@@ -2,10 +2,12 @@
  * 🛰️ CONFIGURATION SUPABASE FRONTEND (Realtime)
  */
 
+import { CONFIG } from "./config.js";
+
 const { createClient } = window.supabase;
 
-const supabaseUrl = "https://bcliieqhymeubmsdkqyn.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjbGlpZXFoeW1ldWJtc2RrcXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTY1NDksImV4cCI6MjA5MjI5MjU0OX0.wohWAn4emeWqZicjYv7jDq8xzZFNVZlEhZRWr1xEog8";
+const supabaseUrl = CONFIG.SUPABASE_URL;
+const supabaseKey = CONFIG.SUPABASE_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
