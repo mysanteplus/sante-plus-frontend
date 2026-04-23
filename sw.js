@@ -1,41 +1,32 @@
 // ============================================================
-// SERVICE WORKER - SANTÉ PLUS SERVICES (DYNAMIQUE)
+// SERVICE WORKER - SANTÉ PLUS SERVICES (OFFLINE-FIRST)
 // ============================================================
 
-const CACHE_NAME = 'sps-v10';
-const STATIC_CACHE = 'sps-static-v10';
-const IMAGE_CACHE = 'sps-images-v10';
-const API_CACHE = 'sps-api-v10';
+const CACHE_NAME = 'sps-v9';
+const STATIC_CACHE = 'sps-static-v9';
+const IMAGE_CACHE = 'sps-images-v9';
+const API_CACHE = 'sps-api-v9';
 
-// Déterminer le chemin de base dynamiquement
-const getBasePath = () => {
-  const swPath = self.location.pathname;
-  return swPath.substring(0, swPath.lastIndexOf('/') + 1);
-};
-
-const BASE_PATH = getBasePath();
-
-// Fichiers statiques à mettre en cache (chemins dynamiques)
+// Fichiers statiques à mettre en cache immédiatement
 const STATIC_URLS = [
-  BASE_PATH,
-  BASE_PATH + 'index.html',
-  BASE_PATH + 'style.css',
-  BASE_PATH + 'js/main.js',
-  BASE_PATH + 'manifest.json',
-  BASE_PATH + 'offline.html',
-  BASE_PATH + 'assets/images/logo-general-icon.png',
-  BASE_PATH + 'assets/images/logo-general-text.png',
-  BASE_PATH + 'assets/images/logo-maman-icon.png',
-  BASE_PATH + 'assets/images/logo-maman-text.png'
+  './',
+  './index.html',
+  './style.css',
+  './js/main.js',
+  './manifest.json',
+  'offline.html',
+  '/assets/images/logo-general-icon.png',
+  '/assets/images/logo-general-text.png',
+  '/assets/images/logo-maman-icon.png',
+  '/assets/images/logo-maman-text.png'
 ];
 
 // ============================================================
-// 🔥 FIREBASE (configuration dynamique)
+// 🔥 FIREBASE
 // ============================================================
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
-// La config Firebase est injectée depuis l'index.html ou définie ici
 firebase.initializeApp({
   apiKey: "AIzaSyBzLQLLWmRI7Nr-c-Ht9DKkJejMxh-5C4g",
   authDomain: "santeplus-service.firebaseapp.com",
@@ -46,83 +37,27 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// ============================================================
-// 🔔 GESTION DES NOTIFICATIONS PUSH (DYNAMIQUE)
-// ============================================================
-
-// Déterminer l'URL de base pour les redirections
-const getAppBaseUrl = () => {
-  // Essayer de trouver l'URL de base à partir du scope du SW
-  let baseUrl = self.location.origin + BASE_PATH;
-  
-  // Si c'est une sous-route, garder uniquement l'origine
-  if (baseUrl.includes('/sante-plus-frontend')) {
-    baseUrl = self.location.origin + '/sante-plus-frontend';
-  }
-  
-  return baseUrl;
-};
-
-const APP_BASE_URL = getAppBaseUrl();
-
-// Fonction pour obtenir l'icône selon le thème
-const getNotificationIcon = (isMaman = false) => {
-  if (isMaman) {
-    return APP_BASE_URL + '/assets/images/logo-maman-icon.png';
-  }
-  return APP_BASE_URL + '/assets/images/logo-general-icon.png';
-};
-
-// Écouter les messages background
+// 🔥 FCM Background (notifications en arrière-plan)
 messaging.onBackgroundMessage((payload) => {
   console.log("🔥 FCM Background:", payload);
-  
-  const isMaman = payload.data?.isMaman === 'true';
+
   const title = payload.notification?.title || "Santé Plus";
-  const body = payload.notification?.body || "Nouvelle notification";
-  const url = payload.data?.url || "/";
-  
-  // Construire l'URL complète
-  const fullUrl = url.startsWith('http') ? url : APP_BASE_URL + url;
-  
   const options = {
-    body: body,
-    icon: getNotificationIcon(isMaman),
-    badge: getNotificationIcon(isMaman),
+    body: payload.notification?.body || "Nouvelle notification",
+    icon: "/assets/images/logo-general-icon.png",
+    badge: "/assets/images/logo-general-icon.png",
     vibrate: [200, 100, 200],
+    sound: "/sounds/notification1.mp3",
     silent: false,
     requireInteraction: true,
     tag: "sante-plus-notif",
     data: { 
-      url: fullUrl,
+      url: payload.data?.url || "/",
       timestamp: Date.now()
     }
   };
-  
-  self.registration.showNotification(title, options);
-});
 
-// Gestionnaire de clic sur notification
-self.addEventListener("notificationclick", function (event) {
-  event.notification.close();
-  
-  const urlToOpen = event.notification.data?.url || APP_BASE_URL + "/";
-  
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(windowClients => {
-        // Vérifier si une fenêtre est déjà ouverte
-        for (let client of windowClients) {
-          if (client.url === urlToOpen && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        // Sinon ouvrir une nouvelle fenêtre
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
-        }
-      })
-  );
+  self.registration.showNotification(title, options);
 });
 
 // ============================================================
@@ -131,13 +66,15 @@ self.addEventListener("notificationclick", function (event) {
 self.addEventListener('install', (event) => {
   console.log('🔧 SW installation...');
   event.waitUntil(
-    caches.open(STATIC_CACHE).then(cache => cache.addAll(STATIC_URLS))
+    Promise.all([
+      caches.open(STATIC_CACHE).then(cache => cache.addAll(STATIC_URLS)),
+      self.skipWaiting()
+    ])
   );
-  self.skipWaiting();
 });
 
 // ============================================================
-// ACTIVATION
+// ACTIVATION - Nettoyage
 // ============================================================
 self.addEventListener('activate', (event) => {
   console.log('✨ SW activation...');
@@ -159,19 +96,18 @@ self.addEventListener('activate', (event) => {
 });
 
 // ============================================================
-// STRATÉGIE DE CACHE
+// STRATÉGIE DE CACHE: OFFLINE-FIRST
 // ============================================================
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  const isSameOrigin = url.origin === self.location.origin;
   
-  // Ignorer les requêtes non-GET
+  // 1. IGNORER LES REQUÊTES NON-GET
   if (event.request.method !== 'GET') {
     event.respondWith(fetch(event.request));
     return;
   }
   
-  // Requêtes API
+  // 2. REQUÊTES API (Network first, fallback cache)
   if (url.pathname.includes('/api/')) {
     event.respondWith(
       fetch(event.request, {
@@ -192,8 +128,17 @@ self.addEventListener('fetch', (event) => {
       })
       .catch(async () => {
         const cachedResponse = await caches.match(event.request);
-        if (cachedResponse) return cachedResponse;
-        return new Response(JSON.stringify({ offline: true, message: "Mode hors-ligne" }), {
+        if (cachedResponse) {
+          console.log(`📦 [SW] API Cache hit: ${url.pathname}`);
+          return cachedResponse;
+        }
+        
+        // Retourner une réponse offline structurée
+        return new Response(JSON.stringify({
+          offline: true,
+          message: "Mode hors-ligne - Données en cache",
+          timestamp: Date.now()
+        }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
         });
@@ -202,7 +147,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Images
+  // 3. IMAGES (Cache first avec fallback)
   if (event.request.destination === 'image') {
     event.respondWith(
       caches.match(event.request).then(cached => {
@@ -217,18 +162,22 @@ self.addEventListener('fetch', (event) => {
           return network;
         });
       }).catch(() => {
-        return caches.match(APP_BASE_URL + '/assets/images/logo-general-icon.png');
+        return caches.match('/assets/images/logo-general-icon.png');
       })
     );
     return;
   }
   
-  // Assets statiques
+  // 4. ASSETS STATIQUES (Cache first)
   event.respondWith(
     caches.match(event.request).then(cached => {
-      if (cached) return cached;
+      if (cached) {
+        console.log(`📦 [SW] Static Cache hit: ${url.pathname}`);
+        return cached;
+      }
+      
       return fetch(event.request).then(networkResponse => {
-        if (networkResponse && networkResponse.status === 200 && isSameOrigin) {
+        if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(STATIC_CACHE).then(cache => {
             cache.put(event.request, responseToCache);
@@ -236,8 +185,9 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => {
+        // Fallback pour les pages HTML
         if (url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname === './') {
-          return caches.match(APP_BASE_URL + '/offline.html');
+          return caches.match('./offline.html');
         }
         return new Response('Page non disponible hors-ligne', { status: 503 });
       });
@@ -246,7 +196,28 @@ self.addEventListener('fetch', (event) => {
 });
 
 // ============================================================
-// SYNC BACKGROUND
+// NOTIFICATION CLICK
+// ============================================================
+self.addEventListener("notificationclick", function (event) {
+  event.notification.close();
+  const url = event.notification.data?.url || "/";
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(windowClients => {
+        for (let client of windowClients) {
+          if (client.url.includes(url) && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        if (clients.openWindow) {
+          return clients.openWindow(url);
+        }
+      })
+  );
+});
+
+// ============================================================
+// SYNC BACKGROUND (pour les requêtes en attente)
 // ============================================================
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-queued-requests') {
@@ -259,5 +230,3 @@ self.addEventListener('sync', (event) => {
     );
   }
 });
-
-console.log("🚀 Service Worker dynamique chargé - Base path:", BASE_PATH);
