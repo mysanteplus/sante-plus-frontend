@@ -391,8 +391,8 @@ window.downloadInvoicePDF = async (abonnementId) => {
         // Sélectionner le logo selon le thème
         const isMaman = localStorage.getItem("user_is_maman") === "true";
         const logoSrc = isMaman 
-            ? "/sante-plus-frontend/assets/images/logo-maman-text.png"
-            : "/sante-plus-frontend/assets/images/logo-general-text.png";
+            ? "/assets/images/logo-maman-text.png"
+            : "/assets/images/logo-general-text.png";
         
         const themeColor = isMaman ? '#DB2777' : '#10B981';
         
