@@ -2,10 +2,24 @@
 // TEMPS RÉEL GLOBAL — Supabase postgres_changes sur toutes tables
 // ============================================================
 
-const REALTIME_CONFIG = {
-    url: 'https://bcliieqhymeubmsdkqyn.supabase.co',
-    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjbGlpZXFoeW1ldWJtc2RrcXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTY1NDksImV4cCI6MjA5MjI5MjU0OX0.wohWAn4emeWqZicjYv7jDq8xzZFNVZlEhZRWr1xEog8'
+// Récupérer la configuration depuis les variables globales ou localStorage
+const getSupabaseConfig = () => {
+    // Essayer de récupérer depuis window.CONFIG (si défini dans config.js)
+    if (window.CONFIG && window.CONFIG.SUPABASE_URL && window.CONFIG.SUPABASE_KEY) {
+        return {
+            url: window.CONFIG.SUPABASE_URL,
+            key: window.CONFIG.SUPABASE_KEY
+        };
+    }
+    
+    // Fallback : valeurs par défaut (à remplacer par tes vraies valeurs)
+    return {
+        url: 'https://bcliieqhymeubmsdkqyn.supabase.co',
+        key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjbGlpZXFoeW1ldWJtc2RrcXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTY1NDksImV4cCI6MjA5MjI5MjU0OX0.wohWAn4emeWqZicjYv7jDq8xzZFNVZlEhZRWr1xEog8'
+    };
 };
+
+const REALTIME_CONFIG = getSupabaseConfig();
 
 // ── État interne ──────────────────────────────────────────────
 let supabaseClient = null;
@@ -94,7 +108,6 @@ function initMessagesChannel() {
             (payload) => {
                 const newMessage = payload.new;
                 console.log("📡 [REALTIME] Nouveau message global:", newMessage);
-                // Appeler tous les callbacks enregistrés pour ce patient
                 messageCallbacks.forEach(({ patientId: pid, callback: cb }) => {
                     if (pid === newMessage.patient_id) {
                         cb('INSERT', newMessage);
@@ -110,15 +123,12 @@ function initMessagesChannel() {
 // ── Subscribe aux messages ──────────────────────────────────
 function subscribeToMessages(patientId, callback) {
     if (!patientId) return;
-
-    // Enregistrer le callback
     messageCallbacks.push({ patientId, callback });
     console.log(`📡 Callback enregistré pour patient ${patientId}, total: ${messageCallbacks.length}`);
 }
 
 // ── Unsubscribe des messages ────────────────────────────────
 function unsubscribeFromMessages() {
-    // On vide uniquement les callbacks, on garde le canal actif
     messageCallbacks = [];
     console.log("🧹 Callbacks messages nettoyés");
 }
@@ -160,7 +170,7 @@ async function fetchSenderInfo(senderId) {
 function start() {
     initClient();
     initGlobalChannel();
-    initMessagesChannel(); // ← CRÉER LE CANAL DES MESSAGES DÈS LE DÉPART
+    initMessagesChannel();
 }
 
 // ── EXPORT GLOBAL ────────────────────────────────────────────
@@ -168,93 +178,44 @@ window.Realtime = {
     start,
     on,
     off,
-
     subscribe: subscribeToMessages,
     unsubscribe: unsubscribeFromMessages,
-
     fetchSenderInfo,
-
     isActive: () => globalChannel !== null,
-
     subscribeToVisites: (cb) => on('visites', (_, row) => cb(row)),
     subscribeToCommandes: (cb) => on('commandes', (_, row) => cb(row)),
-
     initVisitesChannel: initGlobalChannel,
     initClient,
-
-    // =========================
-    // 👁️ READ (VU)
-    // =========================
     subscribeToRead: (callback) => {
         const client = initClient();
         if (!client) return;
-
         client
             .channel('read-status')
-            .on(
-                'postgres_changes',
-                {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'messages'
-                },
-                (payload) => {
-                    console.log("🔥 REALTIME READ PAYLOAD:", payload);
-                    if (!payload.new) {
-                        console.warn("⚠️ payload.new manquant:", payload);
-                        return;
-                    }
-                    callback(payload.new); 
-                }
-            )
-            .subscribe((status) => {
-                console.log(`📡 read-status: ${status}`);
-            });
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
+                if (!payload.new) return;
+                callback(payload.new); 
+            })
+            .subscribe();
     },
-
-    // =========================
-    // ✍️ TYPING (EN TRAIN D'ÉCRIRE)
-    // =========================
     subscribeToTyping: (callback) => {
         const client = initClient();
         if (!client) return;
-
         client
             .channel('typing-channel')
-            .on(
-                'broadcast',
-                { event: '*' },
-                (payload) => {
-                    if (payload.event === 'typing') {
-                        callback(payload.payload);
-                    }
-                }
-            )
-            .subscribe((status) => {
-                console.log(`📡 typing-channel: ${status}`);
-            });
+            .on('broadcast', { event: '*' }, (payload) => {
+                if (payload.event === 'typing') callback(payload.payload);
+            })
+            .subscribe();
     },
-
     sendTyping: (data) => {
         const client = initClient();
         if (!client) return;
-
-        client.channel('typing-channel').send({
-            type: 'broadcast',
-            event: 'typing',
-            payload: data
-        });
+        client.channel('typing-channel').send({ type: 'broadcast', event: 'typing', payload: data });
     },
-
     stopTyping: (data) => {
         const client = initClient();
         if (!client) return;
-
-        client.channel('typing-channel').send({
-            type: 'broadcast',
-            event: 'stop_typing',
-            payload: data
-        });
+        client.channel('typing-channel').send({ type: 'broadcast', event: 'stop_typing', payload: data });
     }
 };
 
