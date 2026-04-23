@@ -12,10 +12,10 @@
     <meta name="apple-mobile-web-app-title" content="SPS Elite">
 
     <!-- Font Awesome local -->
-    <link rel="stylesheet" href="/sante-plus-frontend/assets/fontawesome/css/all.min.css">
-    <link rel="preload" as="font" href="/sante-plus-frontend/assets/fontawesome/webfonts/fa-solid-900.woff2" type="font/woff2" crossorigin>
-    <link rel="preload" as="font" href="/sante-plus-frontend/assets/fontawesome/webfonts/fa-regular-400.woff2" type="font/woff2" crossorigin>
-    <link rel="preload" as="font" href="/sante-plus-frontend/assets/fontawesome/webfonts/fa-brands-400.woff2" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">
+    <link rel="preload" as="font" href="/assets/fontawesome/webfonts/fa-solid-900.woff2" type="font/woff2" crossorigin>
+    <link rel="preload" as="font" href="/assets/fontawesome/webfonts/fa-regular-400.woff2" type="font/woff2" crossorigin>
+    <link rel="preload" as="font" href="/assets/fontawesome/webfonts/fa-brands-400.woff2" type="font/woff2" crossorigin>
 
 
  
@@ -27,8 +27,8 @@
     <script src="https://cdn.jsdelivr.net/npm/emoji-mart@5.6.0/dist/browser.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
-    <link rel="icon" id="favicon" href="/sante-plus-frontend/assets/images/logo-general-icon.png">
-    <link rel="apple-touch-icon" id="apple-touch-icon" href="/sante-plus-frontend/assets/images/logo-general-icon.png">
+    <link rel="icon" id="favicon" href="/assets/images/logo-general-icon.png">
+    <link rel="apple-touch-icon" id="apple-touch-icon" href="/assets/images/logo-general-icon.png">
     <meta name="theme-color" id="theme-color" content="#0F172A">    
     
     <!-- Modules -->
@@ -104,7 +104,7 @@
         <div class="absolute w-32 h-32 rounded-full border-4 border-slate-100 border-t-emerald-500 border-r-emerald-300 animate-spin-slow"></div>
         <!-- Logo au centre -->
         <div class="relative z-10">
-            <img id="loader-logo-img" class="w-20 h-20 object-contain animate-pulse-soft" src="/sante-plus-frontend/assets/images/logo-general-icon.png">
+            <img id="loader-logo-img" class="w-20 h-20 object-contain animate-pulse-soft" src="/assets/images/logo-general-icon.png">
         </div>
     </div>
 </div>
@@ -149,8 +149,8 @@
                     
                     if (loaderImg) {
                         loaderImg.src = isMaman 
-                            ? '/sante-plus-frontend/assets/images/logo-maman-icon.png'
-                            : '/sante-plus-frontend/assets/images/logo-general-icon.png';
+                            ? '/assets/images/logo-maman-icon.png'
+                            : '/assets/images/logo-general-icon.png';
                     }
                     
                     if (santeEl) {
