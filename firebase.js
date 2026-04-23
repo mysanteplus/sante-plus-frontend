@@ -1,19 +1,11 @@
+/**
+ * 🔥 Firebase Configuration - Utilise CONFIG centralisé
+ */
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDXQkxs90j9IQ_MxYOKsDyehMWguBsSwoQ",
-  authDomain: "santeplus-service-50ec2.firebaseapp.com",
-  projectId: "santeplus-service-50ec2",
-  storageBucket: "santeplus-service-50ec2.firebasestorage.app",
-  messagingSenderId: "682827861094",
-  appId: "1:682827861094:web:bbea5ff46932a8acdbf1a7",
-  measurementId: "G-FBELVQMD00"
-};
-
-
-
-
-// Initialisation
-firebase.initializeApp(firebaseConfig);
+// Initialiser Firebase avec la config centralisée
+if (!firebase.apps.length) {
+  firebase.initializeApp(window.CONFIG.FIREBASE);
+}
 
 // 🔥 Demander la permission et enregistrer le token
 async function initFirebaseNotifications() {
@@ -32,14 +24,13 @@ async function initFirebaseNotifications() {
         
         const messaging = firebase.messaging();
         
-        // ✅ IMPORTANT: Spécifier explicitement le service worker existant
         // Attendre que le SW soit prêt
         const registration = await navigator.serviceWorker.ready;
         
-        // Utiliser le SW existant au lieu d'en créer un nouveau
+        // Utiliser le SW existant
         const token = await messaging.getToken({
-            vapidKey: "BEHVyXI23ebDvRG90FlTvbWzvHlhV7hD_ec_Y3_VuP2o_dX2tHqP_ar2WVw1CRpf8PfSyQXKahVGmPknuco8JRA",
-            serviceWorkerRegistration: registration  // ← Clé magique !
+            vapidKey: window.CONFIG.FIREBASE.vapidKey,
+            serviceWorkerRegistration: registration
         });
         
         console.log("🔥 Token FCM:", token);
@@ -47,7 +38,7 @@ async function initFirebaseNotifications() {
         // Sauvegarder le token dans le backend
         const userId = localStorage.getItem("user_id");
         if (userId && token) {
-            const response = await fetch(`${window.CONFIG?.API_URL || 'https://sante-plus-backend-main.onrender.com/api'}/save-push-token`, {
+            const response = await fetch(`${window.CONFIG.API_URL}/save-push-token`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token, user_id: userId })
@@ -70,7 +61,6 @@ async function initFirebaseNotifications() {
         
     } catch (err) {
         console.error("❌ Erreur init Firebase:", err);
-        // Afficher un message plus clair pour l'utilisateur
         if (err.code === 'messaging/failed-service-worker-registration') {
             console.warn("⚠️ Problème SW - Les notifications push peuvent être limitées");
         }
@@ -81,7 +71,6 @@ async function initFirebaseNotifications() {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initFirebaseNotifications);
 } else {
-    // Attendre un peu que le SW soit enregistré
     setTimeout(initFirebaseNotifications, 1000);
 }
 
