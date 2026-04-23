@@ -3,10 +3,10 @@ const isCapacitor = typeof window !== 'undefined' && window.hasOwnProperty('Capa
 
 export const CONFIG = {
   API_URL: isCapacitor 
-    ? "https://sante-plus-backend-ux1n.onrender.com/api"
+    ? "https://sante-plus-backend-main.onrender.com/api"
     : (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
       ? "http://localhost:4000/api"
-      : "https://sante-plus-backend-ux1n.onrender.com/api"),
+      : "https://sante-plus-backend-main.onrender.com/api"),
 
   SUPABASE_URL: "https://bcliieqhymeubmsdkqyn.supabase.co",
   SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjbGlpZXFoeW1ldWJtc2RrcXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTY1NDksImV4cCI6MjA5MjI5MjU0OX0.wohWAn4emeWqZicjYv7jDq8xzZFNVZlEhZRWr1xEog8",
