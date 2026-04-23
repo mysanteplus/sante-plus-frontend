@@ -1,13 +1,15 @@
 // 🔥 Firebase CDN - Configuration unique
-
 const firebaseConfig = {
-  apiKey: "AIzaSyBzLQLLWmRI7Nr-c-Ht9DKkJejMxh-5C4g",
-  authDomain: "santeplus-service.firebaseapp.com",
-  projectId: "santeplus-service",
-  storageBucket: "santeplus-service.firebasestorage.app",
-  messagingSenderId: "706607823043",
-  appId: "1:706607823043:web:0f1f6433cdc796d62b0a76"
+  apiKey: "AIzaSyBlTijhpIzlymz5mCtWveMVk1LKOq6Un4k",
+  authDomain: "santeplus-a42c2.firebaseapp.com",
+  projectId: "santeplus-a42c2",
+  storageBucket: "santeplus-a42c2.firebasestorage.app",
+  messagingSenderId: "479610808944",
+  appId: "1:479610808944:web:b60d2e30425e38296ee2b5",
+  measurementId: "G-W3HFPYSF9Y"
 };
+
+
 
 // Initialisation
 firebase.initializeApp(firebaseConfig);
@@ -35,7 +37,7 @@ async function initFirebaseNotifications() {
         
         // Utiliser le SW existant au lieu d'en créer un nouveau
         const token = await messaging.getToken({
-            vapidKey: "BAStgbdhdf4eevMHymMZSalvx5ZjbrR_6rJQX6VUfxURmNo6X0ej18IHKw0j-y3oCmu6kmLK0T8YvRAeRENjAkk",
+            vapidKey: "BAyNvmCJw4JIEnNHfToHCaWMQsGHCYCmefkuieMS5MiI5eVwQMORsU_NPfJbzHw3dR-ti7vktrFYhU38tJ0KboM",
             serviceWorkerRegistration: registration  // ← Clé magique !
         });
         
@@ -44,7 +46,7 @@ async function initFirebaseNotifications() {
         // Sauvegarder le token dans le backend
         const userId = localStorage.getItem("user_id");
         if (userId && token) {
-            const response = await fetch(`${window.CONFIG?.API_URL || 'https://sante-plus-backend-ux1n.onrender.com/api'}/save-push-token`, {
+            const response = await fetch(`${window.CONFIG?.API_URL || 'https://sante-plus-backend-main.onrender.com/api'}/save-push-token`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token, user_id: userId })
