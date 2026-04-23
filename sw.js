@@ -15,10 +15,10 @@ const STATIC_URLS = [
   './js/main.js',
   './manifest.json',
   'offline.html',
-  '/sante-plus-frontend/assets/images/logo-general-icon.png',
-  '/sante-plus-frontend/assets/images/logo-general-text.png',
-  '/sante-plus-frontend/assets/images/logo-maman-icon.png',
-  '/sante-plus-frontend/assets/images/logo-maman-text.png'
+  '/assets/images/logo-general-icon.png',
+  '/assets/images/logo-general-text.png',
+  '/assets/images/logo-maman-icon.png',
+  '/assets/images/logo-maman-text.png'
 ];
 
 // ============================================================
@@ -44,10 +44,10 @@ messaging.onBackgroundMessage((payload) => {
   const title = payload.notification?.title || "Santé Plus";
   const options = {
     body: payload.notification?.body || "Nouvelle notification",
-    icon: "/sante-plus-frontend/assets/images/logo-general-icon.png",
-    badge: "/sante-plus-frontend/assets/images/logo-general-icon.png",
+    icon: "/assets/images/logo-general-icon.png",
+    badge: "/assets/images/logo-general-icon.png",
     vibrate: [200, 100, 200],
-    sound: "/sante-plus-frontend/sounds/notification1.mp3",
+    sound: "/sounds/notification1.mp3",
     silent: false,
     requireInteraction: true,
     tag: "sante-plus-notif",
@@ -162,7 +162,7 @@ self.addEventListener('fetch', (event) => {
           return network;
         });
       }).catch(() => {
-        return caches.match('/sante-plus-frontend/assets/images/logo-general-icon.png');
+        return caches.match('/assets/images/logo-general-icon.png');
       })
     );
     return;
