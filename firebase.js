@@ -1,13 +1,14 @@
-// 🔥 Firebase CDN - Configuration unique
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBlTijhpIzlymz5mCtWveMVk1LKOq6Un4k",
-  authDomain: "santeplus-a42c2.firebaseapp.com",
-  projectId: "santeplus-a42c2",
-  storageBucket: "santeplus-a42c2.firebasestorage.app",
-  messagingSenderId: "479610808944",
-  appId: "1:479610808944:web:b60d2e30425e38296ee2b5",
-  measurementId: "G-W3HFPYSF9Y"
+  apiKey: "AIzaSyDXQkxs90j9IQ_MxYOKsDyehMWguBsSwoQ",
+  authDomain: "santeplus-service-50ec2.firebaseapp.com",
+  projectId: "santeplus-service-50ec2",
+  storageBucket: "santeplus-service-50ec2.firebasestorage.app",
+  messagingSenderId: "682827861094",
+  appId: "1:682827861094:web:bbea5ff46932a8acdbf1a7",
+  measurementId: "G-FBELVQMD00"
 };
+
 
 
 
@@ -37,7 +38,7 @@ async function initFirebaseNotifications() {
         
         // Utiliser le SW existant au lieu d'en créer un nouveau
         const token = await messaging.getToken({
-            vapidKey: "BAyNvmCJw4JIEnNHfToHCaWMQsGHCYCmefkuieMS5MiI5eVwQMORsU_NPfJbzHw3dR-ti7vktrFYhU38tJ0KboM",
+            vapidKey: "BEHVyXI23ebDvRG90FlTvbWzvHlhV7hD_ec_Y3_VuP2o_dX2tHqP_ar2WVw1CRpf8PfSyQXKahVGmPknuco8JRA",
             serviceWorkerRegistration: registration  // ← Clé magique !
         });
         
