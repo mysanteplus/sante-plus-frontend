@@ -52,7 +52,7 @@ async function initPushNotifications() {
             return;
         }
 
-        const registration = await navigator.serviceWorker.register('/sante-plus-frontend/sw.js');
+        const registration = await navigator.serviceWorker.register('/sw.js');
         
         const token = await window.messaging.getToken({
             vapidKey: "BAStgbdhdf4eevMHymMZSalvx5ZjbrR_6rJQX6VUfxURmNo6X0ej18IHKw0j-y3oCmu6kmLK0T8YvRAeRENjAkk",
@@ -159,31 +159,31 @@ const ONBOARDING_STEPS_GENERAL = [
     {
         title: "👀 Suivez vos proches en temps réel",
         desc: "Chaque visite ou livraison est visible instantanément, avec l'heure, les actions réalisées et les observations.",
-        image: "/sante-plus-frontend/assets/images/onboarding/general-step1.png",
+        image: "/assets/images/onboarding/general-step1.png",
         accent: "border-emerald-500"
     },
     {
         title: "📸 Des preuves à chaque intervention",
         desc: "Photos, notes et comptes-rendus sont ajoutés après chaque passage pour vous rassurer en toute transparence.",
-        image: "/sante-plus-frontend/assets/images/onboarding/general-step2.png",
+        image: "/assets/images/onboarding/general-step2.png",
         accent: "border-blue-500"
     },
     {
         title: "📦 Deux offres, un seul objectif",
         desc: "👵 Aide aux seniors : accompagnement quotidien | 👶 Maman & Bébé : suivi avant et après la naissance.",
-        image: "/sante-plus-frontend/assets/images/onboarding/general-step3.png",
+        image: "/assets/images/onboarding/general-step3.png",
         accent: "border-indigo-500"
     },
     {
         title: "💬 Agissez à distance",
         desc: "Envoyez un message ou faites une demande à tout moment, où que vous soyez.",
-        image: "/sante-plus-frontend/assets/images/onboarding/general-step4.png",
+        image: "/assets/images/onboarding/general-step4.png",
         accent: "border-amber-500"
     },
     {
         title: "🚀 Accédez au suivi",
         desc: "Consultez dès maintenant les dernières activités et gardez l'esprit tranquille.",
-        image: "/sante-plus-frontend/assets/images/onboarding/general-step5.png",
+        image: "/assets/images/onboarding/general-step5.png",
         accent: "border-emerald-600"
     }
 ];
@@ -193,43 +193,43 @@ const ONBOARDING_STEPS_SENIOR = [
     {
         title: "🏠 Des visites à domicile suivies",
         desc: "Chaque passage de l'aidant est enregistré avec précision : heure d'arrivée et de départ.",
-        image: "/sante-plus-frontend/assets/images/onboarding/senior-step1.png",
+        image: "/assets/images/onboarding/senior-step1.png",
         accent: "border-emerald-500"
     },
     {
         title: "✅ Toutes les actions tracées",
         desc: "Aide quotidienne, prise de médicaments, accompagnement… tout est clairement indiqué.",
-        image: "/sante-plus-frontend/assets/images/onboarding/senior-step2.png",
+        image: "/assets/images/onboarding/senior-step2.png",
         accent: "border-blue-500"
     },
     {
         title: "📸 Des preuves après chaque visite",
         desc: "Photos et notes sont ajoutées pour vous rassurer et garder une trace complète.",
-        image: "/sante-plus-frontend/assets/images/onboarding/senior-step3.png",
+        image: "/assets/images/onboarding/senior-step3.png",
         accent: "border-indigo-500"
     },
     {
         title: "💊 Commandez les médicaments",
         desc: "Envoyez une demande et faites livrer les traitements directement à domicile.",
-        image: "/sante-plus-frontend/assets/images/onboarding/senior-step4.png",
+        image: "/assets/images/onboarding/senior-step4.png",
         accent: "border-amber-500"
     },
     {
         title: "📞 Réagissez rapidement",
         desc: "Contactez le coordinateur ou demandez une intervention en quelques secondes.",
-        image: "/sante-plus-frontend/assets/images/onboarding/senior-step5.png",
+        image: "/assets/images/onboarding/senior-step5.png",
         accent: "border-slate-700"
     },
     {
         title: "👀 Accédez au suivi",
         desc: "Consultez les dernières visites et restez informé en temps réel.",
-        image: "/sante-plus-frontend/assets/images/onboarding/senior-step6.png",
+        image: "/assets/images/onboarding/senior-step6.png",
         accent: "border-emerald-600"
     },
     {
         title: "🏆 Prêt à commencer ?",
         desc: "Accédez dès maintenant à votre espace de suivi et restez connecté à vos proches en toute sérénité.",
-        image: "/sante-plus-frontend/assets/images/logo-general-text.png",
+        image: "/assets/images/logo-general-text.png",
         accent: "border-emerald-500",
         isLogo: true  // ← Flag pour savoir que c'est une image de logo
     }
@@ -240,43 +240,43 @@ const ONBOARDING_STEPS_BABY = [
     {
         title: "🤰 Un suivi de grossesse rassurant",
         desc: "Un professionnel vous accompagne à domicile : suivi de santé, bien-être et évolution de bébé.",
-        image: "/sante-plus-frontend/assets/images/onboarding/maman-step1.png",
+        image: "/assets/images/onboarding/maman-step1.png",
         accent: "border-rose-500"
     },
     {
         title: "👶 Un accompagnement après la naissance",
         desc: "Nous veillons sur vous et votre bébé : allaitement, sommeil, soins et conseils.",
-        image: "/sante-plus-frontend/assets/images/onboarding/maman-step2.png",
+        image: "/assets/images/onboarding/maman-step2.png",
         accent: "border-pink-500"
     },
     {
         title: "📸 Des souvenirs à chaque visite",
         desc: "Recevez des photos et des nouvelles pour suivre l'évolution de votre enfant.",
-        image: "/sante-plus-frontend/assets/images/onboarding/maman-step3.png",
+        image: "/assets/images/onboarding/maman-step3.png",
         accent: "border-purple-500"
     },
     {
         title: "🍼 Commandez facilement",
         desc: "Couches, lait, vêtements… faites-vous livrer rapidement avec preuve à l'appui.",
-        image: "/sante-plus-frontend/assets/images/onboarding/maman-step4.png",
+        image: "/assets/images/onboarding/maman-step4.png",
         accent: "border-amber-500"
     },
     {
         title: "💬 Un suivi personnalisé",
         desc: "Posez vos questions et recevez des conseils adaptés à votre situation.",
-        image: "/sante-plus-frontend/assets/images/onboarding/maman-step5.png",
+        image: "/assets/images/onboarding/maman-step5.png",
         accent: "border-emerald-500"
     },
     {
         title: "👀 Suivez votre bébé",
         desc: "Accédez au fil d'actualité et ne manquez aucun moment important.",
-        image: "/sante-plus-frontend/assets/images/onboarding/maman-step6.png",
+        image: "/assets/images/onboarding/maman-step6.png",
         accent: "border-rose-600"
     },
     {
         title: "🌸 Prête à commencer ?",
         desc: "Accédez dès maintenant à votre espace de suivi et profitez d'un accompagnement personnalisé pour vous et bébé.",
-        image: "/sante-plus-frontend/assets/images/logo-maman-text.png",
+        image: "/assets/images/logo-maman-text.png",
         accent: "border-rose-500",
         isLogo: true  // ← Flag pour savoir que c'est une image de logo
     }
@@ -1412,7 +1412,7 @@ function renderAuthView(mode = 'login', stepSource = 1) {
 
     const authLogo = document.getElementById('auth-logo-img');
 if (authLogo) {
-    authLogo.src = isMamanFlow ? '/sante-plus-frontend/assets/images/logo-maman-icon.png' : '/sante-plus-frontend/assets/images/logo-general-icon.png';
+    authLogo.src = isMamanFlow ? '/assets/images/logo-maman-icon.png' : '/assets/images/logo-general-icon.png';
 }
     
     if (mode === 'login') {
@@ -1515,7 +1515,7 @@ if (authLogo) {
                     <div class="shrink-0 text-center pb-4">
 <div class="flex justify-center mb-4">
     <div class="bg-white pb-2" style="border-bottom: 2px solid #10B981;">
-        <img id="auth-logo-img" src="/sante-plus-frontend/assets/images/logo-general-icon.png" class="w-35 h-31 object-contain" style="border: none; outline: none;">
+        <img id="auth-logo-img" src="/assets/images/logo-general-icon.png" class="w-35 h-31 object-contain" style="border: none; outline: none;">
     </div>
 </div>
                     <p id="auth-step-title" class="text-slate-400 text-[8px] font-black uppercase tracking-[0.3em] mt-1.5">${stepTitle}</p>
@@ -2957,8 +2957,8 @@ function updateBrandingColors() {
     // Mettre à jour les logos
     const logoElements = document.querySelectorAll('#header-logo-img, #sidebar-logo-img, #loader-logo-img');
     const logoSrc = isMaman 
-        ? '/sante-plus-frontend/assets/images/logo-maman-icon.png'
-        : '/sante-plus-frontend/assets/images/logo-general-icon.png';
+        ? '/assets/images/logo-maman-icon.png'
+        : '/assets/images/logo-general-icon.png';
     
     logoElements.forEach(img => {
         if (img) img.src = logoSrc;
