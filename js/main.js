@@ -1723,25 +1723,30 @@ function renderMobileHub() {
     
     container.innerHTML = `
         <div class="animate-fadeIn" style="background: #F8FAFC; padding-bottom: 20px;">
-            <!-- Bannière de bienvenue -->
-            <div style="background: ${primaryColor}; border-radius: 24px; padding: 24px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                            <div style="background: rgba(255,255,255,0.2); width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
-                                <i class="fa-solid ${bannerIcon}" style="color: white; font-size: 14px;"></i>
-                            </div>
-                            <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.8);">BIENVENUE</span>
-                        </div>
-                        <h2 style="font-size: 28px; font-weight: 800; color: white; margin-bottom: 4px;">${userName?.split(' ')[0] || 'Utilisateur'}</h2>
-                        <p style="font-size: 12px; color: rgba(255,255,255,0.9);">${bannerDesc}</p>
-                    </div>
-                    <div style="background: rgba(255,255,255,0.15); width: 48px; height: 48px; border-radius: 24px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); position: relative;">
-                        <i class="fa-regular fa-bell" style="color: white; font-size: 20px;"></i>
-                        <span id="mobile-notif-badge" style="position: absolute; top: -4px; right: -4px; background: #EF4444; color: white; font-size: 9px; font-weight: 800; min-width: 18px; height: 18px; border-radius: 18px; display: none; align-items: center; justify-content: center; border: 2px solid white;">0</span>
-                    </div>
-                </div>
-            </div>
+            <!-- Bannière de bienvenue avec image de fond -->
+           <div class="relative rounded-2xl overflow-hidden mb-5" style="height: 160px;">
+               <!-- Image de fond -->
+               <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('/assets/images/banners/${getBannerImage(userRole)}');"></div>
+               <!-- Calque de couleur par-dessus -->
+               <div class="absolute inset-0" style="background: linear-gradient(135deg, ${primaryColor}CC, ${primaryColor}99);"></div>
+               <!-- Contenu -->
+               <div class="relative z-10 h-full flex justify-between items-center p-5">
+                   <div>
+                       <div class="flex items-center gap-2 mb-2">
+                           <div class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">
+                               <i class="fa-solid ${bannerIcon} text-white text-sm"></i>
+                           </div>
+                           <span class="text-[9px] font-bold uppercase tracking-wider text-white/80">BIENVENUE</span>
+                       </div>
+                       <h2 class="text-2xl font-black text-white">${userName?.split(' ')[0] || 'Utilisateur'}</h2>
+                       <p class="text-sm text-white/90 mt-1">${bannerDesc}</p>
+                   </div>
+                   <div class="bg-white/20 w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-sm relative">
+                       <i class="fa-regular fa-bell text-white text-xl"></i>
+                       <span id="mobile-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[8px] text-white flex items-center justify-center hidden">0</span>
+                   </div>
+               </div>
+           </div>
             
             <!-- Section info rapide -->
             <div style="background: white; border-radius: 20px; padding: 14px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
@@ -3640,6 +3645,21 @@ window.forgotPassword = async () => {
         });
     }
 };
+
+
+function getBannerImage(role) {
+    const isMaman = localStorage.getItem("user_is_maman") === "true";
+    
+    if (role === "COORDINATEUR") {
+        return "coord-banner.jpg";
+    } else if (role === "AIDANT") {
+        return "aidant-banner.jpg";
+    } else if (role === "FAMILLE" && isMaman) {
+        return "maman-banner.jpg";
+    } else {
+        return "senior-banner.jpg";
+    }
+}
 
 // Appeler dans initApp()
 initPullToRefresh();
