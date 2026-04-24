@@ -1932,8 +1932,8 @@ function renderLayout() {
     const primaryLight = isMaman ? '#FFF1F2' : '#ECFDF5';
 
     document.getElementById("app").innerHTML = `
-        <div class="flex h-screen w-full bg-transparent overflow-hidden font-sans select-none">
-            <!-- Sidebar Desktop -->
+        <div class="flex h-screen w-full overflow-hidden font-sans select-none">
+                    <!-- Sidebar Desktop -->
                  <aside class="hidden lg:flex flex-col w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white shadow-xl">
                     <!-- Logo -->
                     <div class="flex justify-center py-6 border-b border-white/10">
