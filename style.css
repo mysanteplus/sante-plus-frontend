@@ -4040,3 +4040,56 @@ body:not(.fontawesome-loaded) i[class*="fa-"] {
 .onboarding-skip-btn:hover {
     color: var(--role-primary-dark, #047857) !important;
 }
+
+
+/* Fond dynamique pour la page de connexion */
+.auth-page {
+    transition: background 0.3s ease;
+}
+
+.auth-page.maman {
+    background: linear-gradient(135deg, #FFF1F2 0%, #FFFFFF 100%);
+}
+
+.auth-page.senior {
+    background: linear-gradient(135deg, #ECFDF5 0%, #FFFFFF 100%);
+}
+
+.auth-page.aidant {
+    background: linear-gradient(135deg, #FEF9E6 0%, #FFFFFF 100%);
+}
+
+.auth-page.coordinateur {
+    background: linear-gradient(135deg, #F1F5F9 0%, #FFFFFF 100%);
+}
+
+/* Effets de fond flous */
+.auth-blur {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.auth-blur.maman {
+    background: #F43F5E;
+    opacity: 0.15;
+}
+
+.auth-blur.senior {
+    background: #10B981;
+    opacity: 0.15;
+}
+
+.auth-blur.aidant {
+    background: #D4AF37;
+    opacity: 0.15;
+}
+
+.auth-blur.coordinateur {
+    background: #1E293B;
+    opacity: 0.1;
+}
