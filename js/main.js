@@ -2346,7 +2346,8 @@ function getNavLinks(role, mode) {
             { id: 'rh-dashboard', icon: 'fa-users', label: 'RH' },
             { id: 'map', icon: 'fa-location-dot', label: 'Radar' },
             { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
-            { id: 'profile', icon: 'fa-user-circle', label: 'Profil' }
+            { id: 'profile', icon: 'fa-user-circle', label: 'Profil' },
+           { id: 'users', icon: 'fa-users', label: 'Utilisateurs' }
         ];
     } 
     else if (isAidant) {
@@ -2782,6 +2783,10 @@ async function performViewSwitch(viewName) {
                     return;
                 }
                 await loadEducationPage();
+                break;
+          case "users":
+            const { renderUsersPage } = await import('./modules/users.js');
+                await renderUsersPage();
                 break;
         }
 
