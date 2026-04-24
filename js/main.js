@@ -666,43 +666,35 @@ function applyUserTheme() {
     const userRole = localStorage.getItem("user_role");
     const isMaman = localStorage.getItem("user_is_maman") === "true";
     const userCategorie = localStorage.getItem("user_categorie");
-    const appDiv = document.getElementById("app");
     
     // Enlever les anciennes classes
     document.body.classList.remove('maman-mode', 'senior-mode', 'aidant-mode', 'coordinateur-mode');
-    if (appDiv) {
-        appDiv.classList.remove('bg-senior', 'bg-maman', 'bg-aidant', 'bg-coordinateur');
-    }
     
     // Appliquer la classe selon le rôle
     if (userRole === "COORDINATEUR") {
         document.body.classList.add('coordinateur-mode');
-        if (appDiv) appDiv.classList.add('bg-coordinateur');
-        console.log("🎨 Thème Coordinateur");
+        console.log("🎨 Thème Coordinateur appliqué (GRIS ÉLÉGANT)");
         setThemeColor("#1E293B");
     } 
     else if (userRole === "AIDANT") {
         document.body.classList.add('aidant-mode');
-        if (appDiv) appDiv.classList.add('bg-aidant');
-        console.log("🎨 Thème Aidant");
+        console.log("🎨 Thème Aidant appliqué (OR DOUX)");
         setThemeColor("#C9A84C");
     }
     else if (userRole === "FAMILLE" && (isMaman || userCategorie === 'MAMAN_BEBE')) {
         document.body.classList.add('maman-mode');
-        if (appDiv) appDiv.classList.add('bg-maman');
-        console.log("🎨 Thème Maman");
+        console.log("🎨 Thème Maman appliqué (ROSE)");
         setThemeColor("#E11D48");
     }
     else if (userRole === "FAMILLE") {
         document.body.classList.add('senior-mode');
-        if (appDiv) appDiv.classList.add('bg-senior');
-        console.log("🎨 Thème Senior");
+        console.log("🎨 Thème Senior appliqué (VERT)");
         setThemeColor("#059669");
     }
     
+    // Mettre à jour la couleur de la barre d'état
     updateThemeColor();
 }
-
 
 function setThemeColor(color) {
     const metaTheme = document.getElementById('theme-color');
@@ -1932,8 +1924,8 @@ function renderLayout() {
     const primaryLight = isMaman ? '#FFF1F2' : '#ECFDF5';
 
     document.getElementById("app").innerHTML = `
-        <div class="flex h-screen w-full overflow-hidden font-sans select-none">
-                    <!-- Sidebar Desktop -->
+        <div class="flex h-screen w-full bg-transparent overflow-hidden font-sans select-none">
+            <!-- Sidebar Desktop -->
                  <aside class="hidden lg:flex flex-col w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white shadow-xl">
                     <!-- Logo -->
                     <div class="flex justify-center py-6 border-b border-white/10">
