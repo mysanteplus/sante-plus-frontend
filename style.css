@@ -4345,3 +4345,35 @@ body.coordinateur-mode::before {
 #app {
     background: transparent !important;
 }
+
+
+
+/* ============================================
+   FONDS DYNAMIQUES DIRECTS SUR #app
+   ============================================ */
+
+#app.bg-senior {
+    background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 50%, #ECFDF5 100%);
+}
+
+#app.bg-maman {
+    background: linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 50%, #FFF1F2 100%);
+}
+
+#app.bg-aidant {
+    background: linear-gradient(135deg, #FDE68A 0%, #FCD34D 50%, #FEF9E6 100%);
+}
+
+#app.bg-coordinateur {
+    background: linear-gradient(135deg, #CBD5E1 0%, #94A3B8 50%, #F1F5F9 100%);
+}
+
+/* Supprimer les fonds blancs qui cachent le dégradé */
+.bg-white, 
+.bg-white.rounded-2xl, 
+.bg-white.rounded-xl,
+.bg-slate-50,
+.bg-slate-100 {
+    background-color: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(4px);
+}
