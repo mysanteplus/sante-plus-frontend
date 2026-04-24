@@ -1731,49 +1731,45 @@ function renderMobileHub() {
     
  container.innerHTML = `
     <div class="animate-fadeIn" style="background: #F8FAFC; padding-bottom: 20px;">
-        <!-- Bannière de bienvenue avec image de fond -->
-        <div class="relative rounded-2xl overflow-hidden mb-5" style="height: 160px;">
-            <!-- Image de fond -->
-            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getBannerImage(userRole)}');"></div>
-            <!-- Calque de couleur semi-transparent -->
-            <div class="absolute inset-0" style="background: linear-gradient(135deg, ${primaryColor}80, ${primaryColor}60);"></div>
-                        <!-- Contenu -->
-            <div class="relative z-10 h-full flex justify-between items-center p-5">
-                <div>
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">
-                            <i class="fa-solid ${bannerIcon} text-white text-sm"></i>
-                        </div>
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-white/80">BIENVENUE</span>
-                    </div>
-                    <h2 class="text-2xl font-black text-white drop-shadow-md">${userName?.split(' ')[0] || 'Utilisateur'}</h2>
-                    <p class="text-sm text-white/90 mt-1 drop-shadow-sm">${bannerDesc}</p>
-                </div>
-                <div class="bg-white/20 w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-sm relative">
-                    <i class="fa-regular fa-bell text-white text-xl"></i>
-                    <span id="mobile-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[8px] text-white flex items-center justify-center hidden">0</span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Section info rapide -->
-       <!-- Prochaine intervention avec image de fond -->
-       <div class="relative rounded-xl overflow-hidden mb-5" style="height: 90px;">
-           <!-- Image de fond -->
-           <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getNextVisitImage(userRole)}');"></div>
-          <!-- Calque léger -->
-           <div class="absolute inset-0" style="background: linear-gradient(135deg, ${primaryColor}80, ${primaryColor}60);"></div>
-           <!-- Contenu -->
-           <div class="relative z-10 h-full flex justify-between items-center px-4">
-               <div>
-                   <p class="text-[9px] font-bold uppercase tracking-wider text-white/80">${isMaman ? 'PROCHAINE VISITE' : (isAidant ? 'PROCHAINE MISSION' : 'PROCHAINE INTERVENTION')}</p>
-                   <p class="text-sm font-bold text-white mt-1">${isMaman ? 'Aujourd\'hui, 10h30' : (isAidant ? 'Patient: DIALLO Fatoumata' : 'À venir')}</p>
-               </div>
-               <div class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">
-                   <i class="fa-solid fa-calendar-check text-white text-sm"></i>
-               </div>
-           </div>
-       </div>
+      <!-- Bannière de bienvenue avec image de fond (sans calque) -->
+         <div class="relative rounded-2xl overflow-hidden mb-5" style="height: 160px;">
+             <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getBannerImage(userRole)}');"></div>
+             <!-- Contenu -->
+             <div class="relative z-10 h-full flex justify-between items-center p-5">
+                 <div>
+                     <div class="flex items-center gap-2 mb-2">
+                         <div class="bg-black/30 w-8 h-8 rounded-full flex items-center justify-center">
+                             <i class="fa-solid ${bannerIcon} text-white text-sm"></i>
+                         </div>
+                         <span class="text-[9px] font-bold uppercase tracking-wider text-white/80">BIENVENUE</span>
+                     </div>
+                     <h2 class="text-2xl font-black text-white drop-shadow-md">${userName?.split(' ')[0] || 'Utilisateur'}</h2>
+                     <p class="text-sm text-white drop-shadow-sm mt-1">${bannerDesc}</p>
+                 </div>
+                 <div class="bg-black/30 w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-sm relative">
+                     <i class="fa-regular fa-bell text-white text-xl"></i>
+                     <span id="mobile-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[8px] text-white flex items-center justify-center hidden">0</span>
+                 </div>
+             </div>
+         </div>
+                 
+                 <!-- Section info rapide -->
+                <!-- Prochaine intervention avec image de fond -->
+               <!-- Prochaine intervention avec image de fond (sans calque) -->
+         <div class="relative rounded-xl overflow-hidden mb-5" style="height: 90px;">
+             <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getNextVisitImage(userRole)}');"></div>
+             <div class="absolute inset-0 bg-black/30"></div>
+             <!-- Contenu -->
+             <div class="relative z-10 h-full flex justify-between items-center px-4">
+                 <div>
+                     <p class="text-[9px] font-bold uppercase tracking-wider text-white/80">${isMaman ? 'PROCHAINE VISITE' : (isAidant ? 'PROCHAINE MISSION' : 'PROCHAINE INTERVENTION')}</p>
+                     <p class="text-sm font-bold text-white mt-1">${isMaman ? 'Aujourd\'hui, 10h30' : (isAidant ? 'Patient: DIALLO Fatoumata' : 'À venir')}</p>
+                 </div>
+                 <div class="bg-black/30 w-8 h-8 rounded-full flex items-center justify-center">
+                     <i class="fa-solid fa-calendar-check text-white text-sm"></i>
+                 </div>
+             </div>
+         </div>
         
         <!-- Titre menu -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
