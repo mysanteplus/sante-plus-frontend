@@ -151,6 +151,9 @@ let currentStep = 1;                 // Étape actuelle du formulaire d'inscript
 let loaderTimeout = null;            // Timeout pour le loader global
 
 
+
+
+
 // ============================================================
 // ONBOARDING GÉNÉRAL (affiché si aucune catégorie n'est encore choisie)
 // ============================================================
@@ -307,15 +310,20 @@ async function initApp() {
     console.log("👤 Rôle utilisateur:", userRole);
     console.log("🌸 Mode Maman:", localStorage.getItem("user_is_maman") === "true");
     
-    // Initialisation des services
+    // 🔥 AFFICHER LE LOADER ET PRÉCHARGER
+    loader.classList.remove('hidden');
+    
+    // Précharger toutes les ressources
+    await preloadResources();
+    
+    // Initialisation des services (après préchargement)
     initMicroInteractions();      // Feedback haptique
     ErrorHandler.init();          // Gestion globale des erreurs
     startKeepAlive();             // Ping
-    updateThemeColor();            //Color auto
+    updateThemeColor();            // Color auto
     preloadOnboardingImages();
     initPushNotifications();
     applyUserTheme();
-
 
 if ("Notification" in window) {
     Notification.requestPermission().then(permission => {
@@ -2916,6 +2924,111 @@ window.startOnboarding = () => {
     
     renderOnboarding();
 };
+
+
+
+
+// ============================================================
+// 🚀 PRÉCHARGEMENT COMPLET AVANT AFFICHAGE
+// ============================================================
+
+let resourcesLoaded = false;
+let resourcesToLoad = [];
+
+// Liste de toutes les ressources à précharger
+const RESOURCES_TO_PRELOAD = {
+    // Logos et icônes principales
+    logos: [
+        '/assets/images/logo-general-icon.png',
+        '/assets/images/logo-general-text.png',
+        '/assets/images/logo-maman-icon.png',
+        '/assets/images/logo-maman-text.png',
+        '/assets/fontawesome/webfonts/fa-solid-900.woff2',
+        '/assets/fontawesome/webfonts/fa-regular-400.woff2',
+        '/assets/fontawesome/webfonts/fa-brands-400.woff2'
+    ],
+    // Images onboarding
+    onboarding: [
+        '/assets/images/onboarding/general-step1.png',
+        '/assets/images/onboarding/general-step2.png',
+        '/assets/images/onboarding/general-step3.png',
+        '/assets/images/onboarding/general-step4.png',
+        '/assets/images/onboarding/general-step5.png',
+        '/assets/images/onboarding/senior-step1.png',
+        '/assets/images/onboarding/senior-step2.png',
+        '/assets/images/onboarding/senior-step3.png',
+        '/assets/images/onboarding/senior-step4.png',
+        '/assets/images/onboarding/senior-step5.png',
+        '/assets/images/onboarding/senior-step6.png',
+        '/assets/images/onboarding/maman-step1.png',
+        '/assets/images/onboarding/maman-step2.png',
+        '/assets/images/onboarding/maman-step3.png',
+        '/assets/images/onboarding/maman-step4.png',
+        '/assets/images/onboarding/maman-step5.png',
+        '/assets/images/onboarding/maman-step6.png'
+    ],
+    // Bannières
+    banners: [
+        '/assets/images/banners/coord-banner.png',
+        '/assets/images/banners/aidant-banner.png',
+        '/assets/images/banners/maman-banner.png',
+        '/assets/images/banners/senior-banner.png',
+        '/assets/images/banners/coord-visit.png',
+        '/assets/images/banners/aidant-visit.png',
+        '/assets/images/banners/maman-visit.png',
+        '/assets/images/banners/senior-visit.png'
+    ]
+};
+
+// Rassembler toutes les ressources
+const ALL_RESOURCES = [
+    ...RESOURCES_TO_PRELOAD.logos,
+    ...RESOURCES_TO_PRELOAD.onboarding,
+    ...RESOURCES_TO_PRELOAD.banners
+];
+
+async function preloadResources() {
+    const total = ALL_RESOURCES.length;
+    let loaded = 0;
+    
+    // Mettre à jour la barre de progression
+    const updateProgress = () => {
+        loaded++;
+        const percent = Math.round((loaded / total) * 100);
+        const progressBar = document.getElementById('preload-progress-bar');
+        const progressText = document.getElementById('preload-progress-text');
+        if (progressBar) progressBar.style.width = `${percent}%`;
+        if (progressText) progressText.textContent = `${percent}%`;
+    };
+    
+    // Charger chaque ressource
+    const promises = ALL_RESOURCES.map(src => {
+        return new Promise((resolve) => {
+            // Déterminer le type de ressource par extension
+            const ext = src.split('.').pop().toLowerCase();
+            
+            if (ext === 'woff2') {
+                // Police - utiliser un simple fetch pour précharger
+                fetch(src, { mode: 'no-cors' })
+                    .then(() => { updateProgress(); resolve(); })
+                    .catch(() => { updateProgress(); resolve(); });
+            } else if (ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'svg') {
+                // Image
+                const img = new Image();
+                img.onload = () => { updateProgress(); resolve(); };
+                img.onerror = () => { updateProgress(); resolve(); };
+                img.src = src;
+            } else {
+                updateProgress();
+                resolve();
+            }
+        });
+    });
+    
+    await Promise.all(promises);
+    console.log(`✅ ${total} ressources préchargées`);
+}
+
 
 
 function renderOnboarding() {
