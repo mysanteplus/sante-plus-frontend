@@ -26,10 +26,10 @@ export const CONFIG = {
   APP_NAME: "Santé Plus Services",
   THEME_COLOR: "#16a34a",
   
-  LOGO_GENERAL_TEXT: "/sante-plus-frontend/assets/images/logo-general-text.png",
-  LOGO_MAMAN_TEXT: "/sante-plus-frontend/assets/images/logo-maman-text.png",
-  LOGO_GENERAL_ICON: "/sante-plus-frontend/assets/images/logo-general-icon.png",
-  LOGO_MAMAN_ICON: "/sante-plus-frontend/assets/images/logo-maman-icon.png"
+  LOGO_GENERAL_TEXT: "/assets/images/logo-general-text.png",
+  LOGO_MAMAN_TEXT: "/assets/images/logo-maman-text.png",
+  LOGO_GENERAL_ICON: "/assets/images/logo-general-icon.png",
+  LOGO_MAMAN_ICON: "/assets/images/logo-maman-icon.png"
 };
 
 // Exposer la configuration globalement
