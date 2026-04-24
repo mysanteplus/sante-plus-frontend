@@ -2035,9 +2035,10 @@ function renderLayout() {
                      <div class="p-5 border-b ${drawerBorderColor} shrink-0">
                          <div class="flex items-center justify-between">
                              <div class="flex items-center gap-3">
-                                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${userRole === 'COORDINATEUR' ? 'from-amber-100 to-amber-200' : (userRole === 'AIDANT' ? 'from-amber-50 to-amber-100' : (isMaman ? 'from-pink-100 to-pink-200' : 'from-emerald-100 to-emerald-200'))} flex items-center justify-center">
-                                     <img src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}" class="w-8 h-8 object-contain">
-                                 </div>
+                              <div class="w-12 h-12 rounded-xl flex items-center justify-center">
+                                  <img src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}" class="w-8 h-8 object-contain">
+                              </div>
+                                 
                                  <div>
                                      <p class="font-bold text-slate-800 text-base">${userName?.split(' ')[0] || 'Utilisateur'}</p>
                                      <p class="text-[9px] ${drawerAccentColor} uppercase font-black tracking-wider">${userRole}</p>
