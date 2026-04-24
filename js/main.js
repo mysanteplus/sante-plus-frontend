@@ -41,6 +41,9 @@ import * as Notifications from "./modules/notifications.js";
 import db from './core/db.js';
 window.db = db;
 
+
+let skipPatient = false;
+
 const messaging = window.messaging;
 
 async function initPushNotifications() {
@@ -857,30 +860,39 @@ function getStepHTML() {
         // ============================================
         // ÉTAPE 1 : QUI PAYE ?
         // ============================================
-                case 1: return `
-                    <div class="text-center mb-8">
-                        <h3 class="text-xl font-black text-slate-800">Qui fait la demande ?</h3>
-                        <p class="text-xs text-slate-400 mt-1">Les informations du responsable</p>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="relative">
-                            <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input id="f-nom" class="app-input !pl-12 !py-3" placeholder="Votre nom complet" value="${registrationData.nom_famille || ''}">
-                        </div>
-                        <div class="relative">
-                            <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input id="f-email" type="email" class="app-input !pl-12 !py-3" placeholder="Votre email" value="${registrationData.email || ''}">
-                        </div>
-                        <div class="relative">
-                            <i class="fa-solid fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input id="f-tel" class="app-input !pl-12 !py-3" placeholder="Votre téléphone" value="${registrationData.tel_famille || ''}">
-                        </div>
-                        <div class="relative">
-                            <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input id="f-pass" type="password" class="app-input !pl-12 !py-3" placeholder="Choisissez un mot de passe">
-                        </div>
-                    </div>
-                `;
+        case 1: return `
+            <div class="text-center mb-8">
+                <h3 class="text-xl font-black text-slate-800">Qui fait la demande ?</h3>
+                <p class="text-xs text-slate-400 mt-1">Les informations du responsable</p>
+            </div>
+            <div class="space-y-4">
+                <div class="relative">
+                    <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input id="f-nom" class="app-input !pl-12 !py-3" placeholder="Votre nom complet" value="${registrationData.nom_famille || ''}">
+                </div>
+                <div class="relative">
+                    <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input id="f-email" type="email" class="app-input !pl-12 !py-3" placeholder="Votre email" value="${registrationData.email || ''}">
+                </div>
+                <div class="relative">
+                    <i class="fa-solid fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input id="f-tel" class="app-input !pl-12 !py-3" placeholder="Votre téléphone" value="${registrationData.tel_famille || ''}">
+                </div>
+                <div class="relative">
+                    <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input id="f-pass" type="password" class="app-input !pl-12 !py-3" placeholder="Choisissez un mot de passe">
+                </div>
+        
+                <!-- ✅ NOUVEAU : Option sans patient -->
+                <div class="mt-4 pt-2 border-t border-slate-100">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="skip-patient-checkbox" class="w-4 h-4 accent-emerald-500">
+                        <span class="text-xs text-slate-600">👤 Je n'ai pas encore de patient à déclarer</span>
+                    </label>
+                    <p class="text-[9px] text-slate-400 mt-1 ml-6">Vous pourrez ajouter un patient plus tard depuis votre espace.</p>
+                </div>
+            </div>
+        `;
         // ============================================
         // ÉTAPE 2 : QUI A BESOIN D'AIDE ?
         // ============================================
@@ -1271,6 +1283,10 @@ window.selectPack = (packId, price) => {
         registrationData.password = document.getElementById('f-pass')?.value;
         registrationData.tel_famille = document.getElementById('f-tel')?.value || "";
         registrationData.lien_parente = document.getElementById('f-lien')?.value || "";
+    
+        // ✅ Lire l’état du checkbox
+        const skipCheckbox = document.getElementById('skip-patient-checkbox');
+        skipPatient = skipCheckbox ? skipCheckbox.checked : false;
     }
     
     if (currentStep === 2) {
@@ -1325,46 +1341,67 @@ window.prevAuthStep = () => {
         renderAuthView('register', currentStep);
     }
 };
+
+
 async function submitRegistration() {
-    if(!registrationData.type_pack) return Swal.fire("Erreur", "Veuillez choisir une formule", "warning");
-    
+    if (!skipPatient && !registrationData.type_pack) {
+        return Swal.fire("Erreur", "Veuillez choisir une formule", "warning");
+    }
+
     registrationData.formule = registrationData.type_pack;
     registrationData.email = registrationData.email.trim().toLowerCase();
-    
-    // ✅ Assure-toi que pathologies est bien un tableau
+
+    // pathologies → tableau
     if (registrationData.pathologies && !Array.isArray(registrationData.pathologies)) {
         registrationData.pathologies = registrationData.pathologies.split(',').map(s => s.trim());
     }
-    
-    // ✅ Ne pas stringifier manuellement, laisse fetch le faire
+
     const payload = {
         ...registrationData,
         pathologies: registrationData.pathologies || [],
-        categorie: registrationData.categorie
+        categorie: registrationData.categorie,
+        skip_patient: skipPatient   // ← on envoie l’info au backend
     };
+
+    // Si on skip le patient, on supprime les champs liés au patient
+    if (skipPatient) {
+        delete payload.nom_patient;
+        delete payload.adresse_patient;
+        delete payload.age_patient;
+        delete payload.sexe_patient;
+        delete payload.tel_patient;
+        delete payload.contact_urgence;
+        delete payload.contact_urgence_tel;
+        delete payload.pathologies;
+        delete payload.traitements;
+        delete payload.allergies;
+        delete payload.notes_medicales;
+    }
 
     console.log("📤 Envoi inscription - Catégorie:", registrationData.categorie);
     console.log("📤 Payload complet:", payload);
-    
+
     Swal.fire({ title: 'Création du dossier...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
 
     try {
         const res = await fetch(`${CONFIG.API_URL}/auth/register-family-patient`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)  // ← fetch stringifie automatiquement
+            body: JSON.stringify(payload)
         });
 
         const data = await res.json();
-        
+
         if (res.ok) {
             localStorage.setItem("user_categorie", registrationData.categorie);
             localStorage.setItem("user_is_maman", registrationData.categorie === 'MAMAN_BEBE');
-            
+
             Swal.fire({
                 icon: "success",
-                title: "Dossier Transmis !",
-                text: "Un coordinateur va valider vos informations sous 24h.",
+                title: skipPatient ? "Compte créé !" : "Dossier Transmis !",
+                text: skipPatient
+                    ? "Votre compte a été créé. Vous pourrez ajouter un patient depuis votre espace."
+                    : "Un coordinateur va valider vos informations sous 24h.",
                 confirmButtonText: "RETOUR À L'ACCUEIL",
                 confirmButtonColor: "#16a34a"
             }).then(() => window.location.reload());
@@ -1376,6 +1413,7 @@ async function submitRegistration() {
         Swal.fire("Erreur", e.message, "error");
     }
 }
+
 // ============================================================
 // VUE AUTHENTIFICATION (LOGIN / REGISTER / OTP)
 // ============================================================
