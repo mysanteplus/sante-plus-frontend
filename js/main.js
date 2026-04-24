@@ -816,9 +816,6 @@ function getStepHTML() {
         // ============================================
         case 0: return `
             <div class="text-center mb-8">
-                <div class="w-16 h-16 mx-auto bg-white rounded-2xl flex items-center justify-center mb-4 shadow-md border border-slate-100">
-                    <i class="fa-solid fa-hand-holding-heart text-2xl text-emerald-500"></i>
-                </div>
                 <h3 class="text-xl font-black text-slate-800">Comment pouvons-nous vous aider ?</h3>
                 <p class="text-xs text-slate-400 mt-1">Choisissez le profil qui vous correspond</p>
             </div>
