@@ -4345,3 +4345,13 @@ body.coordinateur-mode::before {
 #app {
     background: transparent !important;
 }
+
+
+/* Bannière avec image de fond */
+.banner-image {
+    transition: transform 0.3s ease;
+}
+
+.banner-image:hover {
+    transform: scale(1.05);
+}
