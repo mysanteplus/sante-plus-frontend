@@ -1426,7 +1426,6 @@ function renderAuthView(mode = 'login', stepSource = 1) {
     const primaryLight = isMamanFlow ? '#FFF1F2' : (category === 'aidant' ? '#FEF9E6' : (category === 'coordinateur' ? '#F1F5F9' : '#ECFDF5'));
     const progressColor = isMamanFlow ? 'bg-pink-500' : (category === 'aidant' ? 'bg-amber-500' : (category === 'coordinateur' ? 'bg-slate-600' : 'bg-emerald-500'));
     const focusBorderColor = isMamanFlow ? 'focus:border-pink-500' : (category === 'aidant' ? 'focus:border-amber-500' : (category === 'coordinateur' ? 'focus:border-slate-500' : 'focus:border-emerald-500'));
-    const iconColor = isMamanFlow ? 'text-pink-500' : (category === 'aidant' ? 'text-amber-600' : (category === 'coordinateur' ? 'text-slate-600' : 'text-emerald-500'));
 
     let dynamicContent = "";
     let stepTitle = mode === 'login' ? "" : 
@@ -1450,9 +1449,7 @@ function renderAuthView(mode = 'login', stepSource = 1) {
                     <input id="password" type="password" class="app-input !pl-12" placeholder="Code d'accès">
                 </div>
                 <div class="text-right mt-1">
-                    <button onclick="window.forgotPassword()" class="text-[9px] text-slate-400 hover:text-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-500 transition-all">
-                        Mot de passe oublié ?
-                    </button>
+                    <button onclick="window.forgotPassword()" class="text-[9px] text-slate-400 transition-all">Mot de passe oublié ?</button>
                 </div>
                 <button onclick="window.login()" id="btn-login" class="w-full mt-4 py-4 rounded-[1.5rem] font-black shadow-xl active:scale-95 transition-all uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3" style="background: ${primaryColor}; color: white;">
                     Accéder à mon espace <i class="fa-solid fa-arrow-right-long opacity-50"></i>
@@ -1535,34 +1532,35 @@ function renderAuthView(mode = 'login', stepSource = 1) {
 
         existingCard.innerHTML = dynamicContent;
     } else {
-        // Définir les couleurs de fond selon la catégorie
+        // Définir les couleurs de fond selon la catégorie (RENFORCÉES)
         let bgGradient, blurColor1, blurColor2;
         
         if (isMamanFlow) {
-            bgGradient = 'from-pink-100 to-rose-50';
-            blurColor1 = 'bg-pink-200';
-            blurColor2 = 'bg-rose-200';
+            bgGradient = 'from-pink-300 via-pink-100 to-rose-200';
+            blurColor1 = 'bg-pink-400';
+            blurColor2 = 'bg-rose-400';
         } else if (category === 'aidant') {
-            bgGradient = 'from-amber-100 to-yellow-50';
-            blurColor1 = 'bg-amber-200';
-            blurColor2 = 'bg-yellow-200';
+            bgGradient = 'from-amber-300 via-amber-100 to-yellow-200';
+            blurColor1 = 'bg-amber-500';
+            blurColor2 = 'bg-yellow-500';
         } else if (category === 'coordinateur') {
-            bgGradient = 'from-slate-100 to-gray-50';
-            blurColor1 = 'bg-slate-200';
-            blurColor2 = 'bg-gray-200';
+            bgGradient = 'from-slate-700 via-slate-500 to-gray-600';
+            blurColor1 = 'bg-slate-600';
+            blurColor2 = 'bg-gray-600';
         } else {
-            bgGradient = 'from-emerald-100 to-teal-50';
-            blurColor1 = 'bg-emerald-200';
-            blurColor2 = 'bg-teal-200';
+            // Senior
+            bgGradient = 'from-emerald-300 via-emerald-100 to-teal-200';
+            blurColor1 = 'bg-emerald-500';
+            blurColor2 = 'bg-teal-500';
         }
         
         app.innerHTML = `
         <div class="fixed inset-0 w-full h-[100dvh] flex items-center justify-center bg-gradient-to-br ${bgGradient} p-4 lg:p-8 z-50">
-            <!-- Effets de fond flous -->
-            <div class="absolute -top-20 -left-20 w-96 h-96 rounded-full ${blurColor1} filter blur-[100px] opacity-40 pointer-events-none z-0"></div>
-            <div class="absolute -bottom-20 -right-20 w-96 h-96 rounded-full ${blurColor2} filter blur-[100px] opacity-40 pointer-events-none z-0 animate-blob animation-delay-4000"></div>
+            <!-- Effets de fond flous renforcés -->
+            <div class="absolute -top-20 -left-20 w-96 h-96 rounded-full ${blurColor1} filter blur-[100px] opacity-60 pointer-events-none z-0"></div>
+            <div class="absolute -bottom-20 -right-20 w-96 h-96 rounded-full ${blurColor2} filter blur-[100px] opacity-60 pointer-events-none z-0 animate-blob animation-delay-4000"></div>
             
-            <div class="auth-card relative w-full max-w-md bg-white/80 backdrop-blur-xl rounded-[3rem] shadow-[0_30px_70px_-15px_rgba(0,0,0,0.1)] border border-white/50 z-10 flex flex-col h-[600px] max-h-[85dvh]">
+            <div class="auth-card relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-[3rem] shadow-2xl border border-white/50 z-10 flex flex-col h-[600px] max-h-[85dvh]">
                 <div class="shrink-0 text-center pb-4">
                     <div class="flex justify-center mb-4">
                         <div class="bg-white pb-2" style="border-bottom: 2px solid ${primaryColor};">
@@ -1593,7 +1591,6 @@ function renderAuthView(mode = 'login', stepSource = 1) {
         </div>`;
     }
 }
-
 
 // ============================================================
 // HUB DE NAVIGATION MOBILE
