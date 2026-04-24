@@ -2112,7 +2112,9 @@ function renderLayout() {
             serviceItems.push(
                 { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', roles: ['COORDINATEUR'] },
                 { id: 'aidants', icon: 'fa-user-nurse', label: 'Équipe', roles: ['COORDINATEUR'] },
-                { id: 'rh-dashboard', icon: 'fa-users', label: 'RH & Assignations', roles: ['COORDINATEUR'] }
+                { id: 'rh-dashboard', icon: 'fa-users', label: 'RH & Assignations', roles: ['COORDINATEUR'] },
+                { id: 'profile', icon: 'fa-user-circle', label: 'Profil', roles: ['COORDINATEUR'] }
+
             );
         }
         if (userRole === 'FAMILLE') {
