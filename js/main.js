@@ -1436,22 +1436,27 @@ if (authLogo) {
     authLogo.src = isMamanFlow ? '/assets/images/logo-maman-icon.png' : '/assets/images/logo-general-icon.png';
 }
     
-    if (mode === 'login') {
-        dynamicContent = `
-            <div class="px-8 pb-8 space-y-4 animate-fadeIn flex flex-col justify-center min-h-full">
-                <div class="relative group">
-                    <i class="fa-solid fa-envelope absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
-                    <input id="email" type="email" class="app-input !pl-12" placeholder="Adresse email" value="${registrationData.email || ''}">
-                </div>
-                <div class="relative group">
-                    <i class="fa-solid fa-shield-lock absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
-                    <input id="password" type="password" class="app-input !pl-12" placeholder="Code d'accès">
-                </div>
-                <button onclick="window.login()" id="btn-login" class="w-full mt-4 py-4 rounded-[1.5rem] font-black shadow-xl active:scale-95 transition-all uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3" style="background: ${primaryColor}; color: white;">
-                    Accéder à mon espace <i class="fa-solid fa-arrow-right-long opacity-50"></i>
+if (mode === 'login') {
+    dynamicContent = `
+        <div class="px-8 pb-8 space-y-4 animate-fadeIn flex flex-col justify-center min-h-full">
+            <div class="relative group">
+                <i class="fa-solid fa-envelope absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                <input id="email" type="email" class="app-input !pl-12" placeholder="Adresse email" value="${registrationData.email || ''}">
+            </div>
+            <div class="relative group">
+                <i class="fa-solid fa-shield-lock absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                <input id="password" type="password" class="app-input !pl-12" placeholder="Code d'accès">
+            </div>
+            <div class="text-right mt-1">
+                <button onclick="window.forgotPassword()" class="text-[9px] text-slate-400 hover:text-emerald-500 transition-all">
+                    Mot de passe oublié ?
                 </button>
-            </div>`;
-    } 
+            </div>
+            <button onclick="window.login()" id="btn-login" class="w-full mt-4 py-4 rounded-[1.5rem] font-black shadow-xl active:scale-95 transition-all uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3" style="background: ${primaryColor}; color: white;">
+                Accéder à mon espace <i class="fa-solid fa-arrow-right-long opacity-50"></i>
+            </button>
+        </div>`;
+}
     else if (mode === 'register') {
         dynamicContent = `
             <div class="px-8 pb-6 animate-fadeIn flex flex-col h-full">
@@ -3529,6 +3534,61 @@ function updateBottomNav(viewName) {
         }
     });
 }
+
+// ============================================================
+// MOT DE PASSE OUBLIÉ
+// ============================================================
+window.forgotPassword = async () => {
+    const { value: email } = await Swal.fire({
+        title: "Mot de passe oublié",
+        input: "email",
+        inputLabel: "Entrez votre adresse email",
+        inputPlaceholder: "votre@email.com",
+        showCancelButton: true,
+        confirmButtonText: "Envoyer",
+        cancelButtonText: "Annuler",
+        confirmButtonColor: "#10B981",
+        inputValidator: (value) => {
+            if (!value) {
+                return "Email requis";
+            }
+            if (!value.includes('@')) {
+                return "Email invalide";
+            }
+        }
+    });
+    
+    if (!email) return;
+    
+    Swal.fire({
+        title: "Envoi en cours...",
+        didOpen: () => Swal.showLoading(),
+        allowOutsideClick: false
+    });
+    
+    try {
+        await secureFetch("/auth/forgot-password", {
+            method: "POST",
+            body: JSON.stringify({ email })
+        });
+        
+        Swal.fire({
+            icon: "success",
+            title: "Email envoyé !",
+            text: "Vérifiez votre boîte de réception (pensez à vérifier vos spams).",
+            confirmButtonColor: "#10B981"
+        });
+        
+    } catch (err) {
+        Swal.close();
+        Swal.fire({
+            icon: "error",
+            title: "Erreur",
+            text: err.message || "Impossible d'envoyer l'email",
+            confirmButtonColor: "#F43F5E"
+        });
+    }
+};
 
 // Appeler dans initApp()
 initPullToRefresh();
