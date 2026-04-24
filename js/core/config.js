@@ -13,16 +13,18 @@ export const CONFIG = {
 
   // Firebase Configuration
   FIREBASE: {
-    apiKey: "AIzaSyDXQkxs90j9IQ_MxYOKsDyehMWguBsSwoQ",
-    authDomain: "santeplus-service-50ec2.firebaseapp.com",
-    projectId: "santeplus-service-50ec2",
-    storageBucket: "santeplus-service-50ec2.firebasestorage.app",
-    messagingSenderId: "682827861094",
-    appId: "1:682827861094:web:bbea5ff46932a8acdbf1a7",
-    measurementId: "G-FBELVQMD00",
-    vapidKey: "BEHVyXI23ebDvRG90FlTvbWzvHlhV7hD_ec_Y3_VuP2o_dX2tHqP_ar2WVw1CRpf8PfSyQXKahVGmPknuco8JRA"
-  },
+  apiKey: "AIzaSyDEHMUhAVtYXzQZuTNs3mYeq4Cag7IsUfI",
+  authDomain: "santeplus-service-9ad08.firebaseapp.com",
+  projectId: "santeplus-service-9ad08",
+  storageBucket: "santeplus-service-9ad08.firebasestorage.app",
+  messagingSenderId: "745872164641",
+  appId: "1:745872164641:web:fcbc5bcee6ae4dbb2ca060",
+  measurementId: "G-6Q72EHMPD8",
+  vapidKey: "BNeY_I69yPNM2R-kjlAWMjghL21XVvG9-EPTet200rg6S4TEJvRDsbAeWO5TqODp9h1tZS5LtlLOBb5lDoQGz6M"
+};
 
+
+  
   APP_NAME: "Santé Plus Services",
   THEME_COLOR: "#16a34a",
   
