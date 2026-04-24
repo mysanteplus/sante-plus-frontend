@@ -850,9 +850,6 @@ function getStepHTML() {
         // ============================================
                 case 1: return `
                     <div class="text-center mb-8">
-                        <div class="w-16 h-16 mx-auto ${themeBgClass} rounded-2xl flex items-center justify-center mb-4 shadow-md">
-                            <i class="fa-solid fa-user-plus text-2xl ${themeTextClass}"></i>
-                        </div>
                         <h3 class="text-xl font-black text-slate-800">Qui fait la demande ?</h3>
                         <p class="text-xs text-slate-400 mt-1">Les informations du responsable</p>
                     </div>
@@ -880,9 +877,6 @@ function getStepHTML() {
         // ============================================
                       case 2: return `
                     <div class="text-center mb-8">
-                        <div class="w-16 h-16 mx-auto ${themeBgClass} rounded-2xl flex items-center justify-center mb-4 shadow-md">
-                            <i class="fa-solid fa-hands-helping text-2xl ${themeTextClass}"></i>
-                        </div>
                         <h3 class="text-xl font-black text-slate-800">Pour qui ?</h3>
                         <p class="text-xs text-slate-400 mt-1">Les informations de la personne à accompagner</p>
                     </div>
@@ -927,9 +921,6 @@ function getStepHTML() {
             if (isMamanFlow) {
                 return `
                     <div class="text-center mb-8">
-                        <div class="w-16 h-16 mx-auto bg-pink-50 rounded-2xl flex items-center justify-center mb-4 shadow-md">
-                            <i class="fa-solid fa-baby-carriage text-2xl text-pink-500"></i>
-                        </div>
                         <h3 class="text-xl font-black text-slate-800">Suivi Maman & Bébé</h3>
                         <p class="text-xs text-slate-400 mt-1">Quelques informations pour mieux vous accompagner</p>
                     </div>
@@ -959,9 +950,6 @@ function getStepHTML() {
             } else {
                 return `
                     <div class="text-center mb-8">
-                        <div class="w-16 h-16 mx-auto ${themeBgClass} rounded-2xl flex items-center justify-center mb-4 shadow-md">
-                            <i class="fa-solid fa-heartbeat text-2xl ${themeTextClass}"></i>
-                        </div>
                         <h3 class="text-xl font-black text-slate-800">Informations de santé</h3>
                         <p class="text-xs text-slate-400 mt-1">Pour un accompagnement adapté</p>
                     </div>
@@ -1005,9 +993,6 @@ function getStepHTML() {
             
             return `
                 <div class="text-center mb-8">
-                    <div class="w-16 h-16 mx-auto ${themeBgClass} rounded-2xl flex items-center justify-center mb-4 shadow-md">
-                        <i class="fa-solid fa-gem text-2xl ${themeTextClass}"></i>
-                    </div>
                     <h3 class="text-xl font-black text-slate-800">Choisissez votre formule</h3>
                     <p class="text-xs text-slate-400 mt-1">Tarifs mensuels en CFA</p>
                 </div>
@@ -1049,9 +1034,6 @@ function getStepHTML() {
         // ============================================
         case 5: return `
             <div class="text-center mb-8">
-                <div class="w-16 h-16 mx-auto bg-amber-50 rounded-2xl flex items-center justify-center mb-4 shadow-md">
-                    <i class="fa-solid fa-check-circle text-2xl text-amber-600"></i>
-                </div>
                 <h3 class="text-xl font-black text-slate-800">Dernière étape</h3>
                 <p class="text-xs text-slate-400 mt-1">Validation de votre demande</p>
             </div>
