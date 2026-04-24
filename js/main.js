@@ -665,6 +665,7 @@ function showGlobalLoader() {
 function applyUserTheme() {
     const userRole = localStorage.getItem("user_role");
     const isMaman = localStorage.getItem("user_is_maman") === "true";
+    const userCategorie = localStorage.getItem("user_categorie");
     
     // Enlever les anciennes classes
     document.body.classList.remove('maman-mode', 'senior-mode', 'aidant-mode', 'coordinateur-mode');
@@ -672,15 +673,15 @@ function applyUserTheme() {
     // Appliquer la classe selon le rôle
     if (userRole === "COORDINATEUR") {
         document.body.classList.add('coordinateur-mode');
-        console.log("🎨 Thème Coordinateur appliqué (OR ÉLÉGANT)");
-        setThemeColor("#D4AF37"); // Or pour la barre d'état
+        console.log("🎨 Thème Coordinateur appliqué (GRIS ÉLÉGANT)");
+        setThemeColor("#1E293B");
     } 
     else if (userRole === "AIDANT") {
         document.body.classList.add('aidant-mode');
         console.log("🎨 Thème Aidant appliqué (OR DOUX)");
         setThemeColor("#C9A84C");
     }
-    else if (userRole === "FAMILLE" && isMaman) {
+    else if (userRole === "FAMILLE" && (isMaman || userCategorie === 'MAMAN_BEBE')) {
         document.body.classList.add('maman-mode');
         console.log("🎨 Thème Maman appliqué (ROSE)");
         setThemeColor("#E11D48");
@@ -1923,7 +1924,7 @@ function renderLayout() {
     const primaryLight = isMaman ? '#FFF1F2' : '#ECFDF5';
 
     document.getElementById("app").innerHTML = `
-        <div class="flex h-screen w-full bg-[#F8FAFC] overflow-hidden font-sans select-none">
+        <div class="flex h-screen w-full bg-transparent overflow-hidden font-sans select-none">
             <!-- Sidebar Desktop -->
                  <aside class="hidden lg:flex flex-col w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white shadow-xl">
                     <!-- Logo -->
