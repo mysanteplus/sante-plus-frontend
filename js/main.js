@@ -1726,8 +1726,7 @@ function renderMobileHub() {
         <!-- Bannière de bienvenue avec image de fond -->
         <div class="relative rounded-2xl overflow-hidden mb-5" style="height: 160px;">
             <!-- Image de fond -->
-            <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('/assets/images/banners/${getBannerImage(userRole)}');"></div>
-            <!-- Calque de couleur par-dessus (assombrit pour lisibilité) -->
+            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getBannerImage(userRole)}');"></div>
             <!-- Calque de couleur semi-transparent -->
             <div class="absolute inset-0" style="background: linear-gradient(135deg, ${primaryColor}80, ${primaryColor}60);"></div>
                         <!-- Contenu -->
@@ -3341,15 +3340,16 @@ function hasDeclinedInstall() {
 
 function getBannerImage(role) {
     const isMaman = localStorage.getItem("user_is_maman") === "true";
+    const basePath = "/assets/images/banners/";
     
     if (role === "COORDINATEUR") {
-        return "/assets/images/banners/coord-banner.png";
+        return basePath + "coord-banner.png";
     } else if (role === "AIDANT") {
-        return "/assets/images/banners/aidant-banner.png";
+        return basePath + "aidant-banner.png";
     } else if (role === "FAMILLE" && isMaman) {
-        return "/assets/images/banners/maman-banner.png";
+        return basePath + "maman-banner.png";
     } else {
-        return "/assets/images/banners/senior-banner.png";
+        return basePath + "senior-banner.png";
     }
 }
 
