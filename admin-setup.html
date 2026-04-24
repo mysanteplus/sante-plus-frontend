@@ -55,7 +55,7 @@
     </div>
 
     <script>
-        // Récupérer l'URL de l'API
+        // URL de l'API - à modifier si besoin
         const API_URL = 'https://sante-plus-backend-main.onrender.com/api';
         
         // Récupérer le token depuis l'URL
@@ -80,6 +80,16 @@
             
             const password = document.getElementById('password').value;
             const confirm = document.getElementById('confirm-password').value;
+            
+            if (!password || !confirm) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Champs manquants',
+                    text: 'Veuillez remplir tous les champs',
+                    confirmButtonColor: '#F43F5E'
+                });
+                return;
+            }
             
             if (password !== confirm) {
                 Swal.fire({
@@ -108,6 +118,9 @@
             });
             
             try {
+                console.log('🔵 Envoi requête à:', `${API_URL}/auth/reset-password`);
+                console.log('🔵 Token:', token);
+                
                 const response = await fetch(`${API_URL}/auth/reset-password`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -115,6 +128,7 @@
                 });
                 
                 const data = await response.json();
+                console.log('📥 Réponse:', data);
                 
                 if (response.ok) {
                     Swal.fire({
@@ -130,6 +144,7 @@
                 }
             } catch (err) {
                 Swal.close();
+                console.error('❌ Erreur:', err);
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
