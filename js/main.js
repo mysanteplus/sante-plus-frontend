@@ -1721,74 +1721,74 @@ function renderMobileHub() {
     // 🔥 GÉNÉRATION DU HTML AVEC COULEURS DYNAMIQUES
     // ============================================================
     
-    container.innerHTML = `
-        <div class="animate-fadeIn" style="background: #F8FAFC; padding-bottom: 20px;">
-            <!-- Bannière de bienvenue avec image de fond -->
-           <div class="relative rounded-2xl overflow-hidden mb-5" style="height: 160px;">
-               <!-- Image de fond -->
-               <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('/assets/images/banners/${getBannerImage(userRole)}');"></div>
-               <!-- Calque de couleur par-dessus -->
-               <div class="absolute inset-0" style="background: linear-gradient(135deg, ${primaryColor}CC, ${primaryColor}99);"></div>
-               <!-- Contenu -->
-               <div class="relative z-10 h-full flex justify-between items-center p-5">
-                   <div>
-                       <div class="flex items-center gap-2 mb-2">
-                           <div class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">
-                               <i class="fa-solid ${bannerIcon} text-white text-sm"></i>
-                           </div>
-                           <span class="text-[9px] font-bold uppercase tracking-wider text-white/80">BIENVENUE</span>
-                       </div>
-                       <h2 class="text-2xl font-black text-white">${userName?.split(' ')[0] || 'Utilisateur'}</h2>
-                       <p class="text-sm text-white/90 mt-1">${bannerDesc}</p>
-                   </div>
-                   <div class="bg-white/20 w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-sm relative">
-                       <i class="fa-regular fa-bell text-white text-xl"></i>
-                       <span id="mobile-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[8px] text-white flex items-center justify-center hidden">0</span>
-                   </div>
-               </div>
-           </div>
-            
-            <!-- Section info rapide -->
-            <div style="background: white; border-radius: 20px; padding: 14px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <p style="font-size: 10px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">${isMaman ? 'Dernière activité' : (isAidant ? 'Prochaine mission' : 'Prochaine intervention')}</p>
-                        <p style="font-size: 13px; font-weight: 600; color: #1E293B; margin-top: 2px;">${isMaman ? 'Aujourd\'hui, 10h30' : 'À venir'}</p>
+ container.innerHTML = `
+    <div class="animate-fadeIn" style="background: #F8FAFC; padding-bottom: 20px;">
+        <!-- Bannière de bienvenue avec image de fond -->
+        <div class="relative rounded-2xl overflow-hidden mb-5" style="height: 160px;">
+            <!-- Image de fond -->
+            <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('/assets/images/banners/${getBannerImage(userRole)}');"></div>
+            <!-- Calque de couleur par-dessus (assombrit pour lisibilité) -->
+            <div class="absolute inset-0" style="background: linear-gradient(135deg, ${primaryColor}CC, ${primaryColor}99);"></div>
+            <!-- Contenu -->
+            <div class="relative z-10 h-full flex justify-between items-center p-5">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">
+                            <i class="fa-solid ${bannerIcon} text-white text-sm"></i>
+                        </div>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-white/80">BIENVENUE</span>
                     </div>
-                    <div style="background: ${primaryLight}; padding: 5px 10px; border-radius: 20px;">
-                        <span style="font-size: 9px; font-weight: 700; color: ${primaryColor};">${isMaman ? 'Visite prévue' : (isAidant ? 'Mission assignée' : 'Planifié')}</span>
-                    </div>
+                    <h2 class="text-2xl font-black text-white drop-shadow-md">${userName?.split(' ')[0] || 'Utilisateur'}</h2>
+                    <p class="text-sm text-white/90 mt-1 drop-shadow-sm">${bannerDesc}</p>
+                </div>
+                <div class="bg-white/20 w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-sm relative">
+                    <i class="fa-regular fa-bell text-white text-xl"></i>
+                    <span id="mobile-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[8px] text-white flex items-center justify-center hidden">0</span>
                 </div>
             </div>
-            
-            <!-- Titre menu -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h4 style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: ${primaryColor};">MENU PRINCIPAL</h4>
-                <span style="font-size: 9px; color: #94A3B8;">${filteredMenu.length} services</span>
-            </div>
-            
-            <!-- Grille des tuiles -->
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;" id="menu-grid">
-                ${filteredMenu.map((item, index) => `
-                    <div data-menu="${item.id}" onclick="window.switchView('${item.id}')" 
-                         style="background: ${tileBgColor}; border-radius: 20px; padding: 16px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: cardAppear 0.3s ease-out ${index * 0.03}s forwards; opacity: 0; position: relative;"
-                         ontouchstart="this.style.transform='scale(0.97)'"
-                         ontouchend="this.style.transform='scale(1)'"
-                         onmousedown="this.style.transform='scale(0.97)'"
-                         onmouseup="this.style.transform='scale(1)'">
-                        <div style="background: rgba(255,255,255,0.15); width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-                            <i class="fa-solid ${item.icon}" style="color: ${tileIconColor}; font-size: 22px;"></i>
-                        </div>
-                        <div>
-                            <p style="font-weight: 700; color: ${tileTextColor}; font-size: 14px; margin-bottom: 2px;">${item.label}</p>
-                            <p style="font-size: 10px; color: ${isCoordinateur || isAidant ? 'rgba(15, 23, 42, 0.7)' : 'rgba(255,255,255,0.7)'};">${item.desc}</p>
-                        </div>
-                        <span class="menu-badge" style="position: absolute; top: -6px; right: -6px; background: #EF4444; color: white; font-size: 10px; font-weight: 800; min-width: 22px; height: 22px; border-radius: 22px; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(239,68,68,0.4); border: 2px solid white;"></span>
-                    </div>
-                `).join('')}
+        </div>
+        
+        <!-- Section info rapide -->
+        <div style="background: white; border-radius: 20px; padding: 14px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p style="font-size: 10px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">${isMaman ? 'Dernière activité' : (isAidant ? 'Prochaine mission' : 'Prochaine intervention')}</p>
+                    <p style="font-size: 13px; font-weight: 600; color: #1E293B; margin-top: 2px;">${isMaman ? 'Aujourd\'hui, 10h30' : 'À venir'}</p>
+                </div>
+                <div style="background: ${primaryLight}; padding: 5px 10px; border-radius: 20px;">
+                    <span style="font-size: 9px; font-weight: 700; color: ${primaryColor};">${isMaman ? 'Visite prévue' : (isAidant ? 'Mission assignée' : 'Planifié')}</span>
+                </div>
             </div>
         </div>
-    `;
+        
+        <!-- Titre menu -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h4 style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: ${primaryColor};">MENU PRINCIPAL</h4>
+            <span style="font-size: 9px; color: #94A3B8;">${filteredMenu.length} services</span>
+        </div>
+        
+        <!-- Grille des tuiles -->
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;" id="menu-grid">
+            ${filteredMenu.map((item, index) => `
+                <div data-menu="${item.id}" onclick="window.switchView('${item.id}')" 
+                     style="background: ${tileBgColor}; border-radius: 20px; padding: 16px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: cardAppear 0.3s ease-out ${index * 0.03}s forwards; opacity: 0; position: relative;"
+                     ontouchstart="this.style.transform='scale(0.97)'"
+                     ontouchend="this.style.transform='scale(1)'"
+                     onmousedown="this.style.transform='scale(0.97)'"
+                     onmouseup="this.style.transform='scale(1)'">
+                    <div style="background: rgba(255,255,255,0.15); width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                        <i class="fa-solid ${item.icon}" style="color: ${tileIconColor}; font-size: 22px;"></i>
+                    </div>
+                    <div>
+                        <p style="font-weight: 700; color: ${tileTextColor}; font-size: 14px; margin-bottom: 2px;">${item.label}</p>
+                        <p style="font-size: 10px; color: ${isCoordinateur || isAidant ? 'rgba(15, 23, 42, 0.7)' : 'rgba(255,255,255,0.7)'};">${item.desc}</p>
+                    </div>
+                    <span class="menu-badge" style="position: absolute; top: -6px; right: -6px; background: #EF4444; color: white; font-size: 10px; font-weight: 800; min-width: 22px; height: 22px; border-radius: 22px; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(239,68,68,0.4); border: 2px solid white;"></span>
+                </div>
+            `).join('')}
+        </div>
+    </div>
+`;
     
     // Initialiser les badges
     initHomeBadges();
@@ -3335,6 +3335,24 @@ function hasDeclinedInstall() {
     return localStorage.getItem(INSTALL_DECLINED_KEY) === 'true';
 }
 
+
+
+
+function getBannerImage(role) {
+    const isMaman = localStorage.getItem("user_is_maman") === "true";
+    
+    if (role === "COORDINATEUR") {
+        return "/assets/images/banners/coord-banner.png";
+    } else if (role === "AIDANT") {
+        return "/assets/images/banners/aidant-banner.png";
+    } else if (role === "FAMILLE" && isMaman) {
+        return "/assets/images/banners/maman-banner.png";
+    } else {
+        return "/assets/images/banners/senior-banner.png";
+    }
+}
+
+
 // Marquer que l'utilisateur a refusé
 function setDeclinedInstall() {
     localStorage.setItem(INSTALL_DECLINED_KEY, 'true');
@@ -3647,19 +3665,7 @@ window.forgotPassword = async () => {
 };
 
 
-function getBannerImage(role) {
-    const isMaman = localStorage.getItem("user_is_maman") === "true";
-    
-    if (role === "COORDINATEUR") {
-        return "coord-banner.jpg";
-    } else if (role === "AIDANT") {
-        return "aidant-banner.jpg";
-    } else if (role === "FAMILLE" && isMaman) {
-        return "maman-banner.jpg";
-    } else {
-        return "senior-banner.jpg";
-    }
-}
+
 
 // Appeler dans initApp()
 initPullToRefresh();
