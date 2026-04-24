@@ -1406,7 +1406,7 @@ function renderAuthView(mode = 'login', stepSource = 1) {
     let dynamicContent = "";
     let stepTitle = mode === 'login' ? "" : 
                 (mode === 'otp' ? "Sécurité Avancée" : 
-                (currentStep === 0 ? "" : `Étape ${currentStep} / 6`));
+                (currentStep === 0 ? "" : `Étape ${currentStep} / 5`));
 
     const authLogo = document.getElementById('auth-logo-img');
     if (authLogo) {
@@ -1440,24 +1440,48 @@ function renderAuthView(mode = 'login', stepSource = 1) {
     // ============================================================
     // MODE REGISTER (avec marges externes)
     // ============================================================
-    else if (mode === 'register') {
-        dynamicContent = `
-            <div class="flex flex-col" style="min-height: auto;">
-                <div class="flex-1 overflow-y-auto custom-scroll pr-1" style="max-height: 55vh;">
-                    ${getStepHTML()}
+        else if (mode === 'register') {
+            const isServiceChoiceStep = currentStep === 0;
+            const isLastStep = currentStep === 5;
+        
+            dynamicContent = `
+                <div class="flex flex-col min-h-0">
+        
+                    <div 
+                        class="flex-1 overflow-y-auto custom-scroll pr-1"
+                        style="
+                            max-height: clamp(360px, 52vh, 560px);
+                            padding-bottom: 4px;
+                        "
+                    >
+                        ${getStepHTML()}
+                    </div>
+        
+                    ${currentStep !== 4 ? `
+                        <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4 bg-white">
+                            ${currentStep > 1 ? `
+                                <button 
+                                    onclick="window.prevAuthStep()" 
+                                    class="prev-btn w-12 h-12 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shadow-sm active:scale-95 transition-all hover:bg-slate-200"
+                                >
+                                    <i class="fa-solid fa-arrow-left"></i>
+                                </button>
+                            ` : ''}
+        
+                            ${currentStep > 0 ? `
+                                <button 
+                                    onclick="window.nextAuthStep()" 
+                                    class="next-btn flex-1 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-md active:scale-95 transition-all" 
+                                    style="background: ${primaryColor}; color: white;"
+                                >
+                                    ${isLastStep ? 'Valider la demande' : 'Étape suivante'}
+                                </button>
+                            ` : ''}
+                        </div>
+                    ` : ''}
                 </div>
-                <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4">
-                    ${currentStep > 1 ? `
-                        <button onclick="window.prevAuthStep()" class="prev-btn w-12 h-12 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shadow-sm active:scale-95 transition-all hover:bg-slate-200">
-                            <i class="fa-solid fa-arrow-left"></i>
-                        </button>
-                    ` : ''}                    
-                    <button onclick="window.nextAuthStep()" class="next-btn flex-1 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-md active:scale-95 transition-all" style="background: ${primaryColor}; color: white;">
-                        ${currentStep === 6 ? 'Valider le dossier' : 'Étape Suivante'}
-                    </button>
-                </div>
-            </div>`;
-    }
+            `;
+        }
     // ============================================================
     // MODE OTP
     // ============================================================
@@ -1544,15 +1568,17 @@ function renderAuthView(mode = 'login', stepSource = 1) {
         }
         
         // Classes supplémentaires pour le mode register
-        const registerClasses = mode === 'register' ? 'my-6' : '';
-        const cardHeight = mode === 'register' ? 'max-h-[85vh]' : '';
+       const registerClasses = mode === 'register' ? 'my-4 sm:my-6' : '';
+       const cardHeight = mode === 'register'
+           ? 'max-height: calc(100vh - 32px);'
+           : '';
         
         app.innerHTML = `
-        <div class="fixed inset-0 w-full h-screen flex items-center justify-center p-4 z-50" style="background: linear-gradient(135deg, ${primaryLight} 0%, white 100%);">
+        <div class="fixed inset-0 w-full h-screen flex items-center justify-center px-4 py-4 sm:px-6 sm:py-6 z-50 overflow-y-auto" style="background: linear-gradient(135deg, ${primaryLight} 0%, white 100%);">
             <div class="absolute -top-20 -left-20 w-96 h-96 rounded-full ${blurColor1} filter blur-[120px] opacity-30 pointer-events-none"></div>
             <div class="absolute -bottom-20 -right-20 w-96 h-96 rounded-full ${blurColor2} filter blur-[120px] opacity-30 pointer-events-none"></div>
             
-            <div class="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden ${registerClasses}" style="${cardHeight}">
+           <div class="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden ${registerClasses}" style="${cardHeight}">
                 
                 <!-- Logo -->
                 <div class="text-center pt-6 pb-2">
@@ -1584,7 +1610,7 @@ function renderAuthView(mode = 'login', stepSource = 1) {
                 </div>
                 
                 <!-- Contenu -->
-                <div id="auth-card-content" class="px-6 py-5 ${mode === 'register' ? 'pb-6' : ''}">
+                <div id="auth-card-content" class="px-5 sm:px-6 py-5 ${mode === 'register' ? 'pb-5' : ''}">
                     ${dynamicContent}
                 </div>
                 
