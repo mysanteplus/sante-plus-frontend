@@ -1860,7 +1860,7 @@ function renderLayout() {
                     <!-- Logo -->
                     <div class="flex justify-center py-6 border-b border-white/10">
                         <div class="w-16 h-16">
-                            <img id="sidebar-logo-img" class="w-full h-full object-contain" src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}">
+                            <img id="sidebar-logo-img" class="w-full h-full object-contain" src="${isMaman ? '/assets/images/logo-maman-icon.png' : '/assets/images/logo-general-icon.png'}">
                         </div>
                     </div>
                     
