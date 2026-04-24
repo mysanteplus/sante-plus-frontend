@@ -4107,3 +4107,112 @@ body:not(.fontawesome-loaded) i[class*="fa-"] {
 .bg-gradient-to-br.from-slate-700 {
     background: linear-gradient(135deg, #334155 0%, #475569 50%, #334155 100%);
 }
+
+
+/* ============================================
+   DESIGN LOGIN MODERNE & ÉPURÉ
+   ============================================ */
+
+.auth-card {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border-radius: 2rem !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.auth-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Titre épuré */
+.auth-card .shrink-0 {
+    padding-top: 1.5rem !important;
+}
+
+/* Champs de saisie modernes */
+.app-input {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 1rem !important;
+    padding: 1rem 1rem 1rem 2.75rem !important;
+    font-size: 0.875rem !important;
+    transition: all 0.2s ease;
+}
+
+.app-input:focus {
+    background: white !important;
+    border-color: var(--role-primary, #10B981) !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+    outline: none;
+}
+
+/* Icônes dans les champs */
+.app-input + i,
+.relative i {
+    color: #94A3B8;
+    transition: color 0.2s ease;
+}
+
+.relative:focus-within i {
+    color: var(--role-primary, #10B981);
+}
+
+/* Bouton principal */
+#btn-login, .next-btn {
+    background: var(--role-primary, #0F172A) !important;
+    border-radius: 1rem !important;
+    padding: 0.875rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.1em !important;
+    transition: all 0.2s ease;
+}
+
+#btn-login:hover, .next-btn:hover {
+    transform: scale(1.02);
+    filter: brightness(1.05);
+}
+
+#btn-login:active, .next-btn:active {
+    transform: scale(0.98);
+}
+
+/* Liens */
+.auth-card .text-right button {
+    font-size: 0.7rem;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+/* Onglets */
+#auth-tabs .bg-slate-100\/50 {
+    background: #F1F5F9 !important;
+    border-radius: 1rem !important;
+    padding: 0.25rem !important;
+}
+
+#auth-tabs button {
+    border-radius: 0.75rem !important;
+    font-size: 0.7rem !important;
+    font-weight: 800 !important;
+    padding: 0.5rem !important;
+    transition: all 0.2s ease;
+}
+
+/* Logo */
+.auth-card img#auth-logo-img {
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
+}
+
+/* Progress bar */
+#auth-progress .h-1 {
+    height: 0.25rem !important;
+    border-radius: 1rem !important;
+}
+
+/* Message d'erreur (SweetAlert adapté) */
+.swal2-popup {
+    border-radius: 1.5rem !important;
+}
