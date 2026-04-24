@@ -288,6 +288,27 @@ let ONBOARDING_STEPS = ONBOARDING_STEPS_GENERAL;
 
 
 async function initApp() {
+
+
+        // Vérifier si la page de setup est nécessaire
+    const isSetupPage = window.location.pathname.includes('admin-setup.html');
+    
+    if (!isSetupPage) {
+        try {
+            const response = await fetch(`${CONFIG.API_URL}/admin-users/has-admin`);
+            const data = await response.json();
+            
+            if (!data.hasAdmin) {
+                // Rediriger vers la page de création d'admin
+                window.location.href = '/admin-setup.html';
+                return;
+            }
+        } catch (err) {
+            console.error("Erreur vérification admin:", err);
+        }
+    }
+
+    
     const loader = document.getElementById("initial-loader");
     const token = localStorage.getItem("token");
     const onboardingSeen = localStorage.getItem("onboarding_seen");
