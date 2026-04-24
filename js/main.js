@@ -1936,21 +1936,26 @@ function renderLayout() {
 
 
 
- // Couleurs dynamiques pour le drawer mobile
-const drawerBgClass = userRole === 'COORDINATEUR' ? 'bg-gradient-to-br from-amber-700/95 to-amber-900/95 backdrop-blur-xl' 
-                    : (userRole === 'AIDANT' ? 'bg-gradient-to-br from-amber-600/90 to-amber-800/90 backdrop-blur-xl'
-                    : (isMaman ? 'bg-gradient-to-br from-pink-600/90 to-pink-800/90 backdrop-blur-xl'
-                    : 'bg-gradient-to-br from-emerald-700/90 to-emerald-900/90 backdrop-blur-xl'));
+ // Couleurs dynamiques pour le drawer mobile (or transparent pour aidant et coordinateur)
+const drawerBgClass = userRole === 'COORDINATEUR' ? 'bg-gradient-to-br from-amber-500/20 to-amber-700/30 backdrop-blur-xl' 
+                    : (userRole === 'AIDANT' ? 'bg-gradient-to-br from-amber-400/20 to-amber-600/30 backdrop-blur-xl'
+                    : (isMaman ? 'bg-gradient-to-br from-pink-500/20 to-pink-700/30 backdrop-blur-xl'
+                    : 'bg-gradient-to-br from-emerald-500/20 to-emerald-700/30 backdrop-blur-xl'));
 
-const drawerTextColor = userRole === 'COORDINATEUR' ? 'text-amber-100' 
-                      : (userRole === 'AIDANT' ? 'text-amber-100'
-                      : (isMaman ? 'text-pink-100'
-                      : 'text-emerald-100'));
+const drawerTextColor = userRole === 'COORDINATEUR' ? 'text-amber-900' 
+                      : (userRole === 'AIDANT' ? 'text-amber-800'
+                      : (isMaman ? 'text-pink-800'
+                      : 'text-emerald-800'));
 
-const drawerIconColor = userRole === 'COORDINATEUR' ? 'text-amber-300' 
-                      : (userRole === 'AIDANT' ? 'text-amber-300'
-                      : (isMaman ? 'text-pink-300'
-                      : 'text-emerald-300'));
+const drawerIconColor = userRole === 'COORDINATEUR' ? 'text-amber-700' 
+                      : (userRole === 'AIDANT' ? 'text-amber-600'
+                      : (isMaman ? 'text-pink-600'
+                      : 'text-emerald-600'));
+
+const drawerBorderColor = userRole === 'COORDINATEUR' ? 'border-amber-200/30' 
+                        : (userRole === 'AIDANT' ? 'border-amber-200/30'
+                        : (isMaman ? 'border-pink-200/30'
+                        : 'border-emerald-200/30'));
 
     document.getElementById("app").innerHTML = `
         <div class="flex h-screen w-full bg-transparent overflow-hidden font-sans select-none">
@@ -2019,45 +2024,45 @@ const drawerIconColor = userRole === 'COORDINATEUR' ? 'text-amber-300'
                     </div>
                 </header>
 
-                             <!-- Menu latéral mobile (drawer) - VERSION AVEC FOND DÉGRADÉ DYNAMIQUE -->
-              <div id="mobile-drawer" class="fixed inset-0 z-50 hidden">
-                  <div class="absolute inset-0 bg-black/50" id="drawer-overlay"></div>
-                  <div class="absolute top-0 left-0 bottom-0 w-80 ${drawerBgClass} shadow-2xl transform -translate-x-full transition-transform duration-300 flex flex-col">
-                      <!-- En-tête du drawer -->
-                      <div class="p-5 border-b border-white/20 shrink-0">
-                          <div class="flex items-center justify-between">
-                              <div class="flex items-center gap-3">
-                                  <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
-                                      <img src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}" class="w-8 h-8 object-contain">
-                                  </div>
-                                  <div>
-                                      <p class="font-bold text-white text-base">${userName?.split(' ')[0] || 'Utilisateur'}</p>
-                                      <p class="text-[9px] ${drawerTextColor} uppercase font-black tracking-wider">${userRole}</p>
-                                  </div>
-                              </div>
-                              <button id="close-drawer" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition">
-                                  <i class="fa-solid fa-times text-sm"></i>
-                              </button>
-                          </div>
-                      </div>
-                      
-                      <!-- Navigation avec accordéon -->
-                      <nav class="flex-1 overflow-y-auto py-4" id="drawer-menu"></nav>
-                      
-                      <!-- Bouton déconnexion en bas -->
-                      <div class="shrink-0 p-5 border-t border-white/20 space-y-3">
-                          <button id="install-app-drawer" 
-                                  class="w-full py-3 rounded-xl text-[10px] font-black uppercase active:scale-98 transition-all flex items-center justify-center gap-2 bg-white/10 text-white border border-white/20 hover:bg-white/20">
-                              <i class="fa-solid fa-download"></i> Installer l'application
-                          </button>
-                          
-                          <button onclick="window.logout()" 
-                                  class="w-full py-3 bg-rose-500/20 text-rose-300 rounded-xl text-[10px] font-black uppercase active:scale-98 transition-all flex items-center justify-center gap-2 hover:bg-rose-500/30">
-                              <i class="fa-solid fa-power-off"></i> Déconnexion
-                          </button>
-                      </div>
-                  </div>
-              </div>
+                              <!-- Menu latéral mobile (drawer) - VERSION OR TRANSPARENT -->
+               <div id="mobile-drawer" class="fixed inset-0 z-50 hidden">
+                   <div class="absolute inset-0 bg-black/30" id="drawer-overlay"></div>
+                   <div class="absolute top-0 left-0 bottom-0 w-80 ${drawerBgClass} shadow-xl transform -translate-x-full transition-transform duration-300 flex flex-col ${drawerBorderColor} border-r">
+                       <!-- En-tête du drawer -->
+                       <div class="p-5 border-b ${drawerBorderColor} shrink-0">
+                           <div class="flex items-center justify-between">
+                               <div class="flex items-center gap-3">
+                                   <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                                       <img src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}" class="w-8 h-8 object-contain">
+                                   </div>
+                                   <div>
+                                       <p class="font-bold ${drawerTextColor} text-base">${userName?.split(' ')[0] || 'Utilisateur'}</p>
+                                       <p class="text-[9px] ${drawerTextColor}/70 uppercase font-black tracking-wider">${userRole}</p>
+                                   </div>
+                               </div>
+                               <button id="close-drawer" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:bg-white/20 transition">
+                                   <i class="fa-solid fa-times text-sm"></i>
+                               </button>
+                           </div>
+                       </div>
+                       
+                       <!-- Navigation -->
+                       <nav class="flex-1 overflow-y-auto py-4" id="drawer-menu"></nav>
+                       
+                       <!-- Bouton déconnexion en bas -->
+                       <div class="shrink-0 p-5 border-t ${drawerBorderColor} space-y-3">
+                           <button id="install-app-drawer" 
+                                   class="w-full py-3 rounded-xl text-[10px] font-black uppercase active:scale-98 transition-all flex items-center justify-center gap-2 bg-white/10 ${drawerTextColor} border ${drawerBorderColor} hover:bg-white/20">
+                               <i class="fa-solid fa-download"></i> Installer l'application
+                           </button>
+                           
+                           <button onclick="window.logout()" 
+                                   class="w-full py-3 bg-rose-500/10 text-rose-400 rounded-xl text-[10px] font-black uppercase active:scale-98 transition-all flex items-center justify-center gap-2 hover:bg-rose-500/20 border border-rose-200/20">
+                               <i class="fa-solid fa-power-off"></i> Déconnexion
+                           </button>
+                       </div>
+                   </div>
+               </div>
 
                 <!-- Effets de fond -->
                 <div class="absolute top-40 left-[-5%] w-[500px] h-[500px] bg-green-200/20 rounded-full blur-[120px] pointer-events-none z-0 animate-blob"></div>
