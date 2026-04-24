@@ -288,7 +288,8 @@ let ONBOARDING_STEPS = ONBOARDING_STEPS_GENERAL;
 
 
 async function initApp() {
-
+    // Nettoyer les classes de fond au chargement
+    document.body.classList.remove('auth-page', 'maman', 'senior', 'aidant', 'coordinateur');
     
     const loader = document.getElementById("initial-loader");
     const token = localStorage.getItem("token");
@@ -1392,20 +1393,40 @@ async function submitRegistration() {
 // ============================================================
 
 
-
 function renderAuthView(mode = 'login', stepSource = 1) {
     const app = document.getElementById("app");
     currentStep = typeof stepSource === 'number' ? stepSource : 1; 
     const otpEmail = mode === 'otp' ? stepSource : null;
 
-    const isMamanFlow = registrationData.categorie === 'MAMAN_BEBE';
+    // 🔥 DÉTERMINER LA CATÉGORIE POUR LE FOND DYNAMIQUE
+    let category = 'senior';
+    const tempCategory = localStorage.getItem("temp_category");
+    const userRole = localStorage.getItem("user_role");
+    const isMamanStorage = localStorage.getItem("user_is_maman") === "true";
     
-    // 🔥 COULEURS DYNAMIQUES SELON LE CHOIX
-    const primaryColor = isMamanFlow ? '#E11D48' : '#059669';
-    const primaryLight = isMamanFlow ? '#FFF1F2' : '#ECFDF5';
-    const progressColor = isMamanFlow ? 'bg-pink-500' : 'bg-emerald-500';
-    const focusBorderColor = isMamanFlow ? 'focus:border-pink-500' : 'focus:border-emerald-500';
-    const iconColor = isMamanFlow ? 'text-pink-500' : 'text-emerald-500';
+    if (tempCategory === 'MAMAN_BEBE' || isMamanStorage) {
+        category = 'maman';
+    } else if (tempCategory === 'SENIOR') {
+        category = 'senior';
+    } else if (userRole === 'AIDANT') {
+        category = 'aidant';
+    } else if (userRole === 'COORDINATEUR') {
+        category = 'coordinateur';
+    }
+    
+    // Appliquer la classe au body pour le fond
+    document.body.classList.add('auth-page');
+    document.body.classList.remove('maman', 'senior', 'aidant', 'coordinateur');
+    document.body.classList.add(category);
+    
+    const isMamanFlow = category === 'maman';
+    
+    // 🔥 COULEURS DYNAMIQUES SELON LA CATÉGORIE
+    const primaryColor = isMamanFlow ? '#E11D48' : (category === 'aidant' ? '#C9A84C' : (category === 'coordinateur' ? '#1E293B' : '#059669'));
+    const primaryLight = isMamanFlow ? '#FFF1F2' : (category === 'aidant' ? '#FEF9E6' : (category === 'coordinateur' ? '#F1F5F9' : '#ECFDF5'));
+    const progressColor = isMamanFlow ? 'bg-pink-500' : (category === 'aidant' ? 'bg-amber-500' : (category === 'coordinateur' ? 'bg-slate-600' : 'bg-emerald-500'));
+    const focusBorderColor = isMamanFlow ? 'focus:border-pink-500' : (category === 'aidant' ? 'focus:border-amber-500' : (category === 'coordinateur' ? 'focus:border-slate-500' : 'focus:border-emerald-500'));
+    const iconColor = isMamanFlow ? 'text-pink-500' : (category === 'aidant' ? 'text-amber-600' : (category === 'coordinateur' ? 'text-slate-600' : 'text-emerald-500'));
 
     let dynamicContent = "";
     let stepTitle = mode === 'login' ? "" : 
@@ -1413,31 +1434,31 @@ function renderAuthView(mode = 'login', stepSource = 1) {
                 (currentStep === 0 ? "" : `Étape ${currentStep} / 6`));
 
     const authLogo = document.getElementById('auth-logo-img');
-if (authLogo) {
-    authLogo.src = isMamanFlow ? '/assets/images/logo-maman-icon.png' : '/assets/images/logo-general-icon.png';
-}
+    if (authLogo) {
+        authLogo.src = isMamanFlow ? '/assets/images/logo-maman-icon.png' : '/assets/images/logo-general-icon.png';
+    }
     
-if (mode === 'login') {
-    dynamicContent = `
-        <div class="px-8 pb-8 space-y-4 animate-fadeIn flex flex-col justify-center min-h-full">
-            <div class="relative group">
-                <i class="fa-solid fa-envelope absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
-                <input id="email" type="email" class="app-input !pl-12" placeholder="Adresse email" value="${registrationData.email || ''}">
-            </div>
-            <div class="relative group">
-                <i class="fa-solid fa-shield-lock absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
-                <input id="password" type="password" class="app-input !pl-12" placeholder="Code d'accès">
-            </div>
-            <div class="text-right mt-1">
-                <button onclick="window.forgotPassword()" class="text-[9px] text-slate-400 hover:text-emerald-500 transition-all">
-                    Mot de passe oublié ?
+    if (mode === 'login') {
+        dynamicContent = `
+            <div class="px-8 pb-8 space-y-4 animate-fadeIn flex flex-col justify-center min-h-full">
+                <div class="relative group">
+                    <i class="fa-solid fa-envelope absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                    <input id="email" type="email" class="app-input !pl-12" placeholder="Adresse email" value="${registrationData.email || ''}">
+                </div>
+                <div class="relative group">
+                    <i class="fa-solid fa-shield-lock absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                    <input id="password" type="password" class="app-input !pl-12" placeholder="Code d'accès">
+                </div>
+                <div class="text-right mt-1">
+                    <button onclick="window.forgotPassword()" class="text-[9px] text-slate-400 hover:text-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-500 transition-all">
+                        Mot de passe oublié ?
+                    </button>
+                </div>
+                <button onclick="window.login()" id="btn-login" class="w-full mt-4 py-4 rounded-[1.5rem] font-black shadow-xl active:scale-95 transition-all uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3" style="background: ${primaryColor}; color: white;">
+                    Accéder à mon espace <i class="fa-solid fa-arrow-right-long opacity-50"></i>
                 </button>
-            </div>
-            <button onclick="window.login()" id="btn-login" class="w-full mt-4 py-4 rounded-[1.5rem] font-black shadow-xl active:scale-95 transition-all uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3" style="background: ${primaryColor}; color: white;">
-                Accéder à mon espace <i class="fa-solid fa-arrow-right-long opacity-50"></i>
-            </button>
-        </div>`;
-}
+            </div>`;
+    } 
     else if (mode === 'register') {
         dynamicContent = `
             <div class="px-8 pb-6 animate-fadeIn flex flex-col h-full">
@@ -1459,7 +1480,7 @@ if (mode === 'login') {
     else if (mode === 'otp') {
         dynamicContent = `
             <div class="px-8 pb-8 space-y-6 animate-fadeIn flex flex-col justify-center min-h-full text-center">
-                <div class="w-16 h-16 mx-auto ${isMamanFlow ? 'bg-pink-100 text-pink-600' : 'bg-emerald-100 text-emerald-600'} border-4 border-white shadow-xl rounded-[1.5rem] flex items-center justify-center text-2xl mb-2">
+                <div class="w-16 h-16 mx-auto ${isMamanFlow ? 'bg-pink-100 text-pink-600' : (category === 'aidant' ? 'bg-amber-100 text-amber-600' : (category === 'coordinateur' ? 'bg-slate-100 text-slate-600' : 'bg-emerald-100 text-emerald-600'))} border-4 border-white shadow-xl rounded-[1.5rem] flex items-center justify-center text-2xl mb-2">
                     <i class="fa-solid fa-lock"></i>
                 </div>
                 <div>
@@ -1514,19 +1535,42 @@ if (mode === 'login') {
 
         existingCard.innerHTML = dynamicContent;
     } else {
+        // Définir les couleurs de fond selon la catégorie
+        let bgGradient, blurColor1, blurColor2;
+        
+        if (isMamanFlow) {
+            bgGradient = 'from-pink-100 to-rose-50';
+            blurColor1 = 'bg-pink-200';
+            blurColor2 = 'bg-rose-200';
+        } else if (category === 'aidant') {
+            bgGradient = 'from-amber-100 to-yellow-50';
+            blurColor1 = 'bg-amber-200';
+            blurColor2 = 'bg-yellow-200';
+        } else if (category === 'coordinateur') {
+            bgGradient = 'from-slate-100 to-gray-50';
+            blurColor1 = 'bg-slate-200';
+            blurColor2 = 'bg-gray-200';
+        } else {
+            bgGradient = 'from-emerald-100 to-teal-50';
+            blurColor1 = 'bg-emerald-200';
+            blurColor2 = 'bg-teal-200';
+        }
+        
         app.innerHTML = `
-        <div class="fixed inset-0 w-full h-[100dvh] flex items-center justify-center bg-[#F8FAFC] p-4 lg:p-8 z-50">
-            <div class="absolute -top-20 -left-20 w-96 h-96 bg-emerald-200 rounded-full filter blur-[100px] opacity-40 animate-blob pointer-events-none z-0"></div>
-            <div class="absolute -bottom-20 -right-20 w-96 h-96 bg-blue-100 rounded-full filter blur-[100px] opacity-40 animate-blob animation-delay-4000 pointer-events-none z-0"></div>
-            <div class="auth-card relative w-full max-w-md bg-white/90 backdrop-blur-3xl rounded-[3rem] shadow-[0_30px_70px_-15px_rgba(0,0,0,0.1)] border border-white z-10 flex flex-col h-[600px] max-h-[85dvh]">
-                    <div class="shrink-0 text-center pb-4">
-<div class="flex justify-center mb-4">
-    <div class="bg-white pb-2" style="border-bottom: 2px solid #10B981;">
-        <img id="auth-logo-img" src="/assets/images/logo-general-icon.png" class="w-35 h-31 object-contain" style="border: none; outline: none;">
-    </div>
-</div>
+        <div class="fixed inset-0 w-full h-[100dvh] flex items-center justify-center bg-gradient-to-br ${bgGradient} p-4 lg:p-8 z-50">
+            <!-- Effets de fond flous -->
+            <div class="absolute -top-20 -left-20 w-96 h-96 rounded-full ${blurColor1} filter blur-[100px] opacity-40 pointer-events-none z-0"></div>
+            <div class="absolute -bottom-20 -right-20 w-96 h-96 rounded-full ${blurColor2} filter blur-[100px] opacity-40 pointer-events-none z-0 animate-blob animation-delay-4000"></div>
+            
+            <div class="auth-card relative w-full max-w-md bg-white/80 backdrop-blur-xl rounded-[3rem] shadow-[0_30px_70px_-15px_rgba(0,0,0,0.1)] border border-white/50 z-10 flex flex-col h-[600px] max-h-[85dvh]">
+                <div class="shrink-0 text-center pb-4">
+                    <div class="flex justify-center mb-4">
+                        <div class="bg-white pb-2" style="border-bottom: 2px solid ${primaryColor};">
+                            <img id="auth-logo-img" src="/assets/images/logo-general-icon.png" class="w-35 h-31 object-contain" style="border: none; outline: none;">
+                        </div>
+                    </div>
                     <p id="auth-step-title" class="text-slate-400 text-[8px] font-black uppercase tracking-[0.3em] mt-1.5">${stepTitle}</p>
-                  </div>
+                </div>
                 <div id="auth-tabs" class="shrink-0 px-8 mb-4 animate-fadeIn" style="display: ${mode !== 'otp' ? 'block' : 'none'}">
                     <div class="bg-slate-100/50 p-1.5 rounded-[1.5rem] flex items-center gap-1 border border-slate-200/30">
                         <button onclick="window.renderAuthView('login')" class="flex-1 py-2.5 rounded-[1.2rem] text-[9px] font-[800] uppercase tracking-widest transition-all ${mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}">
@@ -1549,6 +1593,7 @@ if (mode === 'login') {
         </div>`;
     }
 }
+
 
 // ============================================================
 // HUB DE NAVIGATION MOBILE
