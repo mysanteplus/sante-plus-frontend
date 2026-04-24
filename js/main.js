@@ -1413,14 +1413,12 @@ function renderAuthView(mode = 'login', stepSource = 1) {
         category = 'coordinateur';
     }
     
-    // Appliquer la classe au body pour le fond
     document.body.classList.add('auth-page');
     document.body.classList.remove('maman', 'senior', 'aidant', 'coordinateur');
     document.body.classList.add(category);
     
     const isMamanFlow = category === 'maman';
     
-    // 🔥 COULEURS DYNAMIQUES SELON LA CATÉGORIE
     const primaryColor = isMamanFlow ? '#E11D48' : (category === 'aidant' ? '#C9A84C' : (category === 'coordinateur' ? '#1E293B' : '#059669'));
     const primaryLight = isMamanFlow ? '#FFF1F2' : (category === 'aidant' ? '#FEF9E6' : (category === 'coordinateur' ? '#F1F5F9' : '#ECFDF5'));
     const progressColor = isMamanFlow ? 'bg-pink-500' : (category === 'aidant' ? 'bg-amber-500' : (category === 'coordinateur' ? 'bg-slate-600' : 'bg-emerald-500'));
@@ -1437,11 +1435,11 @@ function renderAuthView(mode = 'login', stepSource = 1) {
     }
     
     // ============================================================
-    // MODE LOGIN - DESIGN ÉPURÉ
+    // MODE LOGIN
     // ============================================================
     if (mode === 'login') {
         dynamicContent = `
-            <div class="space-y-5">
+            <div class="space-y-4">
                 <div class="relative">
                     <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
                     <input id="email" type="email" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-300 focus:ring-1 focus:ring-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-200 transition-all" placeholder="Adresse email" value="${registrationData.email || ''}">
@@ -1466,7 +1464,7 @@ function renderAuthView(mode = 'login', stepSource = 1) {
     else if (mode === 'register') {
         dynamicContent = `
             <div class="flex flex-col h-full">
-                <div class="flex-1 overflow-y-auto custom-scroll pr-1 pb-2">
+                <div class="flex-1 overflow-y-auto custom-scroll pr-1">
                     ${getStepHTML()}
                 </div>
                 <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4">
@@ -1482,20 +1480,20 @@ function renderAuthView(mode = 'login', stepSource = 1) {
             </div>`;
     }
     // ============================================================
-    // MODE OTP (2FA)
+    // MODE OTP
     // ============================================================
     else if (mode === 'otp') {
         dynamicContent = `
-            <div class="text-center space-y-6">
+            <div class="text-center space-y-5">
                 <div class="w-20 h-20 mx-auto ${isMamanFlow ? 'bg-pink-100' : (category === 'aidant' ? 'bg-amber-100' : (category === 'coordinateur' ? 'bg-slate-100' : 'bg-emerald-100'))} rounded-2xl flex items-center justify-center">
                     <i class="fa-solid fa-shield-alt text-3xl ${isMamanFlow ? 'text-pink-500' : (category === 'aidant' ? 'text-amber-500' : (category === 'coordinateur' ? 'text-slate-500' : 'text-emerald-500'))}"></i>
                 </div>
                 <div>
                     <h3 class="text-xl font-black text-slate-800">Vérification à deux facteurs</h3>
-                    <p class="text-xs text-slate-500 mt-2">Code à 6 chiffres envoyé à<br><span class="font-bold text-slate-700">${otpEmail}</span></p>
+                    <p class="text-xs text-slate-500 mt-1">Code à 6 chiffres envoyé à<br><span class="font-bold text-slate-700">${otpEmail}</span></p>
                 </div>
                 <div>
-                    <input id="otp-code" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="w-full py-4 bg-slate-50 border-2 border-slate-200 rounded-xl text-center text-2xl font-black tracking-[0.5em] focus:${focusBorderColor} focus:ring-2 focus:ring-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-200 outline-none transition-all" placeholder="000000">
+                    <input id="otp-code" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="w-full py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-center text-2xl font-black tracking-[0.5em] focus:${focusBorderColor} focus:ring-2 focus:ring-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-200 outline-none transition-all" placeholder="000000">
                 </div>
                 <button onclick="window.verifyOTP('${otpEmail}')" id="btn-otp" class="w-full py-3.5 rounded-xl font-black text-[11px] uppercase tracking-wider shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" style="background: ${primaryColor}; color: white;">
                     Vérifier <i class="fa-solid fa-shield-check text-xs"></i>
@@ -1532,7 +1530,7 @@ function renderAuthView(mode = 'login', stepSource = 1) {
             if (mode === 'register') {
                 progressContainer.style.display = "block";
                 progressContainer.innerHTML = `
-                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
                         <div class="h-full ${progressColor} transition-all duration-500" style="width: ${(currentStep/6)*100}%"></div>
                     </div>`;
             } else {
@@ -1543,10 +1541,9 @@ function renderAuthView(mode = 'login', stepSource = 1) {
         existingCard.innerHTML = dynamicContent;
     } 
     // ============================================================
-    // PREMIER AFFICHAGE - CRÉATION DE LA CARTE
+    // PREMIER AFFICHAGE
     // ============================================================
     else {
-        // Définir les couleurs de fond selon la catégorie
         let bgGradient, blurColor1, blurColor2;
         
         if (isMamanFlow) {
@@ -1569,18 +1566,16 @@ function renderAuthView(mode = 'login', stepSource = 1) {
         
         app.innerHTML = `
         <div class="fixed inset-0 w-full h-screen flex items-center justify-center p-4 z-50" style="background: linear-gradient(135deg, ${primaryLight} 0%, white 100%);">
-            <!-- Effets de fond flous -->
             <div class="absolute -top-20 -left-20 w-96 h-96 rounded-full ${blurColor1} filter blur-[120px] opacity-30 pointer-events-none"></div>
             <div class="absolute -bottom-20 -right-20 w-96 h-96 rounded-full ${blurColor2} filter blur-[120px] opacity-30 pointer-events-none"></div>
             
-            <!-- Carte principale -->
-            <div class="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
+            <div class="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
                 
-                <!-- Logo et titre -->
-                <div class="text-center pt-8 pb-2">
-                    <div class="flex justify-center mb-3">
+                <!-- Logo -->
+                <div class="text-center pt-6 pb-2">
+                    <div class="flex justify-center mb-2">
                         <div class="pb-1" style="border-bottom: 2px solid ${primaryColor};">
-                            <img id="auth-logo-img" src="/assets/images/logo-general-icon.png" class="w-20 h-20 object-contain" style="border: none;">
+                            <img id="auth-logo-img" src="/assets/images/logo-general-icon.png" class="w-16 h-16 object-contain" style="border: none;">
                         </div>
                     </div>
                     <p id="auth-step-title" class="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">${stepTitle}</p>
@@ -1598,15 +1593,15 @@ function renderAuthView(mode = 'login', stepSource = 1) {
                     </div>
                 </div>
                 
-                <!-- Barre de progression (register) -->
-                <div id="auth-progress" class="px-6 mt-4" style="display: ${mode === 'register' ? 'block' : 'none'}">
-                    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <!-- Progress -->
+                <div id="auth-progress" class="px-6 mt-3" style="display: ${mode === 'register' ? 'block' : 'none'}">
+                    <div class="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
                         <div class="h-full ${progressColor} transition-all duration-500" style="width: ${(currentStep/6)*100}%"></div>
                     </div>
                 </div>
                 
-                <!-- Contenu dynamique -->
-                <div id="auth-card-content" class="px-6 py-6">
+                <!-- Contenu -->
+                <div id="auth-card-content" class="px-6 py-5">
                     ${dynamicContent}
                 </div>
                 
