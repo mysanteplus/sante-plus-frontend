@@ -1749,17 +1749,23 @@ function renderMobileHub() {
         </div>
         
         <!-- Section info rapide -->
-        <div style="background: white; border-radius: 20px; padding: 14px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <p style="font-size: 10px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">${isMaman ? 'Dernière activité' : (isAidant ? 'Prochaine mission' : 'Prochaine intervention')}</p>
-                    <p style="font-size: 13px; font-weight: 600; color: #1E293B; margin-top: 2px;">${isMaman ? 'Aujourd\'hui, 10h30' : 'À venir'}</p>
-                </div>
-                <div style="background: ${primaryLight}; padding: 5px 10px; border-radius: 20px;">
-                    <span style="font-size: 9px; font-weight: 700; color: ${primaryColor};">${isMaman ? 'Visite prévue' : (isAidant ? 'Mission assignée' : 'Planifié')}</span>
-                </div>
-            </div>
-        </div>
+       <!-- Prochaine intervention avec image de fond -->
+       <div class="relative rounded-xl overflow-hidden mb-5" style="height: 90px;">
+           <!-- Image de fond -->
+           <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getNextVisitImage(userRole)}');"></div>
+          <!-- Calque léger -->
+           <div class="absolute inset-0" style="background: linear-gradient(135deg, ${primaryColor}80, ${primaryColor}60);"></div>
+           <!-- Contenu -->
+           <div class="relative z-10 h-full flex justify-between items-center px-4">
+               <div>
+                   <p class="text-[9px] font-bold uppercase tracking-wider text-white/80">${isMaman ? 'PROCHAINE VISITE' : (isAidant ? 'PROCHAINE MISSION' : 'PROCHAINE INTERVENTION')}</p>
+                   <p class="text-sm font-bold text-white mt-1">${isMaman ? 'Aujourd\'hui, 10h30' : (isAidant ? 'Patient: DIALLO Fatoumata' : 'À venir')}</p>
+               </div>
+               <div class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">
+                   <i class="fa-solid fa-calendar-check text-white text-sm"></i>
+               </div>
+           </div>
+       </div>
         
         <!-- Titre menu -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -2976,6 +2982,24 @@ async function checkActiveVisit() {
     }
 }
 
+
+
+
+
+function getNextVisitImage(role) {
+    const isMaman = localStorage.getItem("user_is_maman") === "true";
+    const basePath = "/assets/images/banners/";
+    
+    if (role === "COORDINATEUR") {
+        return basePath + "coord-visit.png";
+    } else if (role === "AIDANT") {
+        return basePath + "aidant-visit.png";
+    } else if (role === "FAMILLE" && isMaman) {
+        return basePath + "maman-visit.png";
+    } else {
+        return basePath + "senior-visit.png";
+    }
+}
 
 /**
  * 🎨 Applique les couleurs dynamiques aux éléments
