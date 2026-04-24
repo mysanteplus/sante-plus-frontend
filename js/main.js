@@ -41,9 +41,6 @@ import * as Notifications from "./modules/notifications.js";
 import db from './core/db.js';
 window.db = db;
 
-
-let skipPatient = false;
-
 const messaging = window.messaging;
 
 async function initPushNotifications() {
@@ -860,39 +857,30 @@ function getStepHTML() {
         // ============================================
         // ÉTAPE 1 : QUI PAYE ?
         // ============================================
-        case 1: return `
-            <div class="text-center mb-8">
-                <h3 class="text-xl font-black text-slate-800">Qui fait la demande ?</h3>
-                <p class="text-xs text-slate-400 mt-1">Les informations du responsable</p>
-            </div>
-            <div class="space-y-4">
-                <div class="relative">
-                    <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input id="f-nom" class="app-input !pl-12 !py-3" placeholder="Votre nom complet" value="${registrationData.nom_famille || ''}">
-                </div>
-                <div class="relative">
-                    <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input id="f-email" type="email" class="app-input !pl-12 !py-3" placeholder="Votre email" value="${registrationData.email || ''}">
-                </div>
-                <div class="relative">
-                    <i class="fa-solid fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input id="f-tel" class="app-input !pl-12 !py-3" placeholder="Votre téléphone" value="${registrationData.tel_famille || ''}">
-                </div>
-                <div class="relative">
-                    <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input id="f-pass" type="password" class="app-input !pl-12 !py-3" placeholder="Choisissez un mot de passe">
-                </div>
-        
-                <!-- ✅ NOUVEAU : Option sans patient -->
-                <div class="mt-4 pt-2 border-t border-slate-100">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" id="skip-patient-checkbox" class="w-4 h-4 accent-emerald-500">
-                        <span class="text-xs text-slate-600">👤 Je n'ai pas encore de patient à déclarer</span>
-                    </label>
-                    <p class="text-[9px] text-slate-400 mt-1 ml-6">Vous pourrez ajouter un patient plus tard depuis votre espace.</p>
-                </div>
-            </div>
-        `;
+                case 1: return `
+                    <div class="text-center mb-8">
+                        <h3 class="text-xl font-black text-slate-800">Qui fait la demande ?</h3>
+                        <p class="text-xs text-slate-400 mt-1">Les informations du responsable</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="relative">
+                            <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input id="f-nom" class="app-input !pl-12 !py-3" placeholder="Votre nom complet" value="${registrationData.nom_famille || ''}">
+                        </div>
+                        <div class="relative">
+                            <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input id="f-email" type="email" class="app-input !pl-12 !py-3" placeholder="Votre email" value="${registrationData.email || ''}">
+                        </div>
+                        <div class="relative">
+                            <i class="fa-solid fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input id="f-tel" class="app-input !pl-12 !py-3" placeholder="Votre téléphone" value="${registrationData.tel_famille || ''}">
+                        </div>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input id="f-pass" type="password" class="app-input !pl-12 !py-3" placeholder="Choisissez un mot de passe">
+                        </div>
+                    </div>
+                `;
         // ============================================
         // ÉTAPE 2 : QUI A BESOIN D'AIDE ?
         // ============================================
@@ -1283,10 +1271,6 @@ window.selectPack = (packId, price) => {
         registrationData.password = document.getElementById('f-pass')?.value;
         registrationData.tel_famille = document.getElementById('f-tel')?.value || "";
         registrationData.lien_parente = document.getElementById('f-lien')?.value || "";
-    
-        // ✅ Lire l’état du checkbox
-        const skipCheckbox = document.getElementById('skip-patient-checkbox');
-        skipPatient = skipCheckbox ? skipCheckbox.checked : false;
     }
     
     if (currentStep === 2) {
@@ -1341,67 +1325,46 @@ window.prevAuthStep = () => {
         renderAuthView('register', currentStep);
     }
 };
-
-
 async function submitRegistration() {
-    if (!skipPatient && !registrationData.type_pack) {
-        return Swal.fire("Erreur", "Veuillez choisir une formule", "warning");
-    }
-
+    if(!registrationData.type_pack) return Swal.fire("Erreur", "Veuillez choisir une formule", "warning");
+    
     registrationData.formule = registrationData.type_pack;
     registrationData.email = registrationData.email.trim().toLowerCase();
-
-    // pathologies → tableau
+    
+    // ✅ Assure-toi que pathologies est bien un tableau
     if (registrationData.pathologies && !Array.isArray(registrationData.pathologies)) {
         registrationData.pathologies = registrationData.pathologies.split(',').map(s => s.trim());
     }
-
+    
+    // ✅ Ne pas stringifier manuellement, laisse fetch le faire
     const payload = {
         ...registrationData,
         pathologies: registrationData.pathologies || [],
-        categorie: registrationData.categorie,
-        skip_patient: skipPatient   // ← on envoie l’info au backend
+        categorie: registrationData.categorie
     };
-
-    // Si on skip le patient, on supprime les champs liés au patient
-    if (skipPatient) {
-        delete payload.nom_patient;
-        delete payload.adresse_patient;
-        delete payload.age_patient;
-        delete payload.sexe_patient;
-        delete payload.tel_patient;
-        delete payload.contact_urgence;
-        delete payload.contact_urgence_tel;
-        delete payload.pathologies;
-        delete payload.traitements;
-        delete payload.allergies;
-        delete payload.notes_medicales;
-    }
 
     console.log("📤 Envoi inscription - Catégorie:", registrationData.categorie);
     console.log("📤 Payload complet:", payload);
-
+    
     Swal.fire({ title: 'Création du dossier...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
 
     try {
         const res = await fetch(`${CONFIG.API_URL}/auth/register-family-patient`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload)  // ← fetch stringifie automatiquement
         });
 
         const data = await res.json();
-
+        
         if (res.ok) {
             localStorage.setItem("user_categorie", registrationData.categorie);
             localStorage.setItem("user_is_maman", registrationData.categorie === 'MAMAN_BEBE');
-
+            
             Swal.fire({
                 icon: "success",
-                title: skipPatient ? "Compte créé !" : "Dossier Transmis !",
-                text: skipPatient
-                    ? "Votre compte a été créé. Vous pourrez ajouter un patient depuis votre espace."
-                    : "Un coordinateur va valider vos informations sous 24h.",
+                title: "Dossier Transmis !",
+                text: "Un coordinateur va valider vos informations sous 24h.",
                 confirmButtonText: "RETOUR À L'ACCUEIL",
                 confirmButtonColor: "#16a34a"
             }).then(() => window.location.reload());
@@ -1413,7 +1376,6 @@ async function submitRegistration() {
         Swal.fire("Erreur", e.message, "error");
     }
 }
-
 // ============================================================
 // VUE AUTHENTIFICATION (LOGIN / REGISTER / OTP)
 // ============================================================
@@ -1769,45 +1731,49 @@ function renderMobileHub() {
     
  container.innerHTML = `
     <div class="animate-fadeIn" style="background: #F8FAFC; padding-bottom: 20px;">
-      <!-- Bannière de bienvenue avec image de fond (sans calque) -->
-         <div class="relative rounded-2xl overflow-hidden mb-5" style="height: 160px;">
-             <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getBannerImage(userRole)}');"></div>
-             <!-- Contenu -->
-             <div class="relative z-10 h-full flex justify-between items-center p-5">
-                 <div>
-                     <div class="flex items-center gap-2 mb-2">
-                         <div class="bg-black/30 w-8 h-8 rounded-full flex items-center justify-center">
-                             <i class="fa-solid ${bannerIcon} text-white text-sm"></i>
-                         </div>
-                         <span class="text-[9px] font-bold uppercase tracking-wider text-white/80">BIENVENUE</span>
-                     </div>
-                     <h2 class="text-2xl font-black text-white drop-shadow-md">${userName?.split(' ')[0] || 'Utilisateur'}</h2>
-                     <p class="text-sm text-white drop-shadow-sm mt-1">${bannerDesc}</p>
-                 </div>
-                 <div class="bg-black/30 w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-sm relative">
-                     <i class="fa-regular fa-bell text-white text-xl"></i>
-                     <span id="mobile-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[8px] text-white flex items-center justify-center hidden">0</span>
-                 </div>
-             </div>
-         </div>
-                 
-                 <!-- Section info rapide -->
-                <!-- Prochaine intervention avec image de fond -->
-               <!-- Prochaine intervention avec image de fond (sans calque) -->
-         <div class="relative rounded-xl overflow-hidden mb-5" style="height: 90px;">
-             <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getNextVisitImage(userRole)}');"></div>
-             <div class="absolute inset-0 bg-black/30"></div>
-             <!-- Contenu -->
-             <div class="relative z-10 h-full flex justify-between items-center px-4">
-                 <div>
-                     <p class="text-[9px] font-bold uppercase tracking-wider text-white/80">${isMaman ? 'PROCHAINE VISITE' : (isAidant ? 'PROCHAINE MISSION' : 'PROCHAINE INTERVENTION')}</p>
-                     <p class="text-sm font-bold text-white mt-1">${isMaman ? 'Aujourd\'hui, 10h30' : (isAidant ? 'Patient: DIALLO Fatoumata' : 'À venir')}</p>
-                 </div>
-                 <div class="bg-black/30 w-8 h-8 rounded-full flex items-center justify-center">
-                     <i class="fa-solid fa-calendar-check text-white text-sm"></i>
-                 </div>
-             </div>
-         </div>
+        <!-- Bannière de bienvenue avec image de fond -->
+        <div class="relative rounded-2xl overflow-hidden mb-5" style="height: 160px;">
+            <!-- Image de fond -->
+            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getBannerImage(userRole)}');"></div>
+            <!-- Calque de couleur semi-transparent -->
+            <div class="absolute inset-0" style="background: linear-gradient(135deg, ${primaryColor}80, ${primaryColor}60);"></div>
+                        <!-- Contenu -->
+            <div class="relative z-10 h-full flex justify-between items-center p-5">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">
+                            <i class="fa-solid ${bannerIcon} text-white text-sm"></i>
+                        </div>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-white/80">BIENVENUE</span>
+                    </div>
+                    <h2 class="text-2xl font-black text-white drop-shadow-md">${userName?.split(' ')[0] || 'Utilisateur'}</h2>
+                    <p class="text-sm text-white/90 mt-1 drop-shadow-sm">${bannerDesc}</p>
+                </div>
+                <div class="bg-white/20 w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-sm relative">
+                    <i class="fa-regular fa-bell text-white text-xl"></i>
+                    <span id="mobile-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[8px] text-white flex items-center justify-center hidden">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section info rapide -->
+       <!-- Prochaine intervention avec image de fond -->
+       <div class="relative rounded-xl overflow-hidden mb-5" style="height: 90px;">
+           <!-- Image de fond -->
+           <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getNextVisitImage(userRole)}');"></div>
+          <!-- Calque léger -->
+           <div class="absolute inset-0" style="background: linear-gradient(135deg, ${primaryColor}80, ${primaryColor}60);"></div>
+           <!-- Contenu -->
+           <div class="relative z-10 h-full flex justify-between items-center px-4">
+               <div>
+                   <p class="text-[9px] font-bold uppercase tracking-wider text-white/80">${isMaman ? 'PROCHAINE VISITE' : (isAidant ? 'PROCHAINE MISSION' : 'PROCHAINE INTERVENTION')}</p>
+                   <p class="text-sm font-bold text-white mt-1">${isMaman ? 'Aujourd\'hui, 10h30' : (isAidant ? 'Patient: DIALLO Fatoumata' : 'À venir')}</p>
+               </div>
+               <div class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">
+                   <i class="fa-solid fa-calendar-check text-white text-sm"></i>
+               </div>
+           </div>
+       </div>
         
         <!-- Titre menu -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
