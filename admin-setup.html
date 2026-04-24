@@ -90,40 +90,21 @@
     // Récupérer l'URL de l'API depuis CONFIG ou fallback
     const API_URL = window.CONFIG?.API_URL || 'https://sante-plus-backend-main.onrender.com/api';
     
-    // Vérifier si des admins existent
-    async function checkAdminExists() {
-        try {
-            const response = await fetch(`${API_URL}/admin-users/has-admin`);
-            const data = await response.json();
-            
-            if (data.hasAdmin) {
-                // Rediriger vers l'application normale
-                window.location.href = '/';
-            }
-        } catch (err) {
-            console.error("Erreur vérification:", err);
-        }
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    if (!token) {
+        Swal.fire({ icon: 'error', title: 'Lien invalide', text: 'Token manquant.' }).then(() => {
+            window.location.href = '/';
+        });
     }
     
-    checkAdminExists();
-    
-    // Gestion du formulaire
-    document.getElementById('admin-form').addEventListener('submit', async (e) => {
+    document.getElementById('reset-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('confirm-password').value;
-        const nom = document.getElementById('nom').value.trim();
-        const prenom = document.getElementById('prenom').value.trim();
-        const telephone = document.getElementById('telephone').value.trim();
+        const confirm = document.getElementById('confirm-password').value;
         
-        if (!email || !password || !nom) {
-            Swal.fire({ icon: 'error', title: 'Champs manquants', text: 'Email, nom et mot de passe sont requis' });
-            return;
-        }
-        
-        if (password !== confirmPassword) {
+        if (password !== confirm) {
             Swal.fire({ icon: 'error', title: 'Erreur', text: 'Les mots de passe ne correspondent pas' });
             return;
         }
@@ -133,13 +114,17 @@
             return;
         }
         
-        Swal.fire({ title: 'Création...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+        Swal.fire({
+            title: 'Mise à jour...',
+            didOpen: () => Swal.showLoading(),
+            allowOutsideClick: false
+        });
         
         try {
-            const response = await fetch(`${API_URL}/admin-users/create-first-admin`, {
+            const response = await fetch(`${API_URL}/auth/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, nom, prenom, telephone })
+                body: JSON.stringify({ token, newPassword: password })
             });
             
             const data = await response.json();
@@ -147,10 +132,8 @@
             if (response.ok) {
                 Swal.fire({
                     icon: 'success',
-                    title: 'Administrateur créé !',
-                    html: `Compte créé avec succès.<br><br><strong>Email:</strong> ${email}<br><strong>Mot de passe:</strong> ${password}`,
-                    confirmButtonText: 'Se connecter',
-                    confirmButtonColor: '#10B981'
+                    title: 'Succès !',
+                    text: 'Votre mot de passe a été modifié.'
                 }).then(() => {
                     window.location.href = '/';
                 });
@@ -159,7 +142,11 @@
             }
         } catch (err) {
             Swal.close();
-            Swal.fire({ icon: 'error', title: 'Erreur', text: err.message });
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: err.message || 'Impossible de réinitialiser le mot de passe'
+            });
         }
     });
 </script>
