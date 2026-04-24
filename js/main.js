@@ -2036,7 +2036,7 @@ function renderLayout() {
                          <div class="flex items-center justify-between">
                              <div class="flex items-center gap-3">
                               <div class="w-12 h-12 rounded-xl flex items-center justify-center">
-                                  <img src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}" class="w-8 h-8 object-contain">
+                                  <img src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}" class="w-12 h-12 object-contain">
                               </div>
                                  
                                  <div>
