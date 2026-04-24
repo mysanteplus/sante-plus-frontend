@@ -1728,8 +1728,9 @@ function renderMobileHub() {
             <!-- Image de fond -->
             <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('/assets/images/banners/${getBannerImage(userRole)}');"></div>
             <!-- Calque de couleur par-dessus (assombrit pour lisibilité) -->
-            <div class="absolute inset-0" style="background: linear-gradient(135deg, ${primaryColor}CC, ${primaryColor}99);"></div>
-            <!-- Contenu -->
+            <!-- Calque de couleur semi-transparent -->
+            <div class="absolute inset-0" style="background: linear-gradient(135deg, ${primaryColor}80, ${primaryColor}60);"></div>
+                        <!-- Contenu -->
             <div class="relative z-10 h-full flex justify-between items-center p-5">
                 <div>
                     <div class="flex items-center gap-2 mb-2">
