@@ -1459,12 +1459,12 @@ function renderAuthView(mode = 'login', stepSource = 1) {
             </div>`;
     } 
     // ============================================================
-    // MODE REGISTER
+    // MODE REGISTER (avec marges externes)
     // ============================================================
     else if (mode === 'register') {
         dynamicContent = `
-            <div class="flex flex-col h-full">
-                <div class="flex-1 overflow-y-auto custom-scroll pr-1">
+            <div class="flex flex-col" style="min-height: auto;">
+                <div class="flex-1 overflow-y-auto custom-scroll pr-1" style="max-height: 55vh;">
                     ${getStepHTML()}
                 </div>
                 <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4">
@@ -1564,12 +1564,16 @@ function renderAuthView(mode = 'login', stepSource = 1) {
             blurColor2 = 'bg-teal-500';
         }
         
+        // Classes supplémentaires pour le mode register
+        const registerClasses = mode === 'register' ? 'my-6' : '';
+        const cardHeight = mode === 'register' ? 'max-h-[85vh]' : '';
+        
         app.innerHTML = `
         <div class="fixed inset-0 w-full h-screen flex items-center justify-center p-4 z-50" style="background: linear-gradient(135deg, ${primaryLight} 0%, white 100%);">
             <div class="absolute -top-20 -left-20 w-96 h-96 rounded-full ${blurColor1} filter blur-[120px] opacity-30 pointer-events-none"></div>
             <div class="absolute -bottom-20 -right-20 w-96 h-96 rounded-full ${blurColor2} filter blur-[120px] opacity-30 pointer-events-none"></div>
             
-            <div class="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
+            <div class="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden ${registerClasses}" style="${cardHeight}">
                 
                 <!-- Logo -->
                 <div class="text-center pt-6 pb-2">
@@ -1601,7 +1605,7 @@ function renderAuthView(mode = 'login', stepSource = 1) {
                 </div>
                 
                 <!-- Contenu -->
-                <div id="auth-card-content" class="px-6 py-5">
+                <div id="auth-card-content" class="px-6 py-5 ${mode === 'register' ? 'pb-6' : ''}">
                     ${dynamicContent}
                 </div>
                 
