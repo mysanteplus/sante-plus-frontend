@@ -2036,7 +2036,7 @@ function renderLayout() {
                 <div class="absolute bottom-[-10%] right-[-5%] w-[400px] h-[400px] bg-blue-200/20 rounded-full blur-[100px] pointer-events-none z-0 animate-blob animation-delay-2000"></div>
 
                 <!-- Main content -->
-                <main id="main-content" class="flex-1 overflow-y-auto custom-scroll p-6 lg:p-12 z-10 relative bg-transparent">
+                <main id="main-content" class="flex-1 overflow-y-auto custom-scroll p-6 lg:p-12 z-10 relative">
                     <div id="view-container" class="max-w-7xl mx-auto min-h-full"></div>
                 </main>
             </div>
