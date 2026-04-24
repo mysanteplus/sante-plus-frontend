@@ -4093,3 +4093,17 @@ body:not(.fontawesome-loaded) i[class*="fa-"] {
     background: #1E293B;
     opacity: 0.1;
 }
+
+/* Renforcement des couleurs de fond */
+.bg-gradient-to-br.from-emerald-300 {
+    background: linear-gradient(135deg, #A7F3D0 0%, #CCFBF1 50%, #99F6E4 100%);
+}
+.bg-gradient-to-br.from-pink-300 {
+    background: linear-gradient(135deg, #FBCFE8 0%, #FCE7F3 50%, #FBCFE8 100%);
+}
+.bg-gradient-to-br.from-amber-300 {
+    background: linear-gradient(135deg, #FDE68A 0%, #FEF3C7 50%, #FDE68A 100%);
+}
+.bg-gradient-to-br.from-slate-700 {
+    background: linear-gradient(135deg, #334155 0%, #475569 50%, #334155 100%);
+}
