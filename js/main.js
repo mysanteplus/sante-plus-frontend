@@ -1703,24 +1703,24 @@ function renderMobileHub() {
         tileTextColor = '#FFFFFF';
     }
     
-    // Menu items
-    const menuItems = [
-        { id: isMaman ? 'dashboard-maman' : (isCoordinateur ? 'dashboard' : 'patients'), 
-          label: isMaman ? 'Accueil' : (isCoordinateur ? 'Dashboard' : (isAidant ? 'Patients' : 'Mon suivi')), 
-          desc: isMaman ? 'Suivi quotidien' : (isCoordinateur ? 'Statistiques' : 'Mes dossiers'), 
-          icon: isMaman ? 'fa-home' : (isCoordinateur ? 'fa-chart-pie' : 'fa-folder-open'), 
-          roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-        { id: 'map', label: 'Radar', desc: 'Localisation GPS', icon: 'fa-location-dot', roles: ['COORDINATEUR', 'AIDANT', 'FAMILLE'] },
-        { id: 'visits', label: 'Visites', desc: 'Historique', icon: 'fa-calendar-check', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-        { id: 'feed', label: 'Journal', desc: 'Photos et messages', icon: 'fa-newspaper', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-        { id: 'commandes', label: isMaman ? 'Commandes bébé' : 'Commandes', desc: 'Produits et livraisons', icon: 'fa-box', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-        { id: 'billing', label: 'Factures', desc: 'Paiements', icon: 'fa-file-invoice-dollar', roles: ['COORDINATEUR', 'FAMILLE'] },
-        { id: 'subscription', label: 'Abonnement', desc: 'Formules', icon: 'fa-ticket', roles: ['FAMILLE'] },
-        { id: 'planning', label: 'Planning', desc: 'Agenda des soins', icon: 'fa-calendar-days', roles: ['COORDINATEUR', 'AIDANT'] },
-        { id: 'aidants', label: 'Équipe', desc: 'Gestion des aidants', icon: 'fa-user-nurse', roles: ['COORDINATEUR'] },
-        { id: 'rh-dashboard', label: 'RH', desc: 'Ressources humaines', icon: 'fa-users', roles: ['COORDINATEUR'] },
-        { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] }
-    ];
+   const menuItems = [
+       { id: isMaman ? 'dashboard-maman' : (isCoordinateur ? 'dashboard' : 'patients'), 
+         label: isMaman ? 'Accueil' : (isCoordinateur ? 'Dashboard' : (isAidant ? 'Patients' : 'Mon suivi')), 
+         desc: isMaman ? 'Suivi quotidien' : (isCoordinateur ? 'Statistiques' : 'Mes dossiers'), 
+         icon: isMaman ? 'fa-home' : (isCoordinateur ? 'fa-chart-pie' : 'fa-folder-open'), 
+         roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
+       { id: 'map', label: 'Radar', desc: 'Localisation GPS', icon: 'fa-location-dot', roles: ['COORDINATEUR', 'AIDANT', 'FAMILLE'] },
+       { id: 'visits', label: 'Visites', desc: 'Historique', icon: 'fa-calendar-check', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
+       { id: 'feed', label: 'Journal', desc: 'Photos et messages', icon: 'fa-newspaper', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
+       { id: 'commandes', label: isMaman ? 'Commandes bébé' : 'Commandes', desc: 'Produits et livraisons', icon: 'fa-box', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
+       { id: 'billing', label: 'Factures', desc: 'Paiements', icon: 'fa-file-invoice-dollar', roles: ['COORDINATEUR', 'FAMILLE'] },
+       { id: 'subscription', label: 'Abonnement', desc: 'Formules', icon: 'fa-ticket', roles: ['FAMILLE'] },
+       { id: 'planning', label: 'Planning', desc: 'Agenda des soins', icon: 'fa-calendar-days', roles: ['COORDINATEUR', 'AIDANT'] },
+       { id: 'aidants', label: 'Équipe', desc: 'Gestion des aidants', icon: 'fa-user-nurse', roles: ['COORDINATEUR'] },
+       { id: 'rh-dashboard', label: 'RH', desc: 'Ressources humaines', icon: 'fa-users', roles: ['COORDINATEUR'] },
+       { id: 'users', label: 'Utilisateurs', desc: 'Gestion des comptes', icon: 'fa-users-gear', roles: ['COORDINATEUR'] },  
+       { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] }
+   ];
 
     // Filtrer selon le rôle
     const filteredMenu = menuItems.filter(item => item.roles.includes(userRole));
@@ -2088,57 +2088,59 @@ function renderLayout() {
         const primaryBgLight = isMaman ? 'bg-pink-50' : 'bg-emerald-50';
         const primaryText = isMaman ? 'text-pink-600' : 'text-emerald-600';
         
-        // Définition des sections avec leurs items
-        const sections = [];
-        
-        // Section PRINCIPAL
-        const mainItems = [
-            { id: 'home', icon: 'fa-home', label: 'Accueil', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-            { id: 'map', icon: 'fa-location-dot', label: 'Radar', roles: ['COORDINATEUR', 'AIDANT', 'FAMILLE'] },
-            { id: 'patients', icon: 'fa-folder-open', label: isMaman ? 'Mon suivi' : 'Dossiers', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-            { id: 'feed', icon: 'fa-newspaper', label: 'Journal', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-            { id: 'visits', icon: 'fa-calendar-check', label: 'Visites', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-            { id: 'commandes', icon: 'fa-box', label: isMaman ? 'Commandes bébé' : 'Commandes', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-            { id: 'planning', icon: 'fa-calendar-days', label: 'Planning', roles: ['COORDINATEUR', 'AIDANT'] },
-        ].filter(item => item.roles.includes(userRole));
-        
-        if (mainItems.length > 0) {
-            sections.push({ title: 'PRINCIPAL', icon: 'fa-compass', items: mainItems, defaultOpen: true });
-        }
-        
-        // Section SERVICES
-        const serviceItems = [];
-        if (userRole === 'COORDINATEUR') {
-            serviceItems.push(
-                { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', roles: ['COORDINATEUR'] },
-                { id: 'aidants', icon: 'fa-user-nurse', label: 'Équipe', roles: ['COORDINATEUR'] },
-                { id: 'rh-dashboard', icon: 'fa-users', label: 'RH & Assignations', roles: ['COORDINATEUR'] },
-                { id: 'profile', icon: 'fa-user-circle', label: 'Profil', roles: ['COORDINATEUR'] }
+       // Définition des sections avec leurs items
+         const sections = [];
+         
+         // Section PRINCIPAL
+         const mainItems = [
+             { id: 'home', icon: 'fa-home', label: 'Accueil', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
+             { id: 'map', icon: 'fa-location-dot', label: 'Radar', roles: ['COORDINATEUR', 'AIDANT', 'FAMILLE'] },
+             { id: 'patients', icon: 'fa-folder-open', label: isMaman ? 'Mon suivi' : 'Dossiers', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
+             { id: 'feed', icon: 'fa-newspaper', label: 'Journal', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
+             { id: 'visits', icon: 'fa-calendar-check', label: 'Visites', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
+             { id: 'commandes', icon: 'fa-box', label: isMaman ? 'Commandes bébé' : 'Commandes', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
+             { id: 'planning', icon: 'fa-calendar-days', label: 'Planning', roles: ['COORDINATEUR', 'AIDANT'] },
+             { id: 'users', icon: 'fa-users', label: 'Utilisateurs', roles: ['COORDINATEUR'] },
+         ].filter(item => item.roles.includes(userRole));
+         
+         if (mainItems.length > 0) {
+             sections.push({ title: 'PRINCIPAL', icon: 'fa-compass', items: mainItems, defaultOpen: true });
+         }
+         
+         // Section SERVICES (uniquement pour les services spécifiques)
+         const serviceItems = [];
+         if (userRole === 'COORDINATEUR') {
+             serviceItems.push(
+                 { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', roles: ['COORDINATEUR'] },
+                 { id: 'aidants', icon: 'fa-user-nurse', label: 'Aidants', roles: ['COORDINATEUR'] },
+                 { id: 'rh-dashboard', icon: 'fa-users', label: 'RH & Assignations', roles: ['COORDINATEUR'] }
+             );
+         }
+         if (userRole === 'FAMILLE') {
+             serviceItems.push(
+                 { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures', roles: ['FAMILLE'] },
+                 { id: 'subscription', icon: 'fa-ticket', label: 'Abonnement', roles: ['FAMILLE'] }
+             );
+             if (isMaman) {
+                 serviceItems.push({ id: 'education', icon: 'fa-graduation-cap', label: 'Éducation', roles: ['FAMILLE'] });
+             }
+         }
+         
+         if (serviceItems.length > 0) {
+             sections.push({ title: 'SERVICES', icon: 'fa-briefcase', items: serviceItems, defaultOpen: false });
+         }
+         
+         // Section COMPTE (profil pour tous)
+         const accountItems = [
+             { id: 'profile', icon: 'fa-user-circle', label: 'Mon profil', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] }
+         ].filter(item => item.roles.includes(userRole));
+         
+         if (accountItems.length > 0) {
+             sections.push({ title: 'COMPTE', icon: 'fa-user-circle', items: accountItems, defaultOpen: false });
+         }
 
-            );
-        }
-        if (userRole === 'FAMILLE') {
-            serviceItems.push(
-                { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures', roles: ['FAMILLE'] },
-                { id: 'subscription', icon: 'fa-ticket', label: 'Abonnement', roles: ['FAMILLE'] }
-            );
-            if (isMaman) {
-                serviceItems.push({ id: 'education', icon: 'fa-graduation-cap', label: 'Éducation', roles: ['FAMILLE'] });
-            }
-        }
-        
-        if (serviceItems.length > 0) {
-            sections.push({ title: 'SERVICES', icon: 'fa-briefcase', items: serviceItems, defaultOpen: false });
-        }
-        
-        // Section COMPTE
-        const accountItems = [
-            { id: 'profile', icon: 'fa-user-circle', label: 'Mon profil', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] }
-        ].filter(item => item.roles.includes(userRole));
-        
-        if (accountItems.length > 0) {
-            sections.push({ title: 'COMPTE', icon: 'fa-user-circle', items: accountItems, defaultOpen: false });
-        }
+
+     
         
         // Stocker l'état d'ouverture des sections dans localStorage
         const getSectionState = (sectionTitle) => {
