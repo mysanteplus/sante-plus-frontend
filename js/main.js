@@ -1414,45 +1414,45 @@ function renderAuthView(mode = 'login', stepSource = 1) {
     }
     
     // ============================================================
-    // MODE LOGIN
+    // MODE LOGIN (simplifié, sans icônes superflues)
     // ============================================================
     if (mode === 'login') {
         dynamicContent = `
-            <div class="space-y-4">
+            <div class="space-y-3">
                 <div class="relative">
-                    <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input id="email" type="email" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-300 focus:ring-1 focus:ring-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-200 transition-all" placeholder="Adresse email" value="${registrationData.email || ''}">
+                    <i class="fa-solid fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input id="email" type="email" class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-300 focus:ring-1 focus:ring-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-200 transition-all" placeholder="Adresse email" value="${registrationData.email || ''}">
                 </div>
                 <div class="relative">
-                    <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input id="password" type="password" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-300 focus:ring-1 focus:ring-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-200 transition-all" placeholder="Mot de passe">
+                    <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input id="password" type="password" class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-300 focus:ring-1 focus:ring-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-200 transition-all" placeholder="Mot de passe">
                 </div>
                 <div class="text-right">
-                    <button onclick="window.forgotPassword()" class="text-[11px] text-slate-400 hover:text-${isMamanFlow ? 'pink-500' : (category === 'aidant' ? 'amber-600' : (category === 'coordinateur' ? 'slate-600' : 'emerald-600'))} transition-all font-medium">
+                    <button onclick="window.forgotPassword()" class="text-[10px] text-slate-400 hover:text-${isMamanFlow ? 'pink-500' : (category === 'aidant' ? 'amber-600' : (category === 'coordinateur' ? 'slate-600' : 'emerald-600'))} transition-all font-medium">
                         Mot de passe oublié ?
                     </button>
                 </div>
-                <button onclick="window.login()" id="btn-login" class="w-full py-3.5 rounded-xl font-black text-[11px] uppercase tracking-wider shadow-md active:scale-98 transition-all flex items-center justify-center gap-2" style="background: ${primaryColor}; color: white;">
+                <button onclick="window.login()" id="btn-login" class="w-full py-3 rounded-xl font-black text-[11px] uppercase tracking-wider shadow-md active:scale-98 transition-all flex items-center justify-center gap-2 mt-2" style="background: ${primaryColor}; color: white;">
                     Se connecter <i class="fa-solid fa-arrow-right text-xs"></i>
                 </button>
             </div>`;
     } 
     // ============================================================
-    // MODE REGISTER (avec marges externes)
+    // MODE REGISTER (sans icônes des étapes, espaces optimisés)
     // ============================================================
     else if (mode === 'register') {
         dynamicContent = `
-            <div class="flex flex-col" style="min-height: auto;">
-                <div class="flex-1 overflow-y-auto custom-scroll pr-1" style="max-height: 55vh;">
+            <div class="flex flex-col">
+                <div class="flex-1 overflow-y-auto custom-scroll pr-1" style="max-height: 55vh; min-height: 280px;">
                     ${getStepHTML()}
                 </div>
-                <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4">
+                <div class="flex gap-3 pt-3 border-t border-slate-100 mt-3">
                     ${currentStep > 1 ? `
-                        <button onclick="window.prevAuthStep()" class="prev-btn w-12 h-12 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shadow-sm active:scale-95 transition-all hover:bg-slate-200">
-                            <i class="fa-solid fa-arrow-left"></i>
+                        <button onclick="window.prevAuthStep()" class="prev-btn w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shadow-sm active:scale-95 transition-all">
+                            <i class="fa-solid fa-arrow-left text-sm"></i>
                         </button>
                     ` : ''}                    
-                    <button onclick="window.nextAuthStep()" class="next-btn flex-1 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-md active:scale-95 transition-all" style="background: ${primaryColor}; color: white;">
+                    <button onclick="window.nextAuthStep()" class="next-btn flex-1 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-md active:scale-95 transition-all" style="background: ${primaryColor}; color: white;">
                         ${currentStep === 6 ? 'Valider le dossier' : 'Étape Suivante'}
                     </button>
                 </div>
@@ -1463,18 +1463,18 @@ function renderAuthView(mode = 'login', stepSource = 1) {
     // ============================================================
     else if (mode === 'otp') {
         dynamicContent = `
-            <div class="text-center space-y-5">
-                <div class="w-20 h-20 mx-auto ${isMamanFlow ? 'bg-pink-100' : (category === 'aidant' ? 'bg-amber-100' : (category === 'coordinateur' ? 'bg-slate-100' : 'bg-emerald-100'))} rounded-2xl flex items-center justify-center">
-                    <i class="fa-solid fa-shield-alt text-3xl ${isMamanFlow ? 'text-pink-500' : (category === 'aidant' ? 'text-amber-500' : (category === 'coordinateur' ? 'text-slate-500' : 'text-emerald-500'))}"></i>
+            <div class="text-center space-y-4">
+                <div class="w-16 h-16 mx-auto ${isMamanFlow ? 'bg-pink-100' : (category === 'aidant' ? 'bg-amber-100' : (category === 'coordinateur' ? 'bg-slate-100' : 'bg-emerald-100'))} rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-shield-alt text-2xl ${isMamanFlow ? 'text-pink-500' : (category === 'aidant' ? 'text-amber-500' : (category === 'coordinateur' ? 'text-slate-500' : 'text-emerald-500'))}"></i>
                 </div>
                 <div>
-                    <h3 class="text-xl font-black text-slate-800">Vérification à deux facteurs</h3>
+                    <h3 class="text-lg font-black text-slate-800">Vérification à deux facteurs</h3>
                     <p class="text-xs text-slate-500 mt-1">Code à 6 chiffres envoyé à<br><span class="font-bold text-slate-700">${otpEmail}</span></p>
                 </div>
                 <div>
-                    <input id="otp-code" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="w-full py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-center text-2xl font-black tracking-[0.5em] focus:${focusBorderColor} focus:ring-2 focus:ring-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-200 outline-none transition-all" placeholder="000000">
+                    <input id="otp-code" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="w-full py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-center text-xl font-black tracking-[0.5em] focus:${focusBorderColor} focus:ring-2 focus:ring-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-200 outline-none transition-all" placeholder="000000">
                 </div>
-                <button onclick="window.verifyOTP('${otpEmail}')" id="btn-otp" class="w-full py-3.5 rounded-xl font-black text-[11px] uppercase tracking-wider shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" style="background: ${primaryColor}; color: white;">
+                <button onclick="window.verifyOTP('${otpEmail}')" id="btn-otp" class="w-full py-3 rounded-xl font-black text-[11px] uppercase tracking-wider shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" style="background: ${primaryColor}; color: white;">
                     Vérifier <i class="fa-solid fa-shield-check text-xs"></i>
                 </button>
                 <button onclick="window.renderAuthView('login')" class="text-[10px] text-slate-400 hover:text-slate-600 transition-colors">
@@ -1493,10 +1493,10 @@ function renderAuthView(mode = 'login', stepSource = 1) {
             tabContainer.style.display = "block";
             tabContainer.innerHTML = `
                 <div class="bg-slate-100 p-1 rounded-xl flex gap-1">
-                    <button onclick="window.renderAuthView('login')" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}">
+                    <button onclick="window.renderAuthView('login')" class="flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}">
                         Connexion
                     </button>
-                    <button onclick="window.renderAuthView('register', 0)" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${mode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}">
+                    <button onclick="window.renderAuthView('register', 0)" class="flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${mode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}">
                         Inscription
                     </button>
                 </div>`;
@@ -1543,48 +1543,46 @@ function renderAuthView(mode = 'login', stepSource = 1) {
             blurColor2 = 'bg-teal-500';
         }
         
-        // Classes supplémentaires pour le mode register
-        const registerClasses = mode === 'register' ? 'my-6' : '';
-        const cardHeight = mode === 'register' ? 'max-h-[85vh]' : '';
+        const isRegisterMode = mode === 'register';
         
         app.innerHTML = `
-        <div class="fixed inset-0 w-full h-screen flex items-center justify-center p-4 z-50" style="background: linear-gradient(135deg, ${primaryLight} 0%, white 100%);">
+        <div class="fixed inset-0 w-full h-screen flex items-center justify-center p-3 z-50" style="background: linear-gradient(135deg, ${primaryLight} 0%, white 100%);">
             <div class="absolute -top-20 -left-20 w-96 h-96 rounded-full ${blurColor1} filter blur-[120px] opacity-30 pointer-events-none"></div>
             <div class="absolute -bottom-20 -right-20 w-96 h-96 rounded-full ${blurColor2} filter blur-[120px] opacity-30 pointer-events-none"></div>
             
-            <div class="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden ${registerClasses}" style="${cardHeight}">
+            <div class="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden ${isRegisterMode ? 'my-4' : ''}" style="max-height: 90vh; display: flex; flex-direction: column;">
                 
-                <!-- Logo -->
-                <div class="text-center pt-6 pb-2">
-                    <div class="flex justify-center mb-2">
+                <!-- Logo compact -->
+                <div class="text-center pt-4 pb-1 flex-shrink-0">
+                    <div class="flex justify-center mb-1">
                         <div class="pb-1" style="border-bottom: 2px solid ${primaryColor};">
-                            <img id="auth-logo-img" src="/assets/images/logo-general-icon.png" class="w-16 h-16 object-contain" style="border: none;">
+                            <img id="auth-logo-img" src="/assets/images/logo-general-icon.png" class="w-12 h-12 object-contain" style="border: none;">
                         </div>
                     </div>
-                    <p id="auth-step-title" class="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">${stepTitle}</p>
+                    <p id="auth-step-title" class="text-slate-400 text-[8px] font-black uppercase tracking-[0.2em]">${stepTitle}</p>
                 </div>
                 
                 <!-- Tabs -->
-                <div id="auth-tabs" class="px-6 mt-2" style="display: ${mode !== 'otp' ? 'block' : 'none'}">
+                <div id="auth-tabs" class="px-4 mt-1 flex-shrink-0" style="display: ${mode !== 'otp' ? 'block' : 'none'}">
                     <div class="bg-slate-100 p-1 rounded-xl flex gap-1">
-                        <button onclick="window.renderAuthView('login')" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}">
+                        <button onclick="window.renderAuthView('login')" class="flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}">
                             Connexion
                         </button>
-                        <button onclick="window.renderAuthView('register', 0)" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${mode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}">
+                        <button onclick="window.renderAuthView('register', 0)" class="flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${mode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}">
                             Inscription
                         </button>
                     </div>
                 </div>
                 
                 <!-- Progress -->
-                <div id="auth-progress" class="px-6 mt-3" style="display: ${mode === 'register' ? 'block' : 'none'}">
+                <div id="auth-progress" class="px-4 mt-2 flex-shrink-0" style="display: ${mode === 'register' ? 'block' : 'none'}">
                     <div class="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
                         <div class="h-full ${progressColor} transition-all duration-500" style="width: ${(currentStep/6)*100}%"></div>
                     </div>
                 </div>
                 
                 <!-- Contenu -->
-                <div id="auth-card-content" class="px-6 py-5 ${mode === 'register' ? 'pb-6' : ''}">
+                <div id="auth-card-content" class="px-4 py-4 ${isRegisterMode ? 'flex-1 overflow-y-auto' : ''}">
                     ${dynamicContent}
                 </div>
                 
@@ -1592,7 +1590,6 @@ function renderAuthView(mode = 'login', stepSource = 1) {
         </div>`;
     }
 }
-
 // ============================================================
 // HUB DE NAVIGATION MOBILE
 // ============================================================
