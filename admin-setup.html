@@ -3,13 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Réinitialisation - Santé Plus</title>
+    <!-- Open Graph / Social Media Meta Tags -->
+    <meta property="og:title" content="Santé Plus Services - Configuration" />
+    <meta property="og:description" content="Création du compte administrateur Santé Plus Services." />
+    <meta property="og:image" content="https://app.mysanteplus.com/assets/images/logo-general-text.png" />
+    <meta property="og:url" content="https://app.mysanteplus.com/admin-setup.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Santé Plus Services" />
+    <meta property="og:locale" content="fr_FR" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Santé Plus Services - Configuration" />
+    <meta name="twitter:description" content="Création du compte administrateur." />
+    <meta name="twitter:image" content="https://app.mysanteplus.com/assets/images/logo-general-text.png" />
+    <title>Installation - Santé Plus</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen flex items-center justify-center p-4">
     <div class="max-w-md w-full">
@@ -19,38 +30,59 @@
                 <img src="/assets/images/logo-general-icon.png" class="w-16 h-16 object-contain" alt="Logo">
             </div>
             <h1 class="text-2xl font-black text-white">Santé Plus Services</h1>
-            <p class="text-slate-400 text-sm mt-1">Réinitialisation du mot de passe</p>
+            <p class="text-slate-400 text-sm mt-1">Configuration initiale</p>
         </div>
 
-        <!-- Carte -->
+        <!-- Carte de création -->
         <div class="bg-white rounded-2xl shadow-2xl p-6">
             <div class="text-center mb-6">
                 <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fa-solid fa-key text-emerald-600 text-2xl"></i>
+                    <i class="fa-solid fa-user-shield text-emerald-600 text-2xl"></i>
                 </div>
-                <h2 class="text-xl font-black text-slate-800">Nouveau mot de passe</h2>
-                <p class="text-xs text-slate-400 mt-1">Choisissez un mot de passe sécurisé</p>
+                <h2 class="text-xl font-black text-slate-800">Créer l'administrateur principal</h2>
+                <p class="text-xs text-slate-400 mt-1">Ces informations vous serviront à vous connecter</p>
             </div>
 
-            <form id="reset-form" class="space-y-4">
+            <form id="admin-form" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 block mb-1">Prénom</label>
+                        <input type="text" id="prenom" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="Prénom">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 block mb-1">Nom</label>
+                        <input type="text" id="nom" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="Nom">
+                    </div>
+                </div>
+                
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 block mb-1">Nouveau mot de passe</label>
-                    <input type="password" id="password" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="••••••" required>
+                    <label class="text-[10px] font-black text-slate-400 block mb-1">Email</label>
+                    <input type="email" id="email" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="admin@santeplus.bj">
+                </div>
+                
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 block mb-1">Téléphone (optionnel)</label>
+                    <input type="tel" id="telephone" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="+229 XX XXX XXX">
+                </div>
+                
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 block mb-1">Mot de passe</label>
+                    <input type="password" id="password" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="••••••">
                 </div>
                 
                 <div>
                     <label class="text-[10px] font-black text-slate-400 block mb-1">Confirmer le mot de passe</label>
-                    <input type="password" id="confirm-password" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="••••••" required>
+                    <input type="password" id="confirm-password" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="••••••">
                 </div>
                 
                 <button type="submit" class="w-full py-4 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-wider shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-check-circle"></i> Mettre à jour
+                    <i class="fa-solid fa-check-circle"></i> Créer l'administrateur
                 </button>
             </form>
         </div>
         
         <div class="text-center mt-6">
-            <p class="text-[10px] text-slate-500">Santé Plus Services - Votre partenaire de confiance</p>
+            <p class="text-[10px] text-slate-500">Cette page n'est accessible que si aucun administrateur n'existe.</p>
         </div>
     </div>
 
@@ -58,99 +90,84 @@
         // URL de l'API - à modifier si besoin
         const API_URL = 'https://sante-plus-backend-main.onrender.com/api';
         
-        // Récupérer le token depuis l'URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        
-        // Vérifier si le token existe
-        if (!token) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Lien invalide',
-                text: 'Token de réinitialisation manquant.',
-                confirmButtonColor: '#10B981'
-            }).then(() => {
-                window.location.href = '/';
-            });
+        // Vérifier si des admins existent déjà
+        async function checkAdminExists() {
+            try {
+                const response = await fetch(`${API_URL}/admin-users/has-admin`);
+                const data = await response.json();
+                
+                if (data.hasAdmin) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Administrateur déjà existant',
+                        text: 'Un administrateur a déjà été créé. Redirection vers la page de connexion...',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = '/';
+                    });
+                }
+            } catch (err) {
+                console.error("Erreur vérification admin:", err);
+            }
         }
         
-        // Gérer la soumission du formulaire
-        document.getElementById('reset-form').addEventListener('submit', async (e) => {
+        // Exécuter la vérification
+        checkAdminExists();
+        
+        // Gestion du formulaire
+        document.getElementById('admin-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const prenom = document.getElementById('prenom').value.trim();
+            const nom = document.getElementById('nom').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const telephone = document.getElementById('telephone').value.trim();
             const password = document.getElementById('password').value;
-            const confirm = document.getElementById('confirm-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
             
-            if (!password || !confirm) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Champs manquants',
-                    text: 'Veuillez remplir tous les champs',
-                    confirmButtonColor: '#F43F5E'
-                });
+            if (!email || !password || !nom) {
+                Swal.fire({ icon: 'error', title: 'Champs manquants', text: 'Email, nom et mot de passe sont requis' });
                 return;
             }
             
-            if (password !== confirm) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erreur',
-                    text: 'Les mots de passe ne correspondent pas',
-                    confirmButtonColor: '#F43F5E'
-                });
+            if (password !== confirmPassword) {
+                Swal.fire({ icon: 'error', title: 'Erreur', text: 'Les mots de passe ne correspondent pas' });
                 return;
             }
             
             if (password.length < 6) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Mot de passe trop court',
-                    text: 'Minimum 6 caractères',
-                    confirmButtonColor: '#F43F5E'
-                });
+                Swal.fire({ icon: 'error', title: 'Mot de passe trop court', text: 'Minimum 6 caractères' });
                 return;
             }
             
-            Swal.fire({
-                title: 'Mise à jour...',
-                didOpen: () => Swal.showLoading(),
-                allowOutsideClick: false
-            });
+            Swal.fire({ title: 'Création...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
             
             try {
-                console.log('🔵 Envoi requête à:', `${API_URL}/auth/reset-password`);
-                console.log('🔵 Token:', token);
-                
-                const response = await fetch(`${API_URL}/auth/reset-password`, {
+                const response = await fetch(`${API_URL}/admin-users/create-first-admin`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, newPassword: password })
+                    body: JSON.stringify({ email, password, nom, prenom, telephone })
                 });
                 
                 const data = await response.json();
-                console.log('📥 Réponse:', data);
                 
                 if (response.ok) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Succès !',
-                        text: 'Votre mot de passe a été modifié. Vous pouvez maintenant vous connecter.',
+                        title: 'Administrateur créé !',
+                        html: `Compte créé avec succès.<br><br><strong>Email:</strong> ${email}<br><strong>Mot de passe:</strong> ${password}`,
+                        confirmButtonText: 'Se connecter',
                         confirmButtonColor: '#10B981'
                     }).then(() => {
                         window.location.href = '/';
                     });
                 } else {
-                    throw new Error(data.error || 'Erreur lors de la réinitialisation');
+                    throw new Error(data.error);
                 }
             } catch (err) {
                 Swal.close();
-                console.error('❌ Erreur:', err);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erreur',
-                    text: err.message || 'Impossible de réinitialiser le mot de passe',
-                    confirmButtonColor: '#F43F5E'
-                });
+                Swal.fire({ icon: 'error', title: 'Erreur', text: err.message });
             }
         });
     </script>
