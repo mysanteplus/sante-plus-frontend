@@ -72,79 +72,82 @@
         </div>
     </div>
 
-    <script>
-        // Vérifier si des admins existent déjà
-        async function checkAdminExists() {
-            try {
-                const response = await fetch(`${window.location.origin}/api/admin-users/has-admin`);
-                const data = await response.json();
-                
-                if (data.hasAdmin) {
-                    // Rediriger vers l'application normale
-                    window.location.href = '/';
-                }
-            } catch (err) {
-                console.error("Erreur vérification:", err);
+<script>
+    // Récupérer l'URL de l'API depuis CONFIG ou fallback
+    const API_URL = window.CONFIG?.API_URL || 'https://sante-plus-backend-main.onrender.com/api';
+    
+    // Vérifier si des admins existent
+    async function checkAdminExists() {
+        try {
+            const response = await fetch(`${API_URL}/admin-users/has-admin`);
+            const data = await response.json();
+            
+            if (data.hasAdmin) {
+                // Rediriger vers l'application normale
+                window.location.href = '/';
             }
+        } catch (err) {
+            console.error("Erreur vérification:", err);
+        }
+    }
+    
+    checkAdminExists();
+    
+    // Gestion du formulaire
+    document.getElementById('admin-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        const nom = document.getElementById('nom').value.trim();
+        const prenom = document.getElementById('prenom').value.trim();
+        const telephone = document.getElementById('telephone').value.trim();
+        
+        if (!email || !password || !nom) {
+            Swal.fire({ icon: 'error', title: 'Champs manquants', text: 'Email, nom et mot de passe sont requis' });
+            return;
         }
         
-        checkAdminExists();
+        if (password !== confirmPassword) {
+            Swal.fire({ icon: 'error', title: 'Erreur', text: 'Les mots de passe ne correspondent pas' });
+            return;
+        }
         
-        // Gestion du formulaire
-        document.getElementById('admin-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        if (password.length < 6) {
+            Swal.fire({ icon: 'error', title: 'Mot de passe trop court', text: 'Minimum 6 caractères' });
+            return;
+        }
+        
+        Swal.fire({ title: 'Création...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+        
+        try {
+            const response = await fetch(`${API_URL}/admin-users/create-first-admin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, nom, prenom, telephone })
+            });
             
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-            const nom = document.getElementById('nom').value.trim();
-            const prenom = document.getElementById('prenom').value.trim();
-            const telephone = document.getElementById('telephone').value.trim();
+            const data = await response.json();
             
-            if (!email || !password || !nom) {
-                Swal.fire({ icon: 'error', title: 'Champs manquants', text: 'Email, nom et mot de passe sont requis' });
-                return;
-            }
-            
-            if (password !== confirmPassword) {
-                Swal.fire({ icon: 'error', title: 'Erreur', text: 'Les mots de passe ne correspondent pas' });
-                return;
-            }
-            
-            if (password.length < 6) {
-                Swal.fire({ icon: 'error', title: 'Mot de passe trop court', text: 'Minimum 6 caractères' });
-                return;
-            }
-            
-            Swal.fire({ title: 'Création...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
-            
-            try {
-                const response = await fetch(`${window.CONFIG?.API_URL || 'https://sante-plus-backend-main.onrender.com/api'}/admin-users/create-first-admin`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password, nom, prenom, telephone })
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Administrateur créé !',
+                    html: `Compte créé avec succès.<br><br><strong>Email:</strong> ${email}<br><strong>Mot de passe:</strong> ${password}`,
+                    confirmButtonText: 'Se connecter',
+                    confirmButtonColor: '#10B981'
+                }).then(() => {
+                    window.location.href = '/';
                 });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Administrateur créé !',
-                        html: `Compte créé avec succès.<br><br><strong>Email:</strong> ${email}<br><strong>Mot de passe:</strong> ${password}`,
-                        confirmButtonText: 'Se connecter',
-                        confirmButtonColor: '#10B981'
-                    }).then(() => {
-                        window.location.href = '/';
-                    });
-                } else {
-                    throw new Error(data.error);
-                }
-            } catch (err) {
-                Swal.close();
-                Swal.fire({ icon: 'error', title: 'Erreur', text: err.message });
+            } else {
+                throw new Error(data.error);
             }
-        });
-    </script>
+        } catch (err) {
+            Swal.close();
+            Swal.fire({ icon: 'error', title: 'Erreur', text: err.message });
+        }
+    });
+</script>
 </body>
 </html>
