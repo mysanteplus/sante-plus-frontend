@@ -294,44 +294,6 @@ let ONBOARDING_STEPS = ONBOARDING_STEPS_GENERAL;
 
 
 
-// ============================================================
-// NETTOYAGE LOCALSTORAGE À CHAQUE CHARGEMENT (session conservée)
-// ============================================================
-function cleanLocalStorageKeepSession() {
-    console.log('🧹 Nettoyage localStorage au chargement...');
-    
-    // Clés à conserver (session utilisateur uniquement)
-    const keysToKeep = [
-        'token',           // Authentification
-        'user_role',       // Rôle
-        'user_name',       // Nom
-        'user_email',      // Email
-        'user_id',         // ID utilisateur
-        'user_photo',      // Photo de profil (optionnel)
-        'user_is_maman',   // Mode maman
-        'user_categorie'   // Catégorie (SENIOR/MAMAN_BEBE)
-    ];
-    
-    // Récupérer toutes les clés du localStorage
-    const allKeys = Object.keys(localStorage);
-    let deletedCount = 0;
-    
-    // Supprimer tout ce qui n'est pas dans keysToKeep
-    for (const key of allKeys) {
-        if (!keysToKeep.includes(key)) {
-            localStorage.removeItem(key);
-            console.log(`🗑️ Supprimé: ${key}`);
-            deletedCount++;
-        }
-    }
-    
-    console.log(`✅ Nettoyage terminé: ${deletedCount} clé(s) supprimée(s), ${keysToKeep.length} clé(s) conservée(s)`);
-}
-
-// ⚠️ EXÉCUTER IMMÉDIATEMENT (avant tout autre code)
-cleanLocalStorageKeepSession();
-
-
 
 async function initApp() {
 
