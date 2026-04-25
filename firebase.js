@@ -1,4 +1,6 @@
- // Fallback si CONFIG n'est pas disponible
+// firebase.js - Version corrigée
+
+// Fallback si CONFIG n'est pas disponible
 const getFirebaseConfig = () => {
   if (window.CONFIG && window.CONFIG.FIREBASE) {
     return window.CONFIG.FIREBASE;
@@ -23,3 +25,11 @@ if (!firebase.apps.length) {
   firebase.initializeApp(config);
   console.log("✅ Firebase initialisé");
 }
+
+// ✅ AJOUTER CECI - Créer l'instance messaging
+const messaging = firebase.messaging();
+
+// ✅ Exposer messaging globalement
+window.messaging = messaging;
+
+console.log("✅ Firebase Messaging initialisé");
