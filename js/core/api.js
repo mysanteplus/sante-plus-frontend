@@ -60,13 +60,11 @@ export async function secureFetch(endpoint, options = {}) {
   
   console.log(`📡 [FRAIS] Appel API : ${method} ${endpoint} - ${new Date().toLocaleTimeString()}`);
 
-  const headers = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    "Pragma": "no-cache",
-    "Expires": "0",
-    ...options.headers,
-  };
+ const headers = {
+  "Content-Type": "application/json",
+  "Cache-Control": "no-cache",
+  ...options.headers,
+};
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
