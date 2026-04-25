@@ -6,6 +6,83 @@
 // Auteur: Santé Plus Services
 // ============================================================
 
+
+
+// ============================================================
+// INTERCEPTEUR localStorage.setItem (bloquer les clés non autorisées)
+// ============================================================
+(function() {
+    // Sauvegarder la fonction originale
+    const originalSetItem = localStorage.setItem.bind(localStorage);
+    const originalGetItem = localStorage.getItem.bind(localStorage);
+    const originalRemoveItem = localStorage.removeItem.bind(localStorage);
+    
+    // Liste des clés autorisées (session utilisateur uniquement)
+    const allowedKeys = [
+        'token', 'user_role', 'user_name', 'user_email', 
+        'user_id', 'user_photo', 'user_is_maman', 'user_categorie',
+        'sounds_enabled', 'onboarding_seen'  // Ajout pour les préférences
+    ];
+    
+    // Remplacer setItem
+    localStorage.setItem = function(key, value) {
+        if (allowedKeys.includes(key)) {
+            originalSetItem(key, value);
+            console.log(`✅ [STORAGE] Autorisé: ${key}`);
+        } else {
+            console.warn(`🚫 [STORAGE] BLOQUÉ: ${key} = ${typeof value === 'string' ? value.substring(0, 50) : value}`);
+        }
+    };
+    
+    // Intercepter getItem pour debug
+    localStorage.getItem = function(key) {
+        const value = originalGetItem(key);
+        if (value && !allowedKeys.includes(key)) {
+            console.log(`📖 [STORAGE] Lecture clé non autorisée: ${key}`);
+        }
+        return value;
+    };
+    
+    // Intercepter removeItem pour debug
+    localStorage.removeItem = function(key) {
+        if (!allowedKeys.includes(key)) {
+            console.log(`🗑️ [STORAGE] Suppression clé non autorisée: ${key}`);
+        }
+        originalRemoveItem(key);
+    };
+    
+    console.log('🛡️ Intercepteur localStorage activé (mode modéré)');
+    console.log(`✅ Clés autorisées: ${allowedKeys.join(', ')}`);
+})();
+
+// Nettoyage localStorage au chargement (garder session)
+function cleanLocalStorageKeepSession() {
+    console.log('🧹 Nettoyage localStorage au chargement...');
+    
+    const allowedKeys = [
+        'token', 'user_role', 'user_name', 'user_email', 
+        'user_id', 'user_photo', 'user_is_maman', 'user_categorie',
+        'sounds_enabled', 'onboarding_seen'
+    ];
+    
+    const allKeys = Object.keys(localStorage);
+    let deletedCount = 0;
+    
+    for (const key of allKeys) {
+        if (!allowedKeys.includes(key)) {
+            localStorage.removeItem(key);
+            console.log(`🗑️ Supprimé: ${key}`);
+            deletedCount++;
+        }
+    }
+    
+    console.log(`✅ Nettoyage terminé: ${deletedCount} clé(s) supprimée(s)`);
+}
+
+// Exécuter le nettoyage IMMÉDIATEMENT
+cleanLocalStorageKeepSession();
+
+
 // ============================================================
 // IMPORTS DES MODULES
 // ============================================================
@@ -291,13 +368,11 @@ let ONBOARDING_STEPS = ONBOARDING_STEPS_GENERAL;
 
 
 
-
-
-
+//------------INIT APP---SART-----------
+//---------------------------------
 
 async function initApp() {
-
-     // 🔥 S'assurer que le nettoyage a bien eu lieu
+    // 🔥 S'assurer que le nettoyage a bien eu lieu
     console.log('🚀 Initialisation de l\'application...');
     
     // Vérifier que les données critiques sont présentes
@@ -310,14 +385,12 @@ async function initApp() {
     } else {
         console.log('⚠️ Aucune session active');
     }
- 
+
     // Nettoyer les classes de fond au chargement
     document.body.classList.remove('auth-page', 'maman', 'senior', 'aidant', 'coordinateur');
     
     const loader = document.getElementById("initial-loader");
-    const token = localStorage.getItem("token");
     const onboardingSeen = localStorage.getItem("onboarding_seen");
-    const userRole = localStorage.getItem("user_role");
     
     // ✅ CORRECTION : Réinitialiser le flag Maman pour les non-familles
     if (userRole && userRole !== 'FAMILLE') {
@@ -340,129 +413,111 @@ async function initApp() {
     initMicroInteractions();      // Feedback haptique
     ErrorHandler.init();          // Gestion globale des erreurs
     startKeepAlive();             // Ping
-    updateThemeColor();            // Color auto
+    updateThemeColor();           // Color auto
     preloadOnboardingImages();
     initPushNotifications();
     applyUserTheme();
 
-if ("Notification" in window) {
-    Notification.requestPermission().then(permission => {
-        console.log("🔔 Permission notification:", permission);
-    });
-}
+    if ("Notification" in window) {
+        Notification.requestPermission().then(permission => {
+            console.log("🔔 Permission notification:", permission);
+        });
+    }
 
-
-// ✅ AJOUTE ICI - Écouter les changements de visites en temps réel
-if (window.Realtime && window.Realtime.subscribeToVisites) {
-    window.Realtime.subscribeToVisites((visiteData) => {
-        console.log("📢 [MAIN] Changement visite reçu:", visiteData);
-        
-        const userRole = localStorage.getItem("user_role");
-        const currentView = AppState.currentView;
-        
-        // 1. Recharger les visites si on est sur la vue visites
-        if (currentView === 'visits' && window.loadVisits) {
-            window.loadVisits();
-            console.log("✅ Visites rechargées");
-        }
-        
-        // 2. Si c'est une visite qui commence et qu'on est sur le feed, recharger
-        if (currentView === 'feed' && visiteData.statut === 'En cours') {
-            if (window.renderFeed) window.renderFeed();
-        }
-        
-        // 3. Mettre à jour les badges du menu
-        if (window.refreshMenuBadges) {
-            setTimeout(() => window.refreshMenuBadges(), 500);
-        }
-        
-        // 4. Pour la famille : afficher une notification toast
-        if (userRole === 'FAMILLE') {
-            if (visiteData.statut === 'En cours') {
-                showToast("🔔 Une visite a commencé", "info", 3000);
-            } else if (visiteData.statut === 'En attente') {
-                showToast("📋 Un nouveau rapport de visite est disponible", "info", 3000);
-            } else if (visiteData.statut === 'Validé') {
-                showToast("✅ Une visite a été validée", "success", 3000);
+    // ✅ AJOUTE ICI - Écouter les changements de visites en temps réel
+    if (window.Realtime && window.Realtime.subscribeToVisites) {
+        window.Realtime.subscribeToVisites((visiteData) => {
+            console.log("📢 [MAIN] Changement visite reçu:", visiteData);
+            
+            const currentView = AppState.currentView;
+            
+            // 1. Recharger les visites si on est sur la vue visites
+            if (currentView === 'visits' && window.loadVisits) {
+                window.loadVisits();
+                console.log("✅ Visites rechargées");
             }
-        }
-        
-        // 5. Pour le coordinateur : mettre à jour le dashboard
-        if (userRole === 'COORDINATEUR' && currentView === 'dashboard') {
-            if (window.fetchStats) window.fetchStats();
-            if (window.loadRegistrations) window.loadRegistrations();
-        }
+            
+            // 2. Si c'est une visite qui commence et qu'on est sur le feed, recharger
+            if (currentView === 'feed' && visiteData.statut === 'En cours') {
+                if (window.renderFeed) window.renderFeed();
+            }
+            
+            // 3. Mettre à jour les badges du menu
+            if (window.refreshMenuBadges) {
+                setTimeout(() => window.refreshMenuBadges(), 500);
+            }
+            
+            // 4. Pour la famille : afficher une notification toast
+            if (userRole === 'FAMILLE') {
+                if (visiteData.statut === 'En cours') {
+                    showToast("🔔 Une visite a commencé", "info", 3000);
+                } else if (visiteData.statut === 'En attente') {
+                    showToast("📋 Un nouveau rapport de visite est disponible", "info", 3000);
+                } else if (visiteData.statut === 'Validé') {
+                    showToast("✅ Une visite a été validée", "success", 3000);
+                }
+            }
+            
+            // 5. Pour le coordinateur : mettre à jour le dashboard
+            if (userRole === 'COORDINATEUR' && currentView === 'dashboard') {
+                if (window.fetchStats) window.fetchStats();
+                if (window.loadRegistrations) window.loadRegistrations();
+            }
 
-        handleRealtimeUpdate();
-    });
+            handleRealtimeUpdate();
+        });
 
-
-    console.log("✅ Écoute des visites en temps réel activée");
-}
-
-// Écouter les commandes
-
+        console.log("✅ Écoute des visites en temps réel activée");
+    }
 
     // ============================================================
-// 💬 REALTIME MESSAGES (VERSION CORRECTE)
-// ============================================================
-
-
-
-
+    // 🔔 REALTIME NOTIFICATIONS
     // ============================================================
-// 🔔 REALTIME NOTIFICATIONS
-// ============================================================
-if (window.Realtime && window.Realtime.subscribeToNotifications) {
-    window.Realtime.subscribeToNotifications((data) => {
-        console.log("🔔 Notification reçue:", data);
+    if (window.Realtime && window.Realtime.subscribeToNotifications) {
+        window.Realtime.subscribeToNotifications((data) => {
+            console.log("🔔 Notification reçue:", data);
 
-        // Mettre à jour badge cloche
-        if (Notifications.updateNotificationBadge) {
-            Notifications.updateNotificationBadge();
-        }
+            // Mettre à jour badge cloche
+            if (Notifications.updateNotificationBadge) {
+                Notifications.updateNotificationBadge();
+            }
 
-        // Toast
-        showToast(data.message || "Nouvelle notification", "info", 4000);
+            // Toast
+            showToast(data.message || "Nouvelle notification", "info", 4000);
 
-        handleRealtimeUpdate();
-    });
+            handleRealtimeUpdate();
+        });
 
-    console.log("✅ Realtime notifications activé");
-}
+        console.log("✅ Realtime notifications activé");
+    }
 
+    if (window.Realtime && window.Realtime.subscribeToCommandes) {
+        window.Realtime.subscribeToCommandes((data) => {
+            console.log("📢 [MAIN] Commande mise à jour:", data);
+            
+            // Rafraîchir la liste des commandes
+            if (window.loadCommandes) {
+                window.loadCommandes();
+            }
+            
+            // Notifier l'aidant si nouvelle commande
+            if (userRole === 'AIDANT' && data.action === 'created') {
+                showToast("📦 Nouvelle commande disponible", "info", 3000);
+            }
+            
+            // Notifier la famille si commande prise en charge
+            if (userRole === 'FAMILLE' && data.action === 'accepted') {
+                showToast("🚚 Votre commande a été prise en charge", "info", 3000);
+            }
+            
+            // Mettre à jour les badges
+            if (window.refreshMenuBadges) {
+                setTimeout(() => window.refreshMenuBadges(), 500);
+            }
 
-    
-if (window.Realtime && window.Realtime.subscribeToCommandes) {
-    window.Realtime.subscribeToCommandes((data) => {
-        console.log("📢 [MAIN] Commande mise à jour:", data);
-        
-        const userRole = localStorage.getItem("user_role");
-        
-        // Rafraîchir la liste des commandes
-        if (window.loadCommandes) {
-            window.loadCommandes();
-        }
-        
-        // Notifier l'aidant si nouvelle commande
-        if (userRole === 'AIDANT' && data.action === 'created') {
-            showToast("📦 Nouvelle commande disponible", "info", 3000);
-        }
-        
-        // Notifier la famille si commande prise en charge
-        if (userRole === 'FAMILLE' && data.action === 'accepted') {
-            showToast("🚚 Votre commande a été prise en charge", "info", 3000);
-        }
-        
-        // Mettre à jour les badges
-        if (window.refreshMenuBadges) {
-            setTimeout(() => window.refreshMenuBadges(), 500);
-        }
-
-        handleRealtimeUpdate();
-    });
-}
-
+            handleRealtimeUpdate();
+        });
+    }
     
     // ✅ Correction : appeler la fonction depuis le module importé
     Notifications.updateNotificationBadge();
@@ -495,9 +550,7 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
             Visites.resumeTrackingIfActive();
             checkActiveVisit();
 
-
-                        // ✅ FORCER la mise à jour de l'UI de l'aidant
-            const userRole = localStorage.getItem("user_role");
+            // ✅ FORCER la mise à jour de l'UI de l'aidant
             if (userRole === "AIDANT") {
                 const activePatientId = localStorage.getItem("active_patient_id");
                 if (activePatientId) {
@@ -515,10 +568,10 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
             await window.switchView(lastView);
 
             setTimeout(() => {
-            if (AppState.currentPatient) {
-                console.log("✅ Realtime messages démarré");
-            }
-        }, 1000);
+                if (AppState.currentPatient) {
+                    console.log("✅ Realtime messages démarré");
+                }
+            }, 1000);
 
             // ✅ ASSIGNATION DES FONCTIONS GLOBALES APRÈS LE CHARGEMENT
             console.log("🔍 Vérification des modules après chargement:");
@@ -587,8 +640,6 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
                 });
             }, 500);
 
-
-
             // Écouter les événements de notification
             window.addEventListener('new-notification', (event) => {
                 const { title, message, type } = event.detail;
@@ -616,6 +667,9 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
         hideLoader();
     }
 }
+
+//--------------END INIT APP----------------
+//------------------------------------------
 
 /**
  * 🖼️ PRÉCHARGER LES IMAGES PNG D'ONBOARDING
