@@ -1,21 +1,24 @@
 // ============================================================
-// SERVICE WORKER - SANTÉ PLUS SERVICES (VERSION FRAÎCHEUR)
-// Stratégie: Network First + cache minimal
+// SERVICE WORKER - SANTÉ PLUS SERVICES (OFFLINE-FIRST)
 // ============================================================
 
-// 🔥 VERSION - Incrémente à chaque déploiement
-const APP_VERSION = '20250425-v3';
-const CACHE_NAME = `sps-static-${APP_VERSION}`;
-const IMAGE_CACHE = `sps-images-${APP_VERSION}`;
+const CACHE_NAME = 'sps-v9';
+const STATIC_CACHE = 'sps-static-v9';
+const IMAGE_CACHE = 'sps-images-v9';
+const API_CACHE = 'sps-api-v9';
 
-// ⚠️ Fichiers statiques MINIMAUX à mettre en cache (urgence seulement)
+// Fichiers statiques à mettre en cache immédiatement
 const STATIC_URLS = [
-  './offline.html',
+  './',
+  './index.html',
+  './style.css',
+  './js/main.js',
+  './manifest.json',
+  'offline.html',
   '/assets/images/logo-general-icon.png',
   '/assets/images/logo-general-text.png',
   '/assets/images/logo-maman-icon.png',
   '/assets/images/logo-maman-text.png'
-  // ⚠️ NE PAS mettre index.html, style.css, main.js en cache
 ];
 
 // ============================================================
@@ -58,43 +61,30 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 // ============================================================
-// INSTALLATION - Supprimer les anciens caches
+// INSTALLATION
 // ============================================================
 self.addEventListener('install', (event) => {
-  console.log(`🔧 SW installation - Version ${APP_VERSION}`);
+  console.log('🔧 SW installation...');
   event.waitUntil(
     Promise.all([
-      // Nettoyer tous les anciens caches
-      caches.keys().then(cacheNames => {
-        return Promise.all(
-          cacheNames.map(cache => {
-            if (cache !== CACHE_NAME && cache !== IMAGE_CACHE) {
-              console.log(`🗑️ Suppression ancien cache: ${cache}`);
-              return caches.delete(cache);
-            }
-          })
-        );
-      }),
-      // Cache uniquement les fichiers essentiels
-      caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_URLS)),
+      caches.open(STATIC_CACHE).then(cache => cache.addAll(STATIC_URLS)),
       self.skipWaiting()
     ])
   );
 });
 
 // ============================================================
-// ACTIVATION - Prendre le contrôle immédiatement
+// ACTIVATION - Nettoyage
 // ============================================================
 self.addEventListener('activate', (event) => {
-  console.log('✨ SW activation - Prise de contrôle immédiate');
+  console.log('✨ SW activation...');
   event.waitUntil(
     Promise.all([
-      // Nettoyage final
       caches.keys().then(cacheNames => {
         return Promise.all(
           cacheNames.map(cache => {
-            if (cache !== CACHE_NAME && cache !== IMAGE_CACHE) {
-              console.log(`🗑️ Suppression définitive: ${cache}`);
+            if (![STATIC_CACHE, IMAGE_CACHE, API_CACHE, CACHE_NAME].includes(cache)) {
+              console.log(`🗑️ Suppression: ${cache}`);
               return caches.delete(cache);
             }
           })
@@ -106,7 +96,7 @@ self.addEventListener('activate', (event) => {
 });
 
 // ============================================================
-// STRATÉGIE DE CACHE: NETWORK FIRST TOUJOURS
+// STRATÉGIE DE CACHE: OFFLINE-FIRST
 // ============================================================
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
@@ -117,25 +107,39 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // 2. REQUÊTES API (Network only - PAS DE CACHE)
+  // 2. REQUÊTES API (Network first, fallback cache)
   if (url.pathname.includes('/api/')) {
     event.respondWith(
       fetch(event.request, {
         credentials: 'include',
-        cache: 'no-store',
         headers: {
           'Authorization': event.request.headers.get('Authorization') || '',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
+          'Cache-Control': 'no-cache'
         }
-      }).catch(() => {
-        // ⚠️ En cas d'erreur réseau, retourner une erreur (pas de cache)
+      })
+      .then(response => {
+        if (response && response.status === 200) {
+          const responseToCache = response.clone();
+          caches.open(API_CACHE).then(cache => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return response;
+      })
+      .catch(async () => {
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) {
+          console.log(`📦 [SW] API Cache hit: ${url.pathname}`);
+          return cachedResponse;
+        }
+        
+        // Retourner une réponse offline structurée
         return new Response(JSON.stringify({
           offline: true,
-          message: "Mode hors-ligne - Veuillez vérifier votre connexion",
+          message: "Mode hors-ligne - Données en cache",
           timestamp: Date.now()
         }), {
-          status: 503,
+          status: 200,
           headers: { 'Content-Type': 'application/json' }
         });
       })
@@ -143,57 +147,50 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // 3. IMAGES (Network first, cache fallback uniquement)
+  // 3. IMAGES (Cache first avec fallback)
   if (event.request.destination === 'image') {
     event.respondWith(
-      fetch(event.request, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' }
-      }).catch(async () => {
-        const cached = await caches.match(event.request);
-        if (cached) {
-          console.log(`📦 [SW] Image fallback cache: ${url.pathname}`);
-          return cached;
-        }
+      caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        return fetch(event.request).then(network => {
+          if (network && network.status === 200) {
+            const responseToCache = network.clone();
+            caches.open(IMAGE_CACHE).then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return network;
+        });
+      }).catch(() => {
         return caches.match('/assets/images/logo-general-icon.png');
       })
     );
     return;
   }
   
-  // 4. PAGES HTML / JS / CSS (Network first, JAMAIS de cache)
-  if (url.pathname.endsWith('.html') || 
-      url.pathname.endsWith('.js') || 
-      url.pathname.endsWith('.css') ||
-      url.pathname === '/' ||
-      url.pathname === './') {
-    event.respondWith(
-      fetch(event.request, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+  // 4. ASSETS STATIQUES (Cache first)
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      if (cached) {
+        console.log(`📦 [SW] Static Cache hit: ${url.pathname}`);
+        return cached;
+      }
+      
+      return fetch(event.request).then(networkResponse => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(STATIC_CACHE).then(cache => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return networkResponse;
       }).catch(() => {
-        // Fallback offline uniquement pour les pages HTML
+        // Fallback pour les pages HTML
         if (url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname === './') {
           return caches.match('./offline.html');
         }
-        return new Response('Ressource non disponible - Veuillez rafraîchir', { status: 503 });
-      })
-    );
-    return;
-  }
-  
-  // 5. AUTRES (fichiers statiques) - Network first
-  event.respondWith(
-    fetch(event.request, {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' }
-    }).catch(async () => {
-      const cached = await caches.match(event.request);
-      if (cached) {
-        console.log(`📦 [SW] Fallback cache: ${url.pathname}`);
-        return cached;
-      }
-      return new Response('Ressource non disponible', { status: 404 });
+        return new Response('Page non disponible hors-ligne', { status: 503 });
+      });
     })
   );
 });
@@ -231,14 +228,5 @@ self.addEventListener('sync', (event) => {
         });
       })
     );
-  }
-});
-
-// ============================================================
-// MESSAGE CONTROLLER (pour communication avec main.js)
-// ============================================================
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
   }
 });
