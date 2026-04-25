@@ -6,83 +6,6 @@
 // Auteur: Santé Plus Services
 // ============================================================
 
-
-
-// ============================================================
-// INTERCEPTEUR localStorage.setItem (bloquer les clés non autorisées)
-// ============================================================
-(function() {
-    // Sauvegarder la fonction originale
-    const originalSetItem = localStorage.setItem.bind(localStorage);
-    const originalGetItem = localStorage.getItem.bind(localStorage);
-    const originalRemoveItem = localStorage.removeItem.bind(localStorage);
-    
-    // Liste des clés autorisées (session utilisateur uniquement)
-    const allowedKeys = [
-        'token', 'user_role', 'user_name', 'user_email', 
-        'user_id', 'user_photo', 'user_is_maman', 'user_categorie',
-        'sounds_enabled', 'onboarding_seen'  // Ajout pour les préférences
-    ];
-    
-    // Remplacer setItem
-    localStorage.setItem = function(key, value) {
-        if (allowedKeys.includes(key)) {
-            originalSetItem(key, value);
-            console.log(`✅ [STORAGE] Autorisé: ${key}`);
-        } else {
-            console.warn(`🚫 [STORAGE] BLOQUÉ: ${key} = ${typeof value === 'string' ? value.substring(0, 50) : value}`);
-        }
-    };
-    
-    // Intercepter getItem pour debug
-    localStorage.getItem = function(key) {
-        const value = originalGetItem(key);
-        if (value && !allowedKeys.includes(key)) {
-            console.log(`📖 [STORAGE] Lecture clé non autorisée: ${key}`);
-        }
-        return value;
-    };
-    
-    // Intercepter removeItem pour debug
-    localStorage.removeItem = function(key) {
-        if (!allowedKeys.includes(key)) {
-            console.log(`🗑️ [STORAGE] Suppression clé non autorisée: ${key}`);
-        }
-        originalRemoveItem(key);
-    };
-    
-    console.log('🛡️ Intercepteur localStorage activé (mode modéré)');
-    console.log(`✅ Clés autorisées: ${allowedKeys.join(', ')}`);
-})();
-
-// Nettoyage localStorage au chargement (garder session)
-function cleanLocalStorageKeepSession() {
-    console.log('🧹 Nettoyage localStorage au chargement...');
-    
-    const allowedKeys = [
-        'token', 'user_role', 'user_name', 'user_email', 
-        'user_id', 'user_photo', 'user_is_maman', 'user_categorie',
-        'sounds_enabled', 'onboarding_seen'
-    ];
-    
-    const allKeys = Object.keys(localStorage);
-    let deletedCount = 0;
-    
-    for (const key of allKeys) {
-        if (!allowedKeys.includes(key)) {
-            localStorage.removeItem(key);
-            console.log(`🗑️ Supprimé: ${key}`);
-            deletedCount++;
-        }
-    }
-    
-    console.log(`✅ Nettoyage terminé: ${deletedCount} clé(s) supprimée(s)`);
-}
-
-// Exécuter le nettoyage IMMÉDIATEMENT
-cleanLocalStorageKeepSession();
-
-
 // ============================================================
 // IMPORTS DES MODULES
 // ============================================================
@@ -122,58 +45,37 @@ const messaging = window.messaging;
 
 async function initPushNotifications() {
     try {
-        // ✅ Vérifier que tout est disponible
-        if (!window.messaging) {
-            console.log("⚠️ Firebase Messaging non disponible");
-            return;
-        }
-        
-        // Vérifier si l'utilisateur est connecté
-        const token = localStorage.getItem("token");
-        if (!token) {
-            console.log("⚠️ Utilisateur non connecté, push ignorés");
-            return;
-        }
-        
         const permission = await Notification.requestPermission();
+
         if (permission !== "granted") {
             console.log("❌ Permission refusée");
             return;
         }
 
-        // Récupérer ou enregistrer le Service Worker
-        let registration = await navigator.serviceWorker.getRegistration();
-        if (!registration) {
-            registration = await navigator.serviceWorker.register('/sw.js');
-            await new Promise(r => setTimeout(r, 500)); // Attendre l'activation
-        }
+        const registration = await navigator.serviceWorker.register('/sw.js');
         
-        // Obtenir le token FCM
-        const fcmToken = await window.messaging.getToken({
-            vapidKey: "BNeY_I69yPNM2R-kjlAWMjghL21XVvG9-EPTet200rg6S4TEJvRDsbAeWO5TqODp9h1tZS5LtlLOBb5lDoQGz6M",
+        const token = await window.messaging.getToken({
+            vapidKey: "BAStgbdhdf4eevMHymMZSalvx5ZjbrR_6rJQX6VUfxURmNo6X0ej18IHKw0j-y3oCmu6kmLK0T8YvRAeRENjAkk",
             serviceWorkerRegistration: registration
         });
 
-        if (fcmToken) {
-            console.log("🔥 PUSH TOKEN:", fcmToken);
-            
-            await secureFetch('/save-push-token', {
-                method: 'POST',
-                body: JSON.stringify({
-                    token: fcmToken,
-                    user_id: localStorage.getItem("user_id")
-                })      
-            });
-            console.log("✅ Token push enregistré sur le serveur");
-        } else {
-            console.log("⚠️ Aucun token FCM reçu");
-        }
+        console.log("🔥 PUSH TOKEN:", token);
+        console.log("📱 Appareil enregistré pour les notifications push");
+
+        await secureFetch('/save-push-token', {
+            method: 'POST',
+            body: JSON.stringify({
+                token,
+                user_id: localStorage.getItem("user_id")
+            })      
+        });
 
     } catch (err) {
-        console.error("❌ Erreur push:", err.message);
-        // Ne pas bloquer l'application
+        console.error("❌ Erreur push:", err);
     }
 }
+
+
 
 
 console.log("🔍 [main.js] Imports vérifiés:");
@@ -388,38 +290,14 @@ const ONBOARDING_STEPS_BABY = [
 let ONBOARDING_STEPS = ONBOARDING_STEPS_GENERAL;
 
 
-
-//------------INIT APP---SART-----------
-//---------------------------------
-
 async function initApp() {
-    // 🔥 S'assurer que le nettoyage a bien eu lieu
-    console.log('🚀 Initialisation de l\'application...');
-
-     if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (const registration of registrations) {
-            await registration.unregister();
-            console.log('✅ Service Worker désinscrit');
-        }
-    }
-    
-    // Vérifier que les données critiques sont présentes
-    const token = localStorage.getItem("token");
-    const userRole = localStorage.getItem("user_role");
-    
-    if (token && userRole) {
-        console.log(`✅ Session trouvée: ${userRole}`);
-        // Ne PAS recréer de variables obsolètes
-    } else {
-        console.log('⚠️ Aucune session active');
-    }
-
     // Nettoyer les classes de fond au chargement
     document.body.classList.remove('auth-page', 'maman', 'senior', 'aidant', 'coordinateur');
     
     const loader = document.getElementById("initial-loader");
+    const token = localStorage.getItem("token");
     const onboardingSeen = localStorage.getItem("onboarding_seen");
+    const userRole = localStorage.getItem("user_role");
     
     // ✅ CORRECTION : Réinitialiser le flag Maman pour les non-familles
     if (userRole && userRole !== 'FAMILLE') {
@@ -442,110 +320,129 @@ async function initApp() {
     initMicroInteractions();      // Feedback haptique
     ErrorHandler.init();          // Gestion globale des erreurs
     startKeepAlive();             // Ping
-    updateThemeColor();           // Color auto
+    updateThemeColor();            // Color auto
     preloadOnboardingImages();
+    initPushNotifications();
     applyUserTheme();
 
-    if ("Notification" in window) {
-        Notification.requestPermission().then(permission => {
-            console.log("🔔 Permission notification:", permission);
-        });
-    }
+if ("Notification" in window) {
+    Notification.requestPermission().then(permission => {
+        console.log("🔔 Permission notification:", permission);
+    });
+}
 
-    // ✅ AJOUTE ICI - Écouter les changements de visites en temps réel
-    if (window.Realtime && window.Realtime.subscribeToVisites) {
-        window.Realtime.subscribeToVisites((visiteData) => {
-            console.log("📢 [MAIN] Changement visite reçu:", visiteData);
-            
-            const currentView = AppState.currentView;
-            
-            // 1. Recharger les visites si on est sur la vue visites
-            if (currentView === 'visits' && window.loadVisits) {
-                window.loadVisits();
-                console.log("✅ Visites rechargées");
-            }
-            
-            // 2. Si c'est une visite qui commence et qu'on est sur le feed, recharger
-            if (currentView === 'feed' && visiteData.statut === 'En cours') {
-                if (window.renderFeed) window.renderFeed();
-            }
-            
-            // 3. Mettre à jour les badges du menu
-            if (window.refreshMenuBadges) {
-                setTimeout(() => window.refreshMenuBadges(), 500);
-            }
-            
-            // 4. Pour la famille : afficher une notification toast
-            if (userRole === 'FAMILLE') {
-                if (visiteData.statut === 'En cours') {
-                    showToast("🔔 Une visite a commencé", "info", 3000);
-                } else if (visiteData.statut === 'En attente') {
-                    showToast("📋 Un nouveau rapport de visite est disponible", "info", 3000);
-                } else if (visiteData.statut === 'Validé') {
-                    showToast("✅ Une visite a été validée", "success", 3000);
-                }
-            }
-            
-            // 5. Pour le coordinateur : mettre à jour le dashboard
-            if (userRole === 'COORDINATEUR' && currentView === 'dashboard') {
-                if (window.fetchStats) window.fetchStats();
-                if (window.loadRegistrations) window.loadRegistrations();
-            }
 
-            handleRealtimeUpdate();
-        });
+// ✅ AJOUTE ICI - Écouter les changements de visites en temps réel
+if (window.Realtime && window.Realtime.subscribeToVisites) {
+    window.Realtime.subscribeToVisites((visiteData) => {
+        console.log("📢 [MAIN] Changement visite reçu:", visiteData);
+        
+        const userRole = localStorage.getItem("user_role");
+        const currentView = AppState.currentView;
+        
+        // 1. Recharger les visites si on est sur la vue visites
+        if (currentView === 'visits' && window.loadVisits) {
+            window.loadVisits();
+            console.log("✅ Visites rechargées");
+        }
+        
+        // 2. Si c'est une visite qui commence et qu'on est sur le feed, recharger
+        if (currentView === 'feed' && visiteData.statut === 'En cours') {
+            if (window.renderFeed) window.renderFeed();
+        }
+        
+        // 3. Mettre à jour les badges du menu
+        if (window.refreshMenuBadges) {
+            setTimeout(() => window.refreshMenuBadges(), 500);
+        }
+        
+        // 4. Pour la famille : afficher une notification toast
+        if (userRole === 'FAMILLE') {
+            if (visiteData.statut === 'En cours') {
+                showToast("🔔 Une visite a commencé", "info", 3000);
+            } else if (visiteData.statut === 'En attente') {
+                showToast("📋 Un nouveau rapport de visite est disponible", "info", 3000);
+            } else if (visiteData.statut === 'Validé') {
+                showToast("✅ Une visite a été validée", "success", 3000);
+            }
+        }
+        
+        // 5. Pour le coordinateur : mettre à jour le dashboard
+        if (userRole === 'COORDINATEUR' && currentView === 'dashboard') {
+            if (window.fetchStats) window.fetchStats();
+            if (window.loadRegistrations) window.loadRegistrations();
+        }
 
-        console.log("✅ Écoute des visites en temps réel activée");
-    }
+        handleRealtimeUpdate();
+    });
+
+
+    console.log("✅ Écoute des visites en temps réel activée");
+}
+
+// Écouter les commandes
+
 
     // ============================================================
-    // 🔔 REALTIME NOTIFICATIONS
+// 💬 REALTIME MESSAGES (VERSION CORRECTE)
+// ============================================================
+
+
+
+
     // ============================================================
-    if (window.Realtime && window.Realtime.subscribeToNotifications) {
-        window.Realtime.subscribeToNotifications((data) => {
-            console.log("🔔 Notification reçue:", data);
+// 🔔 REALTIME NOTIFICATIONS
+// ============================================================
+if (window.Realtime && window.Realtime.subscribeToNotifications) {
+    window.Realtime.subscribeToNotifications((data) => {
+        console.log("🔔 Notification reçue:", data);
 
-            // Mettre à jour badge cloche
-            if (Notifications.updateNotificationBadge) {
-                Notifications.updateNotificationBadge();
-            }
+        // Mettre à jour badge cloche
+        if (Notifications.updateNotificationBadge) {
+            Notifications.updateNotificationBadge();
+        }
 
-            // Toast
-            showToast(data.message || "Nouvelle notification", "info", 4000);
+        // Toast
+        showToast(data.message || "Nouvelle notification", "info", 4000);
 
-            handleRealtimeUpdate();
-        });
+        handleRealtimeUpdate();
+    });
 
-        console.log("✅ Realtime notifications activé");
-    }
+    console.log("✅ Realtime notifications activé");
+}
 
-    if (window.Realtime && window.Realtime.subscribeToCommandes) {
-        window.Realtime.subscribeToCommandes((data) => {
-            console.log("📢 [MAIN] Commande mise à jour:", data);
-            
-            // Rafraîchir la liste des commandes
-            if (window.loadCommandes) {
-                window.loadCommandes();
-            }
-            
-            // Notifier l'aidant si nouvelle commande
-            if (userRole === 'AIDANT' && data.action === 'created') {
-                showToast("📦 Nouvelle commande disponible", "info", 3000);
-            }
-            
-            // Notifier la famille si commande prise en charge
-            if (userRole === 'FAMILLE' && data.action === 'accepted') {
-                showToast("🚚 Votre commande a été prise en charge", "info", 3000);
-            }
-            
-            // Mettre à jour les badges
-            if (window.refreshMenuBadges) {
-                setTimeout(() => window.refreshMenuBadges(), 500);
-            }
 
-            handleRealtimeUpdate();
-        });
-    }
+    
+if (window.Realtime && window.Realtime.subscribeToCommandes) {
+    window.Realtime.subscribeToCommandes((data) => {
+        console.log("📢 [MAIN] Commande mise à jour:", data);
+        
+        const userRole = localStorage.getItem("user_role");
+        
+        // Rafraîchir la liste des commandes
+        if (window.loadCommandes) {
+            window.loadCommandes();
+        }
+        
+        // Notifier l'aidant si nouvelle commande
+        if (userRole === 'AIDANT' && data.action === 'created') {
+            showToast("📦 Nouvelle commande disponible", "info", 3000);
+        }
+        
+        // Notifier la famille si commande prise en charge
+        if (userRole === 'FAMILLE' && data.action === 'accepted') {
+            showToast("🚚 Votre commande a été prise en charge", "info", 3000);
+        }
+        
+        // Mettre à jour les badges
+        if (window.refreshMenuBadges) {
+            setTimeout(() => window.refreshMenuBadges(), 500);
+        }
+
+        handleRealtimeUpdate();
+    });
+}
+
     
     // ✅ Correction : appeler la fonction depuis le module importé
     Notifications.updateNotificationBadge();
@@ -565,12 +462,6 @@ async function initApp() {
 
     try {
         if (token) {
-
-            await new Promise(r => setTimeout(r, 2000));
-            
-            // ✅ Initialiser les notifications
-            initPushNotifications();
-         
             if (!onboardingSeen && !window._onboardingCompleted) {
                 hideLoader();
                 window.startOnboarding();
@@ -584,7 +475,9 @@ async function initApp() {
             Visites.resumeTrackingIfActive();
             checkActiveVisit();
 
-            // ✅ FORCER la mise à jour de l'UI de l'aidant
+
+                        // ✅ FORCER la mise à jour de l'UI de l'aidant
+            const userRole = localStorage.getItem("user_role");
             if (userRole === "AIDANT") {
                 const activePatientId = localStorage.getItem("active_patient_id");
                 if (activePatientId) {
@@ -602,10 +495,10 @@ async function initApp() {
             await window.switchView(lastView);
 
             setTimeout(() => {
-                if (AppState.currentPatient) {
-                    console.log("✅ Realtime messages démarré");
-                }
-            }, 1000);
+            if (AppState.currentPatient) {
+                console.log("✅ Realtime messages démarré");
+            }
+        }, 1000);
 
             // ✅ ASSIGNATION DES FONCTIONS GLOBALES APRÈS LE CHARGEMENT
             console.log("🔍 Vérification des modules après chargement:");
@@ -674,6 +567,8 @@ async function initApp() {
                 });
             }, 500);
 
+
+
             // Écouter les événements de notification
             window.addEventListener('new-notification', (event) => {
                 const { title, message, type } = event.detail;
@@ -701,9 +596,6 @@ async function initApp() {
         hideLoader();
     }
 }
-
-//--------------END INIT APP----------------
-//------------------------------------------
 
 /**
  * 🖼️ PRÉCHARGER LES IMAGES PNG D'ONBOARDING
@@ -2159,11 +2051,6 @@ function renderLayout() {
                      
                      <!-- Bouton déconnexion en bas -->
                      <div class="shrink-0 p-5 border-t ${drawerBorderColor} space-y-3">
-
-                     <button onclick="window.forceHardReset()" 
-                             class="w-full py-3 rounded-xl text-[10px] font-black uppercase active:scale-98 transition-all flex items-center justify-center gap-2 bg-amber-50 text-amber-600 border border-amber-100 mt-2">
-                         <i class="fa-solid fa-arrows-rotate"></i> Réinitialiser l'application
-                     </button>
                          <button id="install-app-drawer" 
                                  class="w-full py-3 rounded-xl text-[10px] font-black uppercase active:scale-98 transition-all flex items-center justify-center gap-2 bg-white border ${drawerBorderColor} text-slate-600 hover:${drawerAccentColor} hover:border-${userRole === 'COORDINATEUR' ? 'amber-200' : (userRole === 'AIDANT' ? 'amber-200' : (isMaman ? 'pink-200' : 'emerald-200'))} transition">
                              <i class="fa-solid fa-download"></i> Installer l'application
@@ -3883,45 +3770,6 @@ function updateBottomNav(viewName) {
 }
 
 // ============================================================
-// FORCE REFRESH (réinitialisation complète)
-// ============================================================
-window.forceHardReset = async () => {
-    const result = await Swal.fire({
-        title: 'Réinitialisation complète',
-        text: 'Cette action va vider tous les caches et redémarrer l\'application. Votre session sera conservée.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'OUI, RÉINITIALISER',
-        cancelButtonText: 'Annuler',
-        confirmButtonColor: '#EF4444'
-    });
-    
-    if (result.isConfirmed) {
-        Swal.fire({ title: 'Nettoyage...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
-        
-        // 1. Vider localStorage (sauf token et infos session)
-        const keepKeys = ['token', 'user_role', 'user_name', 'user_email', 'user_id', 'user_photo', 'user_is_maman', 'user_categorie'];
-        const allKeys = Object.keys(localStorage);
-        for (const key of allKeys) {
-            if (!keepKeys.includes(key)) {
-                localStorage.removeItem(key);
-            }
-        }
-        
-        // 2. Supprimer les caches
-        if ('caches' in window) {
-            const cacheNames = await caches.keys();
-            await Promise.all(cacheNames.map(cache => caches.delete(cache)));
-        }
-        
-        // 3. Recharger
-        window.location.reload(true);
-    }
-};
-
-
-
-// ============================================================
 // MOT DE PASSE OUBLIÉ
 // ============================================================
 window.forgotPassword = async () => {
@@ -3979,12 +3827,7 @@ window.forgotPassword = async () => {
 
 
 
-
 // Appeler dans initApp()
 initPullToRefresh();
 
-
-console.log('%c✨ Santé Plus Services - Mode fraîcheur activée ✨', 'color: #10B981; font-size: 14px; font-weight: bold;');
-console.log('%c🔄 Les données sont rechargées à chaque ouverture (session conservée)', 'color: #64748B; font-size: 12px;');
- 
 initApp();
