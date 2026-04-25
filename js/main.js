@@ -374,6 +374,14 @@ let ONBOARDING_STEPS = ONBOARDING_STEPS_GENERAL;
 async function initApp() {
     // 🔥 S'assurer que le nettoyage a bien eu lieu
     console.log('🚀 Initialisation de l\'application...');
+
+     if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+            await registration.unregister();
+            console.log('✅ Service Worker désinscrit');
+        }
+    }
     
     // Vérifier que les données critiques sont présentes
     const token = localStorage.getItem("token");
@@ -3849,6 +3857,45 @@ function updateBottomNav(viewName) {
 }
 
 // ============================================================
+// FORCE REFRESH (réinitialisation complète)
+// ============================================================
+window.forceHardReset = async () => {
+    const result = await Swal.fire({
+        title: 'Réinitialisation complète',
+        text: 'Cette action va vider tous les caches et redémarrer l\'application. Votre session sera conservée.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'OUI, RÉINITIALISER',
+        cancelButtonText: 'Annuler',
+        confirmButtonColor: '#EF4444'
+    });
+    
+    if (result.isConfirmed) {
+        Swal.fire({ title: 'Nettoyage...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+        
+        // 1. Vider localStorage (sauf token et infos session)
+        const keepKeys = ['token', 'user_role', 'user_name', 'user_email', 'user_id', 'user_photo', 'user_is_maman', 'user_categorie'];
+        const allKeys = Object.keys(localStorage);
+        for (const key of allKeys) {
+            if (!keepKeys.includes(key)) {
+                localStorage.removeItem(key);
+            }
+        }
+        
+        // 2. Supprimer les caches
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(cache => caches.delete(cache)));
+        }
+        
+        // 3. Recharger
+        window.location.reload(true);
+    }
+};
+
+
+
+// ============================================================
 // MOT DE PASSE OUBLIÉ
 // ============================================================
 window.forgotPassword = async () => {
@@ -3904,44 +3951,6 @@ window.forgotPassword = async () => {
 };
 
 
-
-
-// ============================================================
-// FORCE REFRESH (réinitialisation complète)
-// ============================================================
-window.forceHardReset = async () => {
-    const result = await Swal.fire({
-        title: 'Réinitialisation complète',
-        text: 'Cette action va vider tous les caches et redémarrer l\'application. Votre session sera conservée.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'OUI, RÉINITIALISER',
-        cancelButtonText: 'Annuler',
-        confirmButtonColor: '#EF4444'
-    });
-    
-    if (result.isConfirmed) {
-        Swal.fire({ title: 'Nettoyage...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
-        
-        // 1. Vider localStorage (sauf token et infos session)
-        const keepKeys = ['token', 'user_role', 'user_name', 'user_email', 'user_id', 'user_photo', 'user_is_maman', 'user_categorie'];
-        const allKeys = Object.keys(localStorage);
-        for (const key of allKeys) {
-            if (!keepKeys.includes(key)) {
-                localStorage.removeItem(key);
-            }
-        }
-        
-        // 2. Supprimer les caches
-        if ('caches' in window) {
-            const cacheNames = await caches.keys();
-            await Promise.all(cacheNames.map(cache => caches.delete(cache)));
-        }
-        
-        // 3. Recharger
-        window.location.reload(true);
-    }
-};
 
 
 
