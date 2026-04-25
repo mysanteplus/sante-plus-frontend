@@ -3888,4 +3888,8 @@ window.forgotPassword = async () => {
 // Appeler dans initApp()
 initPullToRefresh();
 
+
+console.log('%c✨ Santé Plus Services - Mode fraîcheur activée ✨', 'color: #10B981; font-size: 14px; font-weight: bold;');
+console.log('%c🔄 Les données sont rechargées à chaque ouverture (session conservée)', 'color: #64748B; font-size: 12px;');
+ 
 initApp();
