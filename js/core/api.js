@@ -4,11 +4,23 @@ import db from './db.js';
 
 const isCapacitor = typeof window !== 'undefined' && window.hasOwnProperty('Capacitor');
 
-const apiCache = new Map();
-const CACHE_DURATION = 30 * 1000; // 30 secondes
+// 🔥 DÉSACTIVER LE CACHE MÉMOIRE
+// const apiCache = new Map(); // ← COMMENTÉ - Plus de cache mémoire
+// const CACHE_DURATION = 30 * 1000; // ← COMMENTÉ
 
-// Liste des endpoints à NE PAS mettre en cache
-const NO_CACHE_ENDPOINTS = ['/visites/active', '/notifications'];
+// 🔥 TOUS LES ENDPOINTS SONT EXCLUS DU CACHE
+const NO_CACHE_ENDPOINTS = [
+  '/visites/active', 
+  '/notifications', 
+  '/visites', 
+  '/commandes', 
+  '/patients', 
+  '/planning', 
+  '/messages',
+  '/aidants',
+  '/dashboard/stats',
+  '/billing'
+];
 
 // ============================================================
 // UTILITAIRE : FORCER LE FORMAT TABLEAU
@@ -31,14 +43,28 @@ function ensureArray(data, endpoint) {
     return [];
 }
 
+// ============================================================
+// 🔥 FONCTION POUR AJOUTER UN TIMESTAMP ANTI-CACHE
+// ============================================================
+function addNoCacheParam(url) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}_t=${Date.now()}`;
+}
+
+// ============================================================
+// SECURE FETCH - VERSION SANS CACHE
+// ============================================================
 export async function secureFetch(endpoint, options = {}) {
   const token = localStorage.getItem("token");
   const method = options.method || 'GET';
   
-  console.log(`📡 Appel API : ${method} ${endpoint}`);
+  console.log(`📡 [FRAIS] Appel API : ${method} ${endpoint} - ${new Date().toLocaleTimeString()}`);
 
   const headers = {
     "Content-Type": "application/json",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0",
     ...options.headers,
   };
 
@@ -46,32 +72,29 @@ export async function secureFetch(endpoint, options = {}) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  // Vérifier le cache IndexedDB pour les GET
+  // 🔥 DÉSACTIVER LA VÉRIFICATION DU CACHE INDEXEDDB
+  // Plus de cache du tout !
   const isMessagesEndpoint = endpoint.includes('/messages');
-  const shouldUseIndexedDB = method === 'GET' && !options.noCache && 
-    !NO_CACHE_ENDPOINTS.some(pattern => endpoint.includes(pattern)) && !isMessagesEndpoint;
   
-  if (shouldUseIndexedDB && db.isReady) {
-    const cached = await db.getCachedApiResponse(endpoint);
-    if (cached) {
-      console.log(`📦 [IDB Cache hit] ${endpoint}`);
-      return cached;
-    }
-  }
+  // ⚠️ On n'utilise plus jamais le cache IndexedDB
+  // if (shouldUseIndexedDB && db.isReady) { ... } ← SUPPRIMÉ
 
   const executeRequest = async () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
-      const url = `${CONFIG.API_URL}${endpoint}`;
-      console.log(`🌐 Requête vers: ${url}`);
+      // 🔥 AJOUTER UN TIMESTAMP POUR FORCER L'ACTUALISATION
+      let url = `${CONFIG.API_URL}${endpoint}`;
+      url = addNoCacheParam(url);
       
-      // 🔧 SUPPRIMER cache-control pour éviter l'erreur CORS
+      console.log(`🌐 [FRAIS] Requête vers: ${url}`);
+      
       const fetchOptions = {
-        method: options.method,
+        method: options.method || 'GET',
         headers: headers,
-        signal: controller.signal
+        signal: controller.signal,
+        cache: 'no-store'  // 🔥 Forcer le navigateur à ignorer son cache
       };
       
       // Ajouter le body si présent
@@ -83,7 +106,7 @@ export async function secureFetch(endpoint, options = {}) {
 
       clearTimeout(timeoutId);
       
-      console.log(`📥 Réponse API [${response.status}] : ${endpoint}`);
+      console.log(`📥 [FRAIS] Réponse API [${response.status}] : ${endpoint}`);
 
       if (response.status === 503) {
         throw new Error("Le serveur se réveille... Veuillez patienter 30 secondes.");
@@ -123,42 +146,18 @@ export async function secureFetch(endpoint, options = {}) {
           responseData = ensureArray(responseData, endpoint);
         }
         
-        // Cache mémoire pour les endpoints rapides
-        const shouldUseMemoryCache = !NO_CACHE_ENDPOINTS.some(pattern => endpoint.includes(pattern));
+        // 🔥 PLUS AUCUN CACHE MÉMOIRE
+        // On ne stocke plus rien du tout
         
-        if (shouldUseMemoryCache) {
-          apiCache.set(endpoint, {
-            data: responseData,
-            timestamp: Date.now()
-          });
-        }
-        
-        // Cache IndexedDB pour les endpoints GET (sauf messages)
-        if (shouldUseIndexedDB && db.isReady && responseData) {
-          await db.cacheApiResponse(endpoint, responseData, 5);
-        }
       } else {
         responseData = await response.json();
       }
 
-      // Invalider le cache après les modifications
+      // 🔥 Invalider les caches après modification (POST/PUT/DELETE)
       if (method !== 'GET') {
-        apiCache.delete(endpoint);
-        if (db.isReady) {
-          await db.delete('api_cache', endpoint);
-        }
+        console.log(`🗑️ [FRAIS] Modification détectée, nettoyage des références pour: ${endpoint}`);
         
-        const relatedEndpoints = ['/messages', '/visites', '/commandes', '/patients', '/planning'];
-        relatedEndpoints.forEach(related => {
-          if (endpoint.includes(related)) {
-            apiCache.forEach((_, key) => {
-              if (key.includes(related)) apiCache.delete(key);
-            });
-          }
-        });
-        
-        console.log(`🗑️ Cache invalidé pour: ${endpoint}`);
-        
+        // Déclencher un événement pour rafraîchir l'UI
         if (typeof window !== 'undefined') {
           let resourceType = 'unknown';
           if (endpoint.includes('/messages')) resourceType = 'message_sent';
@@ -180,6 +179,7 @@ export async function secureFetch(endpoint, options = {}) {
         }
       }
 
+      console.log(`✅ [FRAIS] Données reçues: ${responseData?.length || Object.keys(responseData || {}).length} éléments`);
       return responseData;
 
     } catch (error) {
@@ -192,56 +192,115 @@ export async function secureFetch(endpoint, options = {}) {
   };
 
   try {
-    const shouldUseMemoryCache = method === 'GET' && !NO_CACHE_ENDPOINTS.some(pattern => endpoint.includes(pattern));
-    
-    if (shouldUseMemoryCache) {
-      const cached = apiCache.get(endpoint);
-      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-        console.log(`📦 [Memory Cache hit] ${endpoint}`);
-        return cached.data;
-      }
-    }
-
-    return await ErrorHandler.retry(executeRequest, 3);
+    // 🔥 PLUS DE CACHE MÉMOIRE DU TOUT
+    // On exécute directement la requête réseau
+    return await ErrorHandler.retry(executeRequest, 2); // 2 essais max au lieu de 3
     
   } catch (err) {
-    console.error(`❌ Erreur API ${method} ${endpoint}:`, err.message);
+    console.error(`❌ [FRAIS] Erreur API ${method} ${endpoint}:`, err.message);
     throw err;
   }
 }
 
+// ============================================================
+// VIDER TOUS LES CACHES (appel manuel si besoin)
+// ============================================================
 export function clearApiCache() {
-  apiCache.clear();
-  console.log('🗑️ Cache mémoire vidé');
+  console.log('🗑️ [FRAIS] Nettoyage des caches...');
+  
+  // Vider le cache mémoire (si jamais il reste quelque chose)
+  // apiCache.clear(); ← Plus utilisé
+  
+  // Vider IndexedDB
   if (db.isReady) {
     db.clear('api_cache').then(() => {
-      console.log('🗑️ Cache IndexedDB vidé');
+      console.log('🗑️ [FRAIS] Cache IndexedDB vidé');
     }).catch(err => {
-      console.warn('⚠️ Erreur nettoyage IndexedDB:', err);
+      console.warn('⚠️ [FRAIS] Erreur nettoyage IndexedDB:', err);
     });
   }
+  
+  // Vider le cache navigateur via Service Worker
+  if ('caches' in window) {
+    caches.keys().then(cacheNames => {
+      cacheNames.forEach(cacheName => {
+        if (cacheName.includes('sps')) {
+          caches.delete(cacheName);
+          console.log(`🗑️ [FRAIS] Cache SW supprimé: ${cacheName}`);
+        }
+      });
+    });
+  }
+  
+  console.log('✅ [FRAIS] Tous les caches ont été vidés');
 }
 
+// ============================================================
+// VÉRIFIER LA CONNEXION
+// ============================================================
 export function isOnline() {
     return navigator.onLine;
 }
 
+// ============================================================
+// ÉVÉNEMENTS RÉSEAU
+// ============================================================
 window.addEventListener('online', () => {
-    console.log('📶 Connexion rétablie');
+    console.log('📶 [FRAIS] Connexion rétablie');
     if (window.showToast) {
         window.showToast("Connexion rétablie", "success", 2000);
     }
+    // 🔥 Forcer le rechargement des données
     window.dispatchEvent(new CustomEvent('connection-restored'));
+    window.dispatchEvent(new CustomEvent('app-data-updated', { 
+      detail: { resourceType: 'connection_restored', timestamp: Date.now() } 
+    }));
 });
 
 window.addEventListener('offline', () => {
-    console.log('📶 Connexion perdue');
+    console.log('📶 [FRAIS] Connexion perdue');
     if (window.showToast) {
-        window.showToast("Mode hors-ligne - Données en cache", "warning", 3000);
+        window.showToast("Connexion perdue - Mode dégradé", "warning", 3000);
     }
     window.dispatchEvent(new CustomEvent('connection-lost'));
 });
 
+// ============================================================
+// REPRENDRE LES REQUÊTES EN FILE D'ATTENTE
+// ============================================================
 export async function retryQueuedRequests() {
   await ErrorHandler.processRetryQueue();
+}
+
+// ============================================================
+// FONCTION DE FORCE REFRESH POUR TOUTES LES DONNÉES
+// ============================================================
+export async function forceRefreshAllData() {
+  console.log('🔄 [FRAIS] Force refresh de toutes les données...');
+  
+  // Vider les caches
+  clearApiCache();
+  
+  // Déclencher un événement global
+  window.dispatchEvent(new CustomEvent('app-data-updated', { 
+    detail: { 
+      resourceType: 'force_refresh', 
+      timestamp: Date.now(),
+      force: true
+    } 
+  }));
+  
+  // Recharger la vue courante si possible
+  if (window.AppState && window.AppState.currentView && window.switchView) {
+    const currentView = window.AppState.currentView;
+    console.log(`🔄 [FRAIS] Rechargement de la vue: ${currentView}`);
+    await window.switchView(currentView);
+  }
+  
+  console.log('✅ [FRAIS] Force refresh terminé');
+}
+
+// Exposer la fonction globalement
+if (typeof window !== 'undefined') {
+  window.forceRefreshAllData = forceRefreshAllData;
 }
