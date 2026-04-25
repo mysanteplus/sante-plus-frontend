@@ -1,24 +1,21 @@
 // ============================================================
-// SERVICE WORKER - SANTÉ PLUS SERVICES (OFFLINE-FIRST)
+// SERVICE WORKER - SANTÉ PLUS SERVICES (VERSION FRAÎCHEUR)
+// Stratégie: Network First + cache minimal
 // ============================================================
 
-const CACHE_NAME = 'sps-v9';
-const STATIC_CACHE = 'sps-static-v9';
-const IMAGE_CACHE = 'sps-images-v9';
-const API_CACHE = 'sps-api-v9';
+// 🔥 VERSION - Incrémente à chaque déploiement
+const APP_VERSION = '20250425-v3';
+const CACHE_NAME = `sps-static-${APP_VERSION}`;
+const IMAGE_CACHE = `sps-images-${APP_VERSION}`;
 
-// Fichiers statiques à mettre en cache immédiatement
+// ⚠️ Fichiers statiques MINIMAUX à mettre en cache (urgence seulement)
 const STATIC_URLS = [
-  './',
-  './index.html',
-  './style.css',
-  './js/main.js',
-  './manifest.json',
-  'offline.html',
+  './offline.html',
   '/assets/images/logo-general-icon.png',
   '/assets/images/logo-general-text.png',
   '/assets/images/logo-maman-icon.png',
   '/assets/images/logo-maman-text.png'
+  // ⚠️ NE PAS mettre index.html, style.css, main.js en cache
 ];
 
 // ============================================================
@@ -61,30 +58,43 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 // ============================================================
-// INSTALLATION
+// INSTALLATION - Supprimer les anciens caches
 // ============================================================
 self.addEventListener('install', (event) => {
-  console.log('🔧 SW installation...');
+  console.log(`🔧 SW installation - Version ${APP_VERSION}`);
   event.waitUntil(
     Promise.all([
-      caches.open(STATIC_CACHE).then(cache => cache.addAll(STATIC_URLS)),
+      // Nettoyer tous les anciens caches
+      caches.keys().then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(cache => {
+            if (cache !== CACHE_NAME && cache !== IMAGE_CACHE) {
+              console.log(`🗑️ Suppression ancien cache: ${cache}`);
+              return caches.delete(cache);
+            }
+          })
+        );
+      }),
+      // Cache uniquement les fichiers essentiels
+      caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_URLS)),
       self.skipWaiting()
     ])
   );
 });
 
 // ============================================================
-// ACTIVATION - Nettoyage
+// ACTIVATION - Prendre le contrôle immédiatement
 // ============================================================
 self.addEventListener('activate', (event) => {
-  console.log('✨ SW activation...');
+  console.log('✨ SW activation - Prise de contrôle immédiate');
   event.waitUntil(
     Promise.all([
+      // Nettoyage final
       caches.keys().then(cacheNames => {
         return Promise.all(
           cacheNames.map(cache => {
-            if (![STATIC_CACHE, IMAGE_CACHE, API_CACHE, CACHE_NAME].includes(cache)) {
-              console.log(`🗑️ Suppression: ${cache}`);
+            if (cache !== CACHE_NAME && cache !== IMAGE_CACHE) {
+              console.log(`🗑️ Suppression définitive: ${cache}`);
               return caches.delete(cache);
             }
           })
@@ -96,7 +106,7 @@ self.addEventListener('activate', (event) => {
 });
 
 // ============================================================
-// STRATÉGIE DE CACHE: OFFLINE-FIRST
+// STRATÉGIE DE CACHE: NETWORK FIRST TOUJOURS
 // ============================================================
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
@@ -107,39 +117,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // 2. REQUÊTES API (Network first, fallback cache)
+  // 2. REQUÊTES API (Network only - PAS DE CACHE)
   if (url.pathname.includes('/api/')) {
     event.respondWith(
       fetch(event.request, {
         credentials: 'include',
+        cache: 'no-store',
         headers: {
           'Authorization': event.request.headers.get('Authorization') || '',
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         }
-      })
-      .then(response => {
-        if (response && response.status === 200) {
-          const responseToCache = response.clone();
-          caches.open(API_CACHE).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return response;
-      })
-      .catch(async () => {
-        const cachedResponse = await caches.match(event.request);
-        if (cachedResponse) {
-          console.log(`📦 [SW] API Cache hit: ${url.pathname}`);
-          return cachedResponse;
-        }
-        
-        // Retourner une réponse offline structurée
+      }).catch(() => {
+        // ⚠️ En cas d'erreur réseau, retourner une erreur (pas de cache)
         return new Response(JSON.stringify({
           offline: true,
-          message: "Mode hors-ligne - Données en cache",
+          message: "Mode hors-ligne - Veuillez vérifier votre connexion",
           timestamp: Date.now()
         }), {
-          status: 200,
+          status: 503,
           headers: { 'Content-Type': 'application/json' }
         });
       })
@@ -147,50 +143,57 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // 3. IMAGES (Cache first avec fallback)
+  // 3. IMAGES (Network first, cache fallback uniquement)
   if (event.request.destination === 'image') {
     event.respondWith(
-      caches.match(event.request).then(cached => {
-        if (cached) return cached;
-        return fetch(event.request).then(network => {
-          if (network && network.status === 200) {
-            const responseToCache = network.clone();
-            caches.open(IMAGE_CACHE).then(cache => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return network;
-        });
-      }).catch(() => {
+      fetch(event.request, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      }).catch(async () => {
+        const cached = await caches.match(event.request);
+        if (cached) {
+          console.log(`📦 [SW] Image fallback cache: ${url.pathname}`);
+          return cached;
+        }
         return caches.match('/assets/images/logo-general-icon.png');
       })
     );
     return;
   }
   
-  // 4. ASSETS STATIQUES (Cache first)
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) {
-        console.log(`📦 [SW] Static Cache hit: ${url.pathname}`);
-        return cached;
-      }
-      
-      return fetch(event.request).then(networkResponse => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(STATIC_CACHE).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
+  // 4. PAGES HTML / JS / CSS (Network first, JAMAIS de cache)
+  if (url.pathname.endsWith('.html') || 
+      url.pathname.endsWith('.js') || 
+      url.pathname.endsWith('.css') ||
+      url.pathname === '/' ||
+      url.pathname === './') {
+    event.respondWith(
+      fetch(event.request, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
       }).catch(() => {
-        // Fallback pour les pages HTML
+        // Fallback offline uniquement pour les pages HTML
         if (url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname === './') {
           return caches.match('./offline.html');
         }
-        return new Response('Page non disponible hors-ligne', { status: 503 });
-      });
+        return new Response('Ressource non disponible - Veuillez rafraîchir', { status: 503 });
+      })
+    );
+    return;
+  }
+  
+  // 5. AUTRES (fichiers statiques) - Network first
+  event.respondWith(
+    fetch(event.request, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' }
+    }).catch(async () => {
+      const cached = await caches.match(event.request);
+      if (cached) {
+        console.log(`📦 [SW] Fallback cache: ${url.pathname}`);
+        return cached;
+      }
+      return new Response('Ressource non disponible', { status: 404 });
     })
   );
 });
@@ -228,5 +231,14 @@ self.addEventListener('sync', (event) => {
         });
       })
     );
+  }
+});
+
+// ============================================================
+// MESSAGE CONTROLLER (pour communication avec main.js)
+// ============================================================
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });
