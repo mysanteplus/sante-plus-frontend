@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+    
     <title>Santé Plus Services</title>
 
     <!-- PWA & Mobile Meta -->
@@ -52,12 +56,16 @@
     <!-- Modules -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/core/realtime.js"></script>
-    <script type="module" src="js/main.js"></script>
-
+    <script>
+        // Version unique à chaque chargement (mais session conservée)
+        const version = Date.now();
+        document.write('<link rel="stylesheet" href="style.css?v=' + version + '">');
+        document.write('<script type="module" src="js/main.js?v=' + version + '"><\/script>');
+    </script>
+    
     <!-- Stylesheets -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css">
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
