@@ -55,7 +55,7 @@ async function initPushNotifications() {
         const registration = await navigator.serviceWorker.register('/sw.js');
         
         const token = await window.messaging.getToken({
-            vapidKey: "BAStgbdhdf4eevMHymMZSalvx5ZjbrR_6rJQX6VUfxURmNo6X0ej18IHKw0j-y3oCmu6kmLK0T8YvRAeRENjAkk",
+            vapidKey: "BNeY_I69yPNM2R-kjlAWMjghL21XVvG9-EPTet200rg6S4TEJvRDsbAeWO5TqODp9h1tZS5LtlLOBb5lDoQGz6M",
             serviceWorkerRegistration: registration
         });
 
