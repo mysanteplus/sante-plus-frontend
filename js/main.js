@@ -2125,6 +2125,11 @@ function renderLayout() {
                      
                      <!-- Bouton déconnexion en bas -->
                      <div class="shrink-0 p-5 border-t ${drawerBorderColor} space-y-3">
+
+                     <button onclick="window.forceHardReset()" 
+                             class="w-full py-3 rounded-xl text-[10px] font-black uppercase active:scale-98 transition-all flex items-center justify-center gap-2 bg-amber-50 text-amber-600 border border-amber-100 mt-2">
+                         <i class="fa-solid fa-arrows-rotate"></i> Réinitialiser l'application
+                     </button>
                          <button id="install-app-drawer" 
                                  class="w-full py-3 rounded-xl text-[10px] font-black uppercase active:scale-98 transition-all flex items-center justify-center gap-2 bg-white border ${drawerBorderColor} text-slate-600 hover:${drawerAccentColor} hover:border-${userRole === 'COORDINATEUR' ? 'amber-200' : (userRole === 'AIDANT' ? 'amber-200' : (isMaman ? 'pink-200' : 'emerald-200'))} transition">
                              <i class="fa-solid fa-download"></i> Installer l'application
@@ -3898,6 +3903,45 @@ window.forgotPassword = async () => {
     }
 };
 
+
+
+
+// ============================================================
+// FORCE REFRESH (réinitialisation complète)
+// ============================================================
+window.forceHardReset = async () => {
+    const result = await Swal.fire({
+        title: 'Réinitialisation complète',
+        text: 'Cette action va vider tous les caches et redémarrer l\'application. Votre session sera conservée.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'OUI, RÉINITIALISER',
+        cancelButtonText: 'Annuler',
+        confirmButtonColor: '#EF4444'
+    });
+    
+    if (result.isConfirmed) {
+        Swal.fire({ title: 'Nettoyage...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+        
+        // 1. Vider localStorage (sauf token et infos session)
+        const keepKeys = ['token', 'user_role', 'user_name', 'user_email', 'user_id', 'user_photo', 'user_is_maman', 'user_categorie'];
+        const allKeys = Object.keys(localStorage);
+        for (const key of allKeys) {
+            if (!keepKeys.includes(key)) {
+                localStorage.removeItem(key);
+            }
+        }
+        
+        // 2. Supprimer les caches
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(cache => caches.delete(cache)));
+        }
+        
+        // 3. Recharger
+        window.location.reload(true);
+    }
+};
 
 
 
