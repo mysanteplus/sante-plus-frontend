@@ -122,6 +122,18 @@ const messaging = window.messaging;
 
 async function initPushNotifications() {
     try {
+
+        let retries = 0;
+        while (!window.messaging && retries < 10) {
+            await new Promise(r => setTimeout(r, 300));
+            retries++;
+        }
+        
+        if (!window.messaging) {
+            console.log("⚠️ Firebase Messaging non disponible après 3s, push ignorés");
+            return;
+        }
+     
         const permission = await Notification.requestPermission();
 
         if (permission !== "granted") {
