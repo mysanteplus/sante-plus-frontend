@@ -122,49 +122,58 @@ const messaging = window.messaging;
 
 async function initPushNotifications() {
     try {
-
-        let retries = 0;
-        while (!window.messaging && retries < 10) {
-            await new Promise(r => setTimeout(r, 300));
-            retries++;
-        }
-        
+        // ✅ Vérifier que tout est disponible
         if (!window.messaging) {
-            console.log("⚠️ Firebase Messaging non disponible après 3s, push ignorés");
+            console.log("⚠️ Firebase Messaging non disponible");
             return;
         }
-     
+        
+        // Vérifier si l'utilisateur est connecté
+        const token = localStorage.getItem("token");
+        if (!token) {
+            console.log("⚠️ Utilisateur non connecté, push ignorés");
+            return;
+        }
+        
         const permission = await Notification.requestPermission();
-
         if (permission !== "granted") {
             console.log("❌ Permission refusée");
             return;
         }
 
-        const registration = await navigator.serviceWorker.register('/sw.js');
+        // Récupérer ou enregistrer le Service Worker
+        let registration = await navigator.serviceWorker.getRegistration();
+        if (!registration) {
+            registration = await navigator.serviceWorker.register('/sw.js');
+            await new Promise(r => setTimeout(r, 500)); // Attendre l'activation
+        }
         
-        const token = await window.messaging.getToken({
-            vapidKey: "BAStgbdhdf4eevMHymMZSalvx5ZjbrR_6rJQX6VUfxURmNo6X0ej18IHKw0j-y3oCmu6kmLK0T8YvRAeRENjAkk",
+        // Obtenir le token FCM
+        const fcmToken = await window.messaging.getToken({
+            vapidKey: "BNeY_I69yPNM2R-kjlAWMjghL21XVvG9-EPTet200rg6S4TEJvRDsbAeWO5TqODp9h1tZS5LtlLOBb5lDoQGz6M",
             serviceWorkerRegistration: registration
         });
 
-        console.log("🔥 PUSH TOKEN:", token);
-        console.log("📱 Appareil enregistré pour les notifications push");
-
-        await secureFetch('/save-push-token', {
-            method: 'POST',
-            body: JSON.stringify({
-                token,
-                user_id: localStorage.getItem("user_id")
-            })      
-        });
+        if (fcmToken) {
+            console.log("🔥 PUSH TOKEN:", fcmToken);
+            
+            await secureFetch('/save-push-token', {
+                method: 'POST',
+                body: JSON.stringify({
+                    token: fcmToken,
+                    user_id: localStorage.getItem("user_id")
+                })      
+            });
+            console.log("✅ Token push enregistré sur le serveur");
+        } else {
+            console.log("⚠️ Aucun token FCM reçu");
+        }
 
     } catch (err) {
-        console.error("❌ Erreur push:", err);
+        console.error("❌ Erreur push:", err.message);
+        // Ne pas bloquer l'application
     }
 }
-
-
 
 
 console.log("🔍 [main.js] Imports vérifiés:");
@@ -435,7 +444,6 @@ async function initApp() {
     startKeepAlive();             // Ping
     updateThemeColor();           // Color auto
     preloadOnboardingImages();
-    initPushNotifications();
     applyUserTheme();
 
     if ("Notification" in window) {
@@ -557,6 +565,12 @@ async function initApp() {
 
     try {
         if (token) {
+
+            await new Promise(r => setTimeout(r, 2000));
+            
+            // ✅ Initialiser les notifications
+            initPushNotifications();
+         
             if (!onboardingSeen && !window._onboardingCompleted) {
                 hideLoader();
                 window.startOnboarding();
