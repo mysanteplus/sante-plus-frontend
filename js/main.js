@@ -1661,56 +1661,48 @@ function renderAuthView(mode = 'login', stepSource = 1) {
     // ============================================================
     // MODE REGISTER (avec marges externes)
     // ============================================================
-else if (mode === 'register') {
-    const isLastStep = currentStep === 5;  // Étape 5 = confirmation finale
-    
-    // Déterminer si on est en mode AVEC_PATIENT ou SANS_PATIENT
-    const hasSelectedPatientType = registrationData.type_compte === 'AVEC_PATIENT';
-    const isSansPatient = registrationData.type_compte === 'SANS_PATIENT';
-    
-    // À l'étape 0, on affiche le choix du type de compte
-    if (currentStep === 0) {
-        dynamicContent = getTypeCompteChoiceHTML();
-    } 
-    // Pour les autres étapes, on vérifie d'abord que le type a été choisi
-    else if (!registrationData.type_compte) {
-        currentStep = 0;
-        dynamicContent = getTypeCompteChoiceHTML();
-    }
-    else {
-        dynamicContent = `
-            <div class="flex flex-col min-h-0">
-                <div 
-                    class="flex-1 overflow-y-auto custom-scroll pr-1"
-                    style="max-height: clamp(360px, 52vh, 480px); padding-bottom: 4px;"
-                >
-                    ${getStepHTML()}
-                </div>
-
-                ${currentStep !== 4 ? `
-                    <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4 bg-white">
-                        ${currentStep > 1 ? `
-                            <button 
-                                onclick="window.prevAuthStep()" 
-                                class="prev-btn w-12 h-12 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shadow-sm active:scale-95 transition-all hover:bg-slate-200"
-                            >
-                                <i class="fa-solid fa-arrow-left"></i>
-                            </button>
-                        ` : ''}
-
-                        <button 
-                            onclick="window.nextAuthStep()" 
-                            class="next-btn flex-1 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-md active:scale-95 transition-all" 
-                            style="background: ${primaryColor}; color: white;"
-                        >
-                            ${isLastStep ? 'Valider la demande' : 'Étape suivante'}
-                        </button>
-                    </div>
-                ` : ''}
-            </div>
-        `;
-    }
-}
+       else if (mode === 'register') {
+           const isLastStep = currentStep === 5;
+           
+           // À l'étape 0, on affiche le choix du type de compte
+           if (currentStep === 0) {
+               dynamicContent = getTypeCompteChoiceHTML();
+           } 
+           else if (!registrationData.type_compte) {
+               currentStep = 0;
+               dynamicContent = getTypeCompteChoiceHTML();
+           }
+           else {
+               dynamicContent = `
+                   <div class="flex flex-col h-full">
+                       <div class="flex-1 overflow-y-auto custom-scroll pr-1" style="padding-bottom: 4px;">
+                           ${getStepHTML()}
+                       </div>
+       
+                       ${currentStep !== 4 ? `
+                           <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4 flex-shrink-0">
+                               ${currentStep > 1 ? `
+                                   <button 
+                                       onclick="window.prevAuthStep()" 
+                                       class="prev-btn w-12 h-12 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shadow-sm active:scale-95 transition-all hover:bg-slate-200"
+                                   >
+                                       <i class="fa-solid fa-arrow-left"></i>
+                                   </button>
+                               ` : ''}
+       
+                               <button 
+                                   onclick="window.nextAuthStep()" 
+                                   class="next-btn flex-1 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-md active:scale-95 transition-all" 
+                                   style="background: ${primaryColor}; color: white;"
+                               >
+                                   ${isLastStep ? 'Valider la demande' : 'Étape suivante'}
+                               </button>
+                           </div>
+                       ` : ''}
+                   </div>
+               `;
+           }
+       }
     // ============================================================
     // MODE OTP
     // ============================================================
@@ -1739,6 +1731,15 @@ else if (mode === 'register') {
     const existingCard = document.getElementById("auth-card-content");
 
     if (existingCard) {
+         // Mettre à jour le conteneur parent pour qu'il utilise flex
+         const cardDiv = document.querySelector('#app .relative.w-full.max-w-md');
+         if (cardDiv && mode === 'register') {
+             cardDiv.classList.add('flex', 'flex-col');
+             cardDiv.style.height = '85vh';
+             cardDiv.style.maxHeight = '85vh';
+             cardDiv.style.overflow = 'hidden';
+         }
+     
         document.getElementById("auth-step-title").innerText = stepTitle;
         
         const tabContainer = document.getElementById("auth-tabs");
@@ -1803,14 +1804,15 @@ else if (mode === 'register') {
            : '';
         
         app.innerHTML = `
-        <div class="fixed inset-0 w-full h-screen flex items-center justify-center px-4 py-4 sm:px-6 sm:py-6 z-50 overflow-y-auto" style="background: linear-gradient(135deg, ${primaryLight} 0%, white 100%);">
+         <div class="fixed inset-0 w-full h-screen flex items-center justify-center px-4 py-4 sm:px-6 sm:py-6 z-50" style="background: linear-gradient(135deg, ${primaryLight} 0%, white 100%);">
             <div class="absolute -top-20 -left-20 w-96 h-96 rounded-full ${blurColor1} filter blur-[120px] opacity-30 pointer-events-none"></div>
             <div class="absolute -bottom-20 -right-20 w-96 h-96 rounded-full ${blurColor2} filter blur-[120px] opacity-30 pointer-events-none"></div>
             
-           <div class="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-y-auto ${registerClasses}" style="max-height: 90vh; height: auto; min-height: auto;">
+            <!-- Carte avec flex column pour que l'en-tête reste fixe -->
+            <div class="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 flex flex-col ${registerClasses}" style="max-height: 85vh; height: 85vh;">
                 
-                <!-- Logo -->
-                <div class="text-center pt-6 pb-2">
+                <!-- Logo (fixe en haut) -->
+                <div class="text-center pt-6 pb-2 flex-shrink-0">
                     <div class="flex justify-center mb-2">
                         <div class="pb-1" style="border-bottom: 2px solid ${primaryColor};">
                             <img id="auth-logo-img" src="/assets/images/logo-general-icon.png" class="w-16 h-16 object-contain" style="border: none;">
@@ -1819,8 +1821,8 @@ else if (mode === 'register') {
                     <p id="auth-step-title" class="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">${stepTitle}</p>
                 </div>
                 
-                <!-- Tabs -->
-                <div id="auth-tabs" class="px-6 mt-2" style="display: ${mode !== 'otp' ? 'block' : 'none'}">
+                <!-- Tabs (fixes) -->
+                <div id="auth-tabs" class="px-6 mt-2 flex-shrink-0" style="display: ${mode !== 'otp' ? 'block' : 'none'}">
                     <div class="bg-slate-100 p-1 rounded-xl flex gap-1">
                         <button onclick="window.renderAuthView('login')" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}">
                             Connexion
@@ -1831,15 +1833,15 @@ else if (mode === 'register') {
                     </div>
                 </div>
                 
-                <!-- Progress -->
-                <div id="auth-progress" class="px-6 mt-3" style="display: ${mode === 'register' ? 'block' : 'none'}">
+                <!-- Progress bar (fixe) -->
+                <div id="auth-progress" class="px-6 mt-3 flex-shrink-0" style="display: ${mode === 'register' ? 'block' : 'none'}">
                     <div class="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
                         <div class="h-full ${progressColor} transition-all duration-500" style="width: ${(currentStep/6)*100}%"></div>
                     </div>
                 </div>
                 
-                <!-- Contenu -->
-                <div id="auth-card-content" class="px-5 sm:px-6 py-5 ${mode === 'register' ? 'pb-5' : ''}">
+                <!-- Contenu scrollable -->
+                <div id="auth-card-content" class="px-5 sm:px-6 py-5 flex-1 overflow-y-auto custom-scroll">
                     ${dynamicContent}
                 </div>
                 
