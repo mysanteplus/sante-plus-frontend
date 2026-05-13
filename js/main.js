@@ -2171,7 +2171,324 @@ window.refreshMenuBadges = () => {
 };
 
 
+// ============================================================
+// DASHBOARD POUR COMPTES SANS PATIENT
+// ============================================================
+async function renderSansPatientDashboard() {
+    const container = document.getElementById("view-container");
+    if (!container) return;
+    
+    const userName = localStorage.getItem("user_name") || "Utilisateur";
+    const isMaman = localStorage.getItem("user_is_maman") === "true";
+    const themeColor = isMaman ? 'pink' : 'emerald';
+    const themeBgClass = isMaman ? 'bg-pink-50' : 'bg-emerald-50';
+    const themeTextClass = isMaman ? 'text-pink-600' : 'text-emerald-600';
+    const primaryColor = isMaman ? '#E11D48' : '#059669';
+    
+    // Récupérer les données
+    let commandesEnCours = [];
+    let commandesRecentes = [];
+    let packConfortActif = false;
+    let joursRestants = 0;
+    
+    try {
+        // Récupérer les commandes de l'utilisateur
+        const commandes = await secureFetch("/commandes/mes-commandes");
+        commandesEnCours = commandes.filter(c => c.statut === "En attente" || c.statut === "En cours de livraison");
+        commandesRecentes = commandes.slice(0, 3);
+        
+        // Récupérer le statut du Pack Confort
+        const confortStatus = await secureFetch("/billing/confort-status");
+        packConfortActif = confortStatus.actif || false;
+        joursRestants = confortStatus.jours_restants || 0;
+        
+    } catch (err) {
+        console.error("Erreur chargement dashboard:", err);
+    }
+    
+    container.innerHTML = `
+        <div class="animate-fadeIn pb-24">
+            <!-- Bannière de bienvenue -->
+            <div class="relative rounded-2xl overflow-hidden mb-6" style="background: linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%);">
+                <div class="relative z-10 p-6 text-white">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[10px] font-bold opacity-80">Bienvenue</p>
+                            <h2 class="text-2xl font-black">${escapeHtml(userName.split(' ')[0])}</h2>
+                            <p class="text-sm opacity-90 mt-1">Espace personnel</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                            <i class="fa-solid fa-user text-white text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Statut Pack Confort -->
+            <div class="bg-white rounded-2xl p-5 mb-6 shadow-sm border border-slate-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl ${themeBgClass} flex items-center justify-center">
+                            <i class="fa-solid fa-crown ${themeTextClass} text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="font-black text-slate-800">Pack Confort 24/7</p>
+                            ${packConfortActif ? `
+                                <p class="text-[10px] text-emerald-600 font-bold">✅ Actif</p>
+                                <p class="text-[9px] text-slate-400">Plus que ${joursRestants} jour(s)</p>
+                            ` : `
+                                <p class="text-[10px] text-amber-600 font-bold">⚠️ Inactif</p>
+                                <p class="text-[9px] text-slate-400">Souscrivez pour bénéficier des avantages</p>
+                            `}
+                        </div>
+                    </div>
+                    ${!packConfortActif ? `
+                        <button onclick="window.switchView('subscription')" 
+                                class="px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-${themeColor}-500 text-white shadow-md active:scale-95 transition-all">
+                            Souscrire
+                        </button>
+                    ` : `
+                        <i class="fa-solid fa-check-circle text-2xl text-emerald-500"></i>
+                    `}
+                </div>
+            </div>
+            
+            <!-- Commandes en cours -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-black text-slate-800 text-sm">
+                        <i class="fa-solid fa-box mr-2 ${themeTextClass}"></i>
+                        Commandes en cours
+                    </h3>
+                    <button onclick="window.switchView('commandes')" class="text-[9px] font-bold ${themeTextClass}">
+                        Voir tout →
+                    </button>
+                </div>
+                
+                ${commandesEnCours.length === 0 ? `
+                    <div class="bg-white rounded-2xl p-6 text-center border border-slate-100">
+                        <i class="fa-solid fa-box-open text-3xl text-slate-300 mb-2"></i>
+                        <p class="text-xs text-slate-400">Aucune commande en cours</p>
+                        <button onclick="window.openOrderModal()" 
+                                class="mt-3 px-4 py-2 rounded-xl text-[9px] font-black uppercase ${themeBgClass} ${themeTextClass} active:scale-95 transition-all">
+                            + Nouvelle commande
+                        </button>
+                    </div>
+                ` : `
+                    <div class="space-y-2">
+                        ${commandesEnCours.map(cmd => `
+                            <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="font-bold text-slate-800 text-sm">#${cmd.id.substring(0, 8)}</p>
+                                        <p class="text-[10px] text-slate-400 mt-0.5">${cmd.liste_medocs?.substring(0, 60)}${cmd.liste_medocs?.length > 60 ? '...' : ''}</p>
+                                    </div>
+                                    <span class="px-2 py-1 rounded-full text-[9px] font-bold ${
+                                        cmd.statut === 'En attente' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'
+                                    }">
+                                        ${cmd.statut === 'En attente' ? '⏳ En attente' : '🚚 En cours'}
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between mt-3 pt-2 border-t border-slate-50">
+                                    <p class="text-[8px] text-slate-400">📅 ${new Date(cmd.created_at).toLocaleDateString('fr-FR')}</p>
+                                    <button onclick="window.switchView('commandes')" class="text-[9px] font-bold ${themeTextClass}">
+                                        Détails →
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `}
+            </div>
+            
+            <!-- Dernières commandes -->
+            ${commandesRecentes.length > 0 && commandesEnCours.length !== commandesRecentes.length ? `
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-black text-slate-800 text-sm">
+                            <i class="fa-solid fa-clock mr-2 ${themeTextClass}"></i>
+                            Dernières commandes
+                        </h3>
+                    </div>
+                    <div class="space-y-2">
+                        ${commandesRecentes.filter(c => c.statut !== 'En attente' && c.statut !== 'En cours de livraison').slice(0, 3).map(cmd => `
+                            <div class="bg-white rounded-xl p-3 border border-slate-100">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex-1">
+                                        <p class="text-[10px] font-bold text-slate-700">${cmd.liste_medocs?.substring(0, 50)}${cmd.liste_medocs?.length > 50 ? '...' : ''}</p>
+                                        <p class="text-[8px] text-slate-400 mt-0.5">${new Date(cmd.created_at).toLocaleDateString('fr-FR')}</p>
+                                    </div>
+                                    <span class="px-2 py-1 rounded-full text-[8px] font-bold ${
+                                        cmd.statut === 'Livrée' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                                    }">
+                                        ${cmd.statut === 'Livrée' ? '✅ Livrée' : cmd.statut}
+                                    </span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <!-- Actions rapides -->
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <button onclick="window.openOrderModal()" 
+                        class="flex flex-col items-center gap-2 py-4 bg-white rounded-xl border border-slate-100 shadow-sm active:scale-95 transition-all">
+                    <i class="fa-solid fa-cart-plus text-2xl ${themeTextClass}"></i>
+                    <span class="text-[10px] font-black text-slate-700">Nouvelle commande</span>
+                </button>
+                <button onclick="window.switchView('profile')" 
+                        class="flex flex-col items-center gap-2 py-4 bg-white rounded-xl border border-slate-100 shadow-sm active:scale-95 transition-all">
+                    <i class="fa-solid fa-user-circle text-2xl ${themeTextClass}"></i>
+                    <span class="text-[10px] font-black text-slate-700">Mon profil</span>
+                </button>
+            </div>
+            
+            <!-- Section Ajouter un patient (si pas déjà fait) -->
+            <div class="bg-gradient-to-r from-${themeColor}-50 to-white rounded-2xl p-5 border border-${themeColor}-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full ${themeBgClass} flex items-center justify-center">
+                        <i class="fa-solid fa-user-plus ${themeTextClass} text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-bold text-slate-800 text-sm">Ajouter un patient</p>
+                        <p class="text-[9px] text-slate-400">Vous pourrez bénéficier des visites à domicile</p>
+                    </div>
+                    <button onclick="window.addPatientAfterRegistration()" 
+                            class="px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-${themeColor}-500 text-white shadow-md active:scale-95 transition-all">
+                        Ajouter
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
 
+
+
+// ============================================================
+// AJOUTER UN PATIENT APRÈS INSCRIPTION (compte SANS_PATIENT)
+// ============================================================
+window.addPatientAfterRegistration = async () => {
+    const isMaman = localStorage.getItem("user_is_maman") === "true";
+    const themeColor = isMaman ? 'pink' : 'emerald';
+    
+    const { value: formData } = await Swal.fire({
+        title: "➕ Ajouter un patient",
+        html: `
+            <div class="text-left space-y-3">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400">Prénom</label>
+                        <input id="patient-prenom" class="w-full p-2 border rounded-lg text-sm" placeholder="Prénom">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400">Nom</label>
+                        <input id="patient-nom" class="w-full p-2 border rounded-lg text-sm" placeholder="Nom">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400">Âge</label>
+                    <input id="patient-age" type="number" class="w-full p-2 border rounded-lg text-sm" placeholder="Âge">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400">Sexe</label>
+                    <select id="patient-sexe" class="w-full p-2 border rounded-lg text-sm">
+                        <option value="Homme">Homme</option>
+                        <option value="Femme">Femme</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400">Adresse</label>
+                    <input id="patient-adresse" class="w-full p-2 border rounded-lg text-sm" placeholder="Adresse complète">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400">Téléphone</label>
+                    <input id="patient-tel" class="w-full p-2 border rounded-lg text-sm" placeholder="Téléphone">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400">Contact urgence</label>
+                    <input id="patient-urgence" class="w-full p-2 border rounded-lg text-sm" placeholder="Nom et téléphone">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400">Notes médicales</label>
+                    <textarea id="patient-notes" rows="2" class="w-full p-2 border rounded-lg text-sm" placeholder="Pathologies, traitements, allergies..."></textarea>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: "✅ Ajouter le patient",
+        confirmButtonColor: "#10B981",
+        cancelButtonText: "Annuler",
+        width: '500px',
+        customClass: { popup: 'rounded-2xl' },
+        preConfirm: () => {
+            const prenom = document.getElementById('patient-prenom').value;
+            const nom = document.getElementById('patient-nom').value;
+            const adresse = document.getElementById('patient-adresse').value;
+            
+            if (!prenom || !nom || !adresse) {
+                Swal.showValidationMessage("Prénom, nom et adresse sont requis");
+                return false;
+            }
+            
+            return {
+                prenom: prenom,
+                nom: nom,
+                age: document.getElementById('patient-age').value,
+                sexe: document.getElementById('patient-sexe').value,
+                adresse: adresse,
+                telephone: document.getElementById('patient-tel').value,
+                contact_urgence: document.getElementById('patient-urgence').value,
+                notes_medicales: document.getElementById('patient-notes').value
+            };
+        }
+    });
+    
+    if (!formData) return;
+    
+    Swal.fire({ title: "Ajout en cours...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+    
+    try {
+        const nomComplet = `${formData.prenom} ${formData.nom}`.trim();
+        
+        await secureFetch("/patients/add-after-registration", {
+            method: "POST",
+            body: JSON.stringify({
+                nom_complet: nomComplet,
+                prenom: formData.prenom,
+                nom: formData.nom,
+                age: formData.age,
+                sexe: formData.sexe,
+                adresse: formData.adresse,
+                telephone: formData.telephone,
+                contact_urgence: formData.contact_urgence,
+                notes_medicales: formData.notes_medicales
+            })
+        });
+        
+        // Mettre à jour le type de compte dans localStorage
+        localStorage.setItem("user_type_compte", "AVEC_PATIENT");
+        
+        Swal.fire({
+            icon: "success",
+            title: "Patient ajouté !",
+            text: "Votre compte a été transformé en compte avec patient. Vous pouvez maintenant bénéficier des visites à domicile.",
+            confirmButtonText: "OK"
+        }).then(() => {
+            window.location.reload();
+        });
+        
+    } catch (err) {
+        Swal.close();
+        Swal.fire({
+            icon: "error",
+            title: "Erreur",
+            text: err.message,
+            confirmButtonText: "OK"
+        });
+    }
+};
 
 
 // ============================================================
@@ -3265,7 +3582,15 @@ async function performViewSwitch(viewName) {
                 await Visites.renderStartVisitView(AppState.currentPatient);
                 break;
             case "home":
-                if (isMaman && userRole === "FAMILLE") {
+                const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+                const isSansPatient = typeCompte === "SANS_PATIENT";
+                const isMaman = localStorage.getItem("user_is_maman") === "true";
+                const userRole = localStorage.getItem("user_role");
+                
+                if (isSansPatient && userRole === "FAMILLE") {
+                    // Afficher le dashboard spécifique pour comptes sans patient
+                    await renderSansPatientDashboard();
+                } else if (isMaman && userRole === "FAMILLE") {
                     await Maman.loadMamanDashboard();
                 } else {
                     renderMobileHub();
