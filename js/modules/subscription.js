@@ -18,15 +18,16 @@ function escapeHtml(str) {
 // ============================================================
 // PAGE D'ABONNEMENT
 // ============================================================
-
 export async function renderSubscriptionPage() {
     const container = document.getElementById("view-container");
     const userRole = localStorage.getItem("user_role");
     const isMaman = localStorage.getItem("user_is_maman") === "true";
+    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+    const isSansPatient = typeCompte === "SANS_PATIENT";
     
-    // Récupérer le patient actuel
+    // Récupérer le patient actuel (uniquement pour les comptes AVEC_PATIENT)
     let currentPatient = null;
-    if (userRole === "FAMILLE") {
+    if (userRole === "FAMILLE" && !isSansPatient) {
         try {
             const patients = await secureFetch("/patients");
             if (patients && patients.length > 0) {
@@ -37,8 +38,16 @@ export async function renderSubscriptionPage() {
         }
     }
     
-    // Définition des packs
-    const packs = getPacks(isMaman);
+    // Définition des packs selon le type de compte
+    let packs = [];
+    
+    if (isSansPatient) {
+        // Pack Confort 24/7 pour comptes SANS_PATIENT
+        packs = getConfortPacks();
+    } else {
+        // Packs médicaux pour comptes AVEC_PATIENT
+        packs = getMedicalPacks(isMaman);
+    }
     
     container.innerHTML = `
         <div class="animate-fadeIn max-w-2xl mx-auto pb-32">
@@ -48,12 +57,16 @@ export async function renderSubscriptionPage() {
                     <i class="fa-solid fa-arrow-left text-lg"></i>
                 </button>
                 <div>
-                    <h3 class="font-black text-2xl text-slate-800 tracking-tight">Nos Formules</h3>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Choisissez l'accompagnement qui vous convient</p>
+                    <h3 class="font-black text-2xl text-slate-800 tracking-tight">
+                        ${isSansPatient ? 'Pack Confort 24/7' : 'Nos Formules'}
+                    </h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                        ${isSansPatient ? 'Commandes illimitées et support prioritaire' : 'Choisissez l\'accompagnement qui vous convient'}
+                    </p>
                 </div>
             </div>
             
-            ${currentPatient ? `
+            ${currentPatient && !isSansPatient ? `
                 <div class="bg-slate-100 p-4 rounded-2xl mb-6 flex items-center justify-between">
                     <div>
                         <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Pour le dossier</p>
@@ -103,25 +116,95 @@ export async function renderSubscriptionPage() {
             <div class="mt-8 p-5 bg-slate-50 rounded-2xl border border-slate-100">
                 <div class="flex items-center gap-3 mb-3">
                     <i class="fa-solid fa-shield-heart text-emerald-500 text-xl"></i>
-                    <p class="font-black text-slate-800 text-sm">Pourquoi s'abonner ?</p>
+                    <p class="font-black text-slate-800 text-sm">
+                        ${isSansPatient ? 'Pourquoi souscrire au Pack Confort ?' : 'Pourquoi s\'abonner ?'}
+                    </p>
                 </div>
                 <ul class="space-y-2 text-xs text-slate-600">
-                    <li class="flex items-center gap-2">✓ Suivi médical personnalisé 24/7</li>
-                    <li class="flex items-center gap-2">✓ Intervenants qualifiés et formés</li>
-                    <li class="flex items-center gap-2">✓ Rapport détaillé après chaque visite</li>
-                    <li class="flex items-center gap-2">✓ Assistance téléphonique prioritaire</li>
-                    <li class="flex items-center gap-2">✓ Paiement sécurisé via FedaPay</li>
+                    ${isSansPatient ? `
+                        <li class="flex items-center gap-2">✓ Commandes de produits illimitées</li>
+                        <li class="flex items-center gap-2">✓ Support prioritaire 24/7</li>
+                        <li class="flex items-center gap-2">✓ Accès aux contenus éducatifs</li>
+                        <li class="flex items-center gap-2">✓ Ajout possible d'un patient plus tard</li>
+                        <li class="flex items-center gap-2">✓ Paiement sécurisé via FedaPay</li>
+                    ` : `
+                        <li class="flex items-center gap-2">✓ Suivi médical personnalisé 24/7</li>
+                        <li class="flex items-center gap-2">✓ Intervenants qualifiés et formés</li>
+                        <li class="flex items-center gap-2">✓ Rapport détaillé après chaque visite</li>
+                        <li class="flex items-center gap-2">✓ Assistance téléphonique prioritaire</li>
+                        <li class="flex items-center gap-2">✓ Paiement sécurisé via FedaPay</li>
+                    `}
                 </ul>
             </div>
         </div>
     `;
 }
 
+
+// ============================================================
+// PACKS CONFORT 24/7 (pour comptes SANS_PATIENT)
+// ============================================================
+
+function getConfortPacks() {
+    return [
+        { 
+            id: 'CONFORT_247_MENSUEL', 
+            name: 'Mensuel', 
+            desc: 'Accès complet', 
+            price: 25000, 
+            priceDisplay: '25.000 CFA', 
+            duration: 1, 
+            durationText: '1 mois',
+            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Accès contenu éducatif'],
+            icon: 'fa-crown',
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-50',
+            popular: true
+        },
+        { 
+            id: 'CONFORT_247_TRIMESTRIEL', 
+            name: 'Trimestriel', 
+            desc: 'Économie 5%', 
+            price: 71250, 
+            priceDisplay: '71.250 CFA',
+            originalPrice: 75000,
+            duration: 3, 
+            durationText: '3 mois',
+            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Accès contenu éducatif', 'Économie 5%'],
+            icon: 'fa-calendar-alt',
+            color: 'text-blue-600',
+            bg: 'bg-blue-50',
+            popular: false,
+            badge: '-5%'
+        },
+        { 
+            id: 'CONFORT_247_ANNUEL', 
+            name: 'Annuel', 
+            desc: 'Économie 15%', 
+            price: 255000, 
+            priceDisplay: '255.000 CFA',
+            originalPrice: 300000,
+            duration: 12, 
+            durationText: '12 mois',
+            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Accès contenu éducatif', 'Économie 15%', 'Paiement unique'],
+            icon: 'fa-calendar-year',
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-50',
+            popular: false,
+            badge: '-15%'
+        }
+    ];
+}
+
 // ============================================================
 // DÉFINITION DES PACKS
 // ============================================================
 
-function getPacks(isMaman) {
+// ============================================================
+// PACKS MÉDICAUX (pour comptes AVEC_PATIENT)
+// ============================================================
+
+function getMedicalPacks(isMaman) {
     if (isMaman) {
         return [
             { id: 'MENSUEL_ESSENTIEL', name: 'Essentiel', desc: '2 visites / semaine', price: 100, priceDisplay: '100 CFA', duration: 1, durationText: '1 mois', features: ['2 visites par semaine', 'Suivi de base', 'Rapport hebdomadaire'], icon: 'fa-seedling', color: 'text-emerald-600', bg: 'bg-emerald-50', popular: false },
@@ -144,49 +227,73 @@ function getPacks(isMaman) {
         ];
     }
 }
-
 // ============================================================
 // SÉLECTION D'UN PACK
 // ============================================================
 window.selectSubscriptionPack = async (packId, price, durationMonths) => {
     const isMaman = localStorage.getItem("user_is_maman") === "true";
-    const packs = getPacks(isMaman);
-    const selectedPack = packs.find(p => p.id === packId);
+    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+    const isSansPatient = typeCompte === "SANS_PATIENT";
     
-    // Récupérer le patient ID
-    let patientId = AppState.currentPatient;
-    if (!patientId) {
-        try {
-            const patients = await secureFetch("/patients");
-            if (patients && patients.length > 0) {
-                patientId = patients[0].id;
-                AppState.currentPatient = patientId;
-                localStorage.setItem("current_patient_id", patientId);
-            } else {
-                UI.error("Aucun patient trouvé");
+    // Sélectionner les bons packs selon le type de compte
+    let selectedPack = null;
+    let packs = [];
+    
+    if (isSansPatient) {
+        packs = getConfortPacks();
+    } else {
+        packs = getMedicalPacks(isMaman);
+    }
+    
+    selectedPack = packs.find(p => p.id === packId);
+    
+    if (!selectedPack) {
+        UI.error("Pack non trouvé");
+        return;
+    }
+    
+    // Récupérer le patient ID (uniquement pour les comptes AVEC_PATIENT)
+    let patientId = null;
+    if (!isSansPatient) {
+        patientId = AppState.currentPatient;
+        if (!patientId) {
+            try {
+                const patients = await secureFetch("/patients");
+                if (patients && patients.length > 0) {
+                    patientId = patients[0].id;
+                    AppState.currentPatient = patientId;
+                    localStorage.setItem("current_patient_id", patientId);
+                } else {
+                    UI.error("Aucun patient trouvé");
+                    return;
+                }
+            } catch (err) {
+                UI.error("Impossible de récupérer le patient");
                 return;
             }
-        } catch (err) {
-            UI.error("Impossible de récupérer le patient");
-            return;
         }
     }
     
     // Confirmation avant paiement
     const confirm = await Swal.fire({
-        title: '<span class="text-xl font-black">💳 Paiement sécurisé</span>',
+        title: `<span class="text-xl font-black">${isSansPatient ? '💎 Pack Confort' : '💳 Paiement sécurisé'}</span>`,
         html: `
             <div class="text-center">
                 <div class="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
-                    <i class="fa-solid fa-credit-card text-emerald-500 text-3xl"></i>
+                    <i class="fa-solid ${isSansPatient ? 'fa-crown' : 'fa-credit-card'} text-emerald-500 text-3xl"></i>
                 </div>
-                <p class="text-sm font-bold text-slate-800 mb-2">${selectedPack?.name}</p>
+                <p class="text-sm font-bold text-slate-800 mb-2">${selectedPack.name}</p>
                 <p class="text-xs text-slate-500">Montant: <span class="font-bold text-emerald-600">${price.toLocaleString()} CFA</span></p>
                 <p class="text-xs text-slate-500 mt-1">Durée: ${durationMonths === 0.5 ? '2 semaines' : durationMonths + ' mois'}</p>
                 <div class="mt-4 p-3 bg-slate-50 rounded-xl">
                     <p class="text-[10px] text-slate-500">🔒 Paiement sécurisé par FedaPay</p>
                     <p class="text-[10px] text-slate-500 mt-1">📱 Mobile Money • 💳 Carte bancaire</p>
                 </div>
+                ${isSansPatient ? `
+                    <div class="mt-3 p-2 bg-blue-50 rounded-lg">
+                        <p class="text-[8px] text-blue-600">✨ Inclus: commandes illimitées, support prioritaire, accès contenu éducatif</p>
+                    </div>
+                ` : ''}
             </div>
         `,
         icon: 'info',
@@ -208,16 +315,33 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
     });
     
     try {
-        const facture = await secureFetch("/billing/generate", {
-            method: "POST",
-            body: JSON.stringify({
-                patient_id: patientId,
-                montant: price,
-                pack: packId
-            })
-        });
+        let facture;
         
-        console.log("✅ Facture créée:", facture);
+        if (isSansPatient) {
+            // Pour les comptes SANS_PATIENT : souscrire au Pack Confort
+            const response = await secureFetch("/billing/subscribe-confort", {
+                method: "POST",
+                body: JSON.stringify({
+                    montant: price,
+                    duree_mois: durationMonths,
+                    mode_paiement: "FEDAPAY"
+                })
+            });
+            facture = { id: response.abonnement_id };
+            console.log("✅ Pack Confort créé:", facture);
+        } else {
+            // Pour les comptes AVEC_PATIENT : créer une facture médicale
+            facture = await secureFetch("/billing/generate", {
+                method: "POST",
+                body: JSON.stringify({
+                    patient_id: patientId,
+                    montant: price,
+                    pack: packId
+                })
+            });
+            console.log("✅ Facture médicale créée:", facture);
+        }
+        
         Swal.close();
         
         // Préparer les données pour FedaPay
@@ -237,83 +361,83 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
             public_key: 'pk_live_tGAFMjEYOV37KoKgDSZGtktR',
             transaction: {
                 amount: price,
-                description: `Pack ${selectedPack?.name} - ${durationMonths} mois`
+                description: isSansPatient 
+                    ? `Pack Confort 24/7 - ${durationMonths} mois`
+                    : `Pack ${selectedPack.name} - ${durationMonths} mois`
             },
             customer: {
                 email: userEmail,
                 firstname: firstName,
                 lastname: lastName
             },
-
-onComplete: async (response) => {
-    console.log("FedaPay fermé - Réponse complète:", response);
-    
-    // La transaction est dans response, pas dans un deuxième paramètre
-    const transaction = response.transaction || response;
-    const reason = response.reason || response;
-    
-    console.log("Transaction status:", transaction?.status);
-    console.log("Reason:", reason);
-    
-    // Vérifier si le paiement est approuvé
-    const isApproved = transaction && transaction.status === 'approved';
-    
-    if (isApproved) {
-        Swal.fire({
-            title: "Validation du paiement...",
-            didOpen: () => Swal.showLoading(),
-            allowOutsideClick: false
-        });
-        
-        try {
-            console.log("🔵 Appel à /billing/pay avec:", {
-                abonnement_id: facture.id,
-                montant: price,
-                transaction_id: transaction.id,
-                mode_paiement: "FEDAPAY"
-            });
-            
-            const result = await secureFetch("/billing/pay", {
-                method: "POST",
-                body: JSON.stringify({
-                    abonnement_id: facture.id,
-                    montant: price,
-                    transaction_id: transaction.id,
-                    mode_paiement: "FEDAPAY"
-                })
-            });
-            
-            console.log("✅ Résultat de /billing/pay:", result);
-            
-            Swal.fire({
-                icon: "success",
-                title: "✅ Abonnement activé !",
-                timer: 2000,
-                showConfirmButton: false
-            });
-            
-            window.switchView("billing");
-            
-        } catch (err) {
-            console.error("❌ Erreur lors de l'appel à /billing/pay:", err);
-            Swal.fire({
-                icon: "error",
-                title: "Erreur",
-                text: err.message || "Erreur lors de l'activation",
-                confirmButtonText: "OK"
-            });
-        }
-    } else {
-        Swal.fire({
-            icon: "info",
-            title: "Paiement annulé",
-            text: "Vous pouvez réessayer quand vous voulez.",
-            confirmButtonText: "OK"
-        });
-    }
-    
-    tempBtn.remove();
-}
+            onComplete: async (response) => {
+                console.log("FedaPay fermé - Réponse complète:", response);
+                
+                const transaction = response.transaction || response;
+                const isApproved = transaction && transaction.status === 'approved';
+                
+                if (isApproved) {
+                    Swal.fire({
+                        title: "Validation du paiement...",
+                        didOpen: () => Swal.showLoading(),
+                        allowOutsideClick: false
+                    });
+                    
+                    try {
+                        if (isSansPatient) {
+                            // Pour les comptes SANS_PATIENT, la confirmation est déjà faite
+                            Swal.fire({
+                                icon: "success",
+                                title: "✅ Pack Confort activé !",
+                                text: "Votre abonnement est maintenant actif.",
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            window.switchView("billing");
+                        } else {
+                            // Pour les comptes AVEC_PATIENT, valider le paiement
+                            const result = await secureFetch("/billing/pay", {
+                                method: "POST",
+                                body: JSON.stringify({
+                                    abonnement_id: facture.id,
+                                    montant: price,
+                                    transaction_id: transaction.id,
+                                    mode_paiement: "FEDAPAY"
+                                })
+                            });
+                            
+                            console.log("✅ Résultat de /billing/pay:", result);
+                            
+                            Swal.fire({
+                                icon: "success",
+                                title: "✅ Abonnement activé !",
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            
+                            window.switchView("billing");
+                        }
+                        
+                    } catch (err) {
+                        console.error("❌ Erreur lors de la validation:", err);
+                        Swal.fire({
+                            icon: "error",
+                            title: "Erreur",
+                            text: err.message || "Erreur lors de l'activation",
+                            confirmButtonText: "OK"
+                        });
+                    }
+                } else {
+                    Swal.fire({
+                        icon: "info",
+                        title: "Paiement annulé",
+                        text: "Vous pouvez réessayer quand vous voulez.",
+                        confirmButtonText: "OK"
+                    });
+                }
+                
+                tempBtn.remove();
+            }
         });
         
         // Déclencher l'ouverture du popup
