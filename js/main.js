@@ -3615,21 +3615,21 @@ async function performViewSwitch(viewName) {
                 }
                 await Visites.renderStartVisitView(AppState.currentPatient);
                 break;
-            case "home":
-                const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
-                const isSansPatient = typeCompte === "SANS_PATIENT";
-                const isMaman = localStorage.getItem("user_is_maman") === "true";
-                const userRole = localStorage.getItem("user_role");
-                
-                if (isSansPatient && userRole === "FAMILLE") {
-                    // Afficher le dashboard spécifique pour comptes sans patient
-                    await renderSansPatientDashboard();
-                } else if (isMaman && userRole === "FAMILLE") {
-                    await Maman.loadMamanDashboard();
-                } else {
-                    renderMobileHub();
-                }
-                break;
+             case "home":
+                 // ✅ Utiliser la variable userRole déjà déclarée au début de la fonction
+                 // Ne pas redéclarer const userRole !
+                 const homeTypeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+                 const homeIsSansPatient = homeTypeCompte === "SANS_PATIENT";
+                 const homeIsMaman = localStorage.getItem("user_is_maman") === "true";
+                 
+                 if (homeIsSansPatient && userRole === "FAMILLE") {
+                     await renderSansPatientDashboard();
+                 } else if (homeIsMaman && userRole === "FAMILLE") {
+                     await Maman.loadMamanDashboard();
+                 } else {
+                     renderMobileHub();
+                 }
+                 break;
             case "subscription":
                 await Subscription.renderSubscriptionPage();
                 break;
