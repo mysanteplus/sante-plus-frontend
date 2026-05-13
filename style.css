@@ -4355,3 +4355,82 @@ body.coordinateur-mode::before {
 .banner-image:hover {
     transform: scale(1.05);
 }
+
+
+
+/* ============================================
+   CHAT PLEIN ÉCRAN - CORRIGÉ POUR DESKTOP
+   ============================================ */
+
+/* Pour mobile : plein écran */
+@media (max-width: 1023px) {
+    .chat-whatsapp-container {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 9999 !important;
+        background: #efeae2 !important;
+    }
+    
+    body:has(.chat-whatsapp-container) main,
+    body:has(.chat-whatsapp-container) #main-content,
+    body:has(.chat-whatsapp-container) .main-wrapper {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        height: 100vh !important;
+    }
+    
+    body:has(.chat-whatsapp-container) #view-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+    }
+    
+    body:has(.chat-whatsapp-container) footer,
+    body:has(.chat-whatsapp-container) .fab-container {
+        display: none !important;
+    }
+    
+    body:has(.chat-whatsapp-container) aside,
+    body:has(.chat-whatsapp-container) header {
+        display: none !important;
+    }
+}
+
+/* Pour desktop : occupe tout l'espace restant à droite de la sidebar */
+@media (min-width: 1024px) {
+    .chat-whatsapp-container {
+        position: relative !important;
+        display: flex !important;
+        flex-direction: column !important;
+        height: calc(100vh - 120px) !important;
+        min-height: 500px !important;
+        width: 100% !important;
+        background: #efeae2 !important;
+        border-radius: 1.5rem !important;
+        overflow: hidden !important;
+    }
+    
+    /* Ne pas cacher la sidebar sur desktop */
+    body:has(.chat-whatsapp-container) aside {
+        display: flex !important;
+    }
+    
+    body:has(.chat-whatsapp-container) header {
+        display: flex !important;
+    }
+    
+    body:has(.chat-whatsapp-container) main {
+        padding: 1.5rem !important;
+    }
+}
