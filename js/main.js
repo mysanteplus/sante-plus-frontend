@@ -1629,57 +1629,56 @@ function renderAuthView(mode = 'login', stepSource = 1) {
     // ============================================================
     // MODE REGISTER (avec marges externes)
     // ============================================================
-    else if (mode === 'register') {
-        const isServiceChoiceStep = currentStep === 0;
-        const isLastStep = currentStep === 6;  // ← Changé de 5 à 6 (car on a une étape de plus)
-        
-        // Déterminer si on est en mode AVEC_PATIENT ou SANS_PATIENT
-        const hasSelectedPatientType = registrationData.type_compte === 'AVEC_PATIENT';
-        const isSansPatient = registrationData.type_compte === 'SANS_PATIENT';
-        
-        // À l'étape 0, on affiche le choix du type de compte
-        if (currentStep === 0) {
-            dynamicContent = getTypeCompteChoiceHTML();
-        } 
-        // Pour les autres étapes, on vérifie d'abord que le type a été choisi
-        else if (!registrationData.type_compte) {
-            currentStep = 0;
-            dynamicContent = getTypeCompteChoiceHTML();
-        }
-        else {
-            dynamicContent = `
-                <div class="flex flex-col min-h-0">
-                    <div 
-                        class="flex-1 overflow-y-auto custom-scroll pr-1"
-                        style="max-height: clamp(360px, 52vh, 560px); padding-bottom: 4px;"
-                    >
-                        ${getStepHTML()}
-                    </div>
+else if (mode === 'register') {
+    const isLastStep = currentStep === 5;  // Étape 5 = confirmation finale
     
-                    ${currentStep !== 4 && currentStep !== 5 ? `
-                        <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4 bg-white">
-                            ${currentStep > 1 ? `
-                                <button 
-                                    onclick="window.prevAuthStep()" 
-                                    class="prev-btn w-12 h-12 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shadow-sm active:scale-95 transition-all hover:bg-slate-200"
-                                >
-                                    <i class="fa-solid fa-arrow-left"></i>
-                                </button>
-                            ` : ''}
+    // Déterminer si on est en mode AVEC_PATIENT ou SANS_PATIENT
+    const hasSelectedPatientType = registrationData.type_compte === 'AVEC_PATIENT';
+    const isSansPatient = registrationData.type_compte === 'SANS_PATIENT';
     
-                            <button 
-                                onclick="window.nextAuthStep()" 
-                                class="next-btn flex-1 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-md active:scale-95 transition-all" 
-                                style="background: ${primaryColor}; color: white;"
-                            >
-                                ${isLastStep ? 'Valider la demande' : 'Étape suivante'}
-                            </button>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }
+    // À l'étape 0, on affiche le choix du type de compte
+    if (currentStep === 0) {
+        dynamicContent = getTypeCompteChoiceHTML();
+    } 
+    // Pour les autres étapes, on vérifie d'abord que le type a été choisi
+    else if (!registrationData.type_compte) {
+        currentStep = 0;
+        dynamicContent = getTypeCompteChoiceHTML();
     }
+    else {
+        dynamicContent = `
+            <div class="flex flex-col min-h-0">
+                <div 
+                    class="flex-1 overflow-y-auto custom-scroll pr-1"
+                    style="max-height: clamp(360px, 52vh, 480px); padding-bottom: 4px;"
+                >
+                    ${getStepHTML()}
+                </div>
+
+                ${currentStep !== 4 ? `
+                    <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4 bg-white">
+                        ${currentStep > 1 ? `
+                            <button 
+                                onclick="window.prevAuthStep()" 
+                                class="prev-btn w-12 h-12 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shadow-sm active:scale-95 transition-all hover:bg-slate-200"
+                            >
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                        ` : ''}
+
+                        <button 
+                            onclick="window.nextAuthStep()" 
+                            class="next-btn flex-1 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-md active:scale-95 transition-all" 
+                            style="background: ${primaryColor}; color: white;"
+                        >
+                            ${isLastStep ? 'Valider la demande' : 'Étape suivante'}
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+}
     // ============================================================
     // MODE OTP
     // ============================================================
@@ -1776,7 +1775,7 @@ function renderAuthView(mode = 'login', stepSource = 1) {
             <div class="absolute -top-20 -left-20 w-96 h-96 rounded-full ${blurColor1} filter blur-[120px] opacity-30 pointer-events-none"></div>
             <div class="absolute -bottom-20 -right-20 w-96 h-96 rounded-full ${blurColor2} filter blur-[120px] opacity-30 pointer-events-none"></div>
             
-           <div class="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden ${registerClasses}" style="${cardHeight}">
+           <div class="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-y-auto ${registerClasses}" style="max-height: 90vh; height: auto; min-height: auto;">
                 
                 <!-- Logo -->
                 <div class="text-center pt-6 pb-2">
