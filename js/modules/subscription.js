@@ -358,7 +358,7 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
         
         // Initialiser FedaPay en mode popup
         FedaPay.init('#temp-pay-btn', {
-            public_key: 'pk_live_tGAFMjEYOV37KoKgDSZGtktR',
+            public_key: 'pk_live_yUBTAv4LLN0V7WBMpfuXnPdD',
             transaction: {
                 amount: price,
                 description: isSansPatient 
@@ -527,7 +527,7 @@ window.retryPayment = async (abonnementId, montant, patientNom, packId, duration
         
         // Initialiser FedaPay en mode popup (sans iframe)
         FedaPay.init('#temp-pay-btn-retry', {
-            public_key: 'pk_live_tGAFMjEYOV37KoKgDSZGtktR',
+            public_key: 'pk_live_yUBTAv4LLN0V7WBMpfuXnPdD',
             transaction: {
                 amount: montant,
                 description: `Pack ${packId?.replace(/_/g, ' ') || 'Abonnement'} - ${durationMonths} mois`
