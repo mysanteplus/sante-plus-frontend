@@ -147,7 +147,7 @@ function updatePWAIcon(isMaman) {
           // Stocke l'invite d'installation PWA
 let onboardingStep = 0;              // Étape actuelle du tutoriel
 let registrationData = {};           // Données d'inscription temporaires
-let currentStep = 1;                 // Étape actuelle du formulaire d'inscription
+let currentStep = 0;                 // Étape actuelle du formulaire d'inscription
 let loaderTimeout = null;            // Timeout pour le loader global
 
 
@@ -804,6 +804,90 @@ window.selectServiceType = (type) => {
 };
 
 
+// ============================================================
+// ÉTAPE 0 : CHOIX DU TYPE DE COMPTE (AVEC ou SANS PATIENT)
+// ============================================================
+function getTypeCompteChoiceHTML() {
+    const isMamanFlow = registrationData.categorie === 'MAMAN_BEBE';
+    const themeColor = isMamanFlow ? 'pink' : 'emerald';
+    const themeBgClass = isMamanFlow ? 'bg-pink-50' : 'bg-emerald-50';
+    const themeBorderClass = isMamanFlow ? 'border-pink-200' : 'border-emerald-200';
+    const themeTextClass = isMamanFlow ? 'text-pink-600' : 'text-emerald-600';
+    
+    return `
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 mx-auto bg-${themeColor}-100 rounded-full flex items-center justify-center mb-4">
+                <i class="fa-solid fa-users text-2xl text-${themeColor}-500"></i>
+            </div>
+            <h3 class="text-xl font-black text-slate-800">Comment souhaitez-vous utiliser Santé Plus ?</h3>
+            <p class="text-xs text-slate-400 mt-2">Choisissez le type de compte qui vous correspond</p>
+        </div>
+        
+        <div class="space-y-4">
+            <!-- Option AVEC PATIENT -->
+            <div onclick="window.selectTypeCompte('AVEC_PATIENT')" 
+                 class="service-card p-5 bg-white rounded-2xl border-2 border-slate-200 cursor-pointer transition-all hover:border-${themeColor}-400 hover:shadow-lg active:scale-98">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-xl ${themeBgClass} flex items-center justify-center text-3xl">
+                        👨‍👩‍👧
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-black text-slate-800 text-base">Avec un patient</h4>
+                        <p class="text-[10px] ${themeTextClass} font-bold uppercase tracking-wider">Suivi médical complet</p>
+                        <p class="text-xs text-slate-500 mt-1">Je crée un compte pour un proche (parent, grand-parent, enfant) et bénéficie des visites à domicile.</p>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <span class="text-[9px] text-slate-400">✓ Visites à domicile</span>
+                            <span class="text-[9px] text-slate-400">✓ Suivi médical</span>
+                            <span class="text-[9px] text-slate-400">✓ Commandes</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300"></i>
+                </div>
+            </div>
+            
+            <!-- Option SANS PATIENT -->
+            <div onclick="window.selectTypeCompte('SANS_PATIENT')" 
+                 class="service-card p-5 bg-white rounded-2xl border-2 border-slate-200 cursor-pointer transition-all hover:border-${themeColor}-400 hover:shadow-lg active:scale-98">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-xl ${themeBgClass} flex items-center justify-center text-3xl">
+                        👤
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-black text-slate-800 text-base">Sans patient</h4>
+                        <p class="text-[10px] ${themeTextClass} font-bold uppercase tracking-wider">Compte personnel</p>
+                        <p class="text-xs text-slate-500 mt-1">Je crée un compte pour moi-même. Je pourrai ajouter un patient plus tard si nécessaire.</p>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <span class="text-[9px] text-slate-400">✓ Commandes personnelles</span>
+                            <span class="text-[9px] text-slate-400">✓ Pack Confort 24/7</span>
+                            <span class="text-[9px] text-slate-400">✓ Ajout patient possible</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300"></i>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+
+
+// ============================================================
+// SÉLECTION DU TYPE DE COMPTE (AVEC ou SANS PATIENT)
+// ============================================================
+window.selectTypeCompte = (type) => {
+    registrationData.type_compte = type;
+    UI.vibrate('success');
+    
+    // Passer à l'étape suivante
+    if (type === 'AVEC_PATIENT') {
+        currentStep = 1;  // Formulaire complet (payeur → patient → santé → pack)
+    } else {
+        currentStep = 1;  // Compte SANS_PATIENT : on passe directement à l'étape payeur
+        // Note : on n'affichera pas les étapes patient et santé
+    }
+    
+    renderAuthView('register', currentStep);
+};
 
 // ============================================================
 // VUES DYNAMIQUES DU FORMULAIRE D'ADMISSION
@@ -819,114 +903,152 @@ function getStepHTML() {
     const themeBorderClass = isMamanFlow ? 'border-pink-200' : 'border-emerald-200';
     const themeTextClass = isMamanFlow ? 'text-pink-600' : 'text-emerald-600';
     
+    // Déterminer si on est en mode SANS_PATIENT
+    const isSansPatient = registrationData.type_compte === 'SANS_PATIENT';
+    
     switch(currentStep) {
         // ============================================
-        // ÉTAPE 0 : CHOIX DU SERVICE (NOUVEAU)
+        // ÉTAPE 0 : CHOIX DU TYPE DE COMPTE (AVEC ou SANS PATIENT)
         // ============================================
         case 0: return `
             <div class="text-center mb-8">
-                <h3 class="text-xl font-black text-slate-800">Comment pouvons-nous vous aider ?</h3>
-                <p class="text-xs text-slate-400 mt-1">Choisissez le profil qui vous correspond</p>
+                <div class="w-16 h-16 mx-auto bg-${themeColor}-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-users text-2xl text-${themeColor}-500"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-800">Comment souhaitez-vous utiliser Santé Plus ?</h3>
+                <p class="text-xs text-slate-400 mt-2">Choisissez le type de compte qui vous correspond</p>
             </div>
+            
             <div class="space-y-4">
-                <div onclick="window.selectServiceType('SENIOR')" 
-                     class="service-card p-5 bg-white rounded-2xl border-2 border-slate-200 cursor-pointer transition-all hover:border-emerald-400 hover:shadow-lg active:scale-98">
+                <!-- Option AVEC PATIENT -->
+                <div onclick="window.selectTypeCompte('AVEC_PATIENT')" 
+                     class="service-card p-5 bg-white rounded-2xl border-2 border-slate-200 cursor-pointer transition-all hover:border-${themeColor}-400 hover:shadow-lg active:scale-98">
                     <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 rounded-xl bg-emerald-50 flex items-center justify-center text-3xl">👴</div>
-                        <div class="flex-1">
-                            <h4 class="font-black text-slate-800 text-base">Accompagnement Sénior</h4>
-                            <p class="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Maintien à domicile • Soins au quotidien</p>
+                        <div class="w-14 h-14 rounded-xl ${themeBgClass} flex items-center justify-center text-3xl">
+                            👨‍👩‍👧
                         </div>
-                        <i class="fa-solid fa-arrow-right text-slate-300"></i>
+                        <div class="flex-1">
+                            <h4 class="font-black text-slate-800 text-base">Avec un patient</h4>
+                            <p class="text-[10px] ${themeTextClass} font-bold uppercase tracking-wider">Suivi médical complet</p>
+                            <p class="text-xs text-slate-500 mt-1">Je crée un compte pour un proche (parent, grand-parent, enfant) et bénéficie des visites à domicile.</p>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="text-[9px] text-slate-400">✓ Visites à domicile</span>
+                                <span class="text-[9px] text-slate-400">✓ Suivi médical</span>
+                                <span class="text-[9px] text-slate-400">✓ Commandes</span>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-300"></i>
                     </div>
                 </div>
-                <div onclick="window.selectServiceType('MAMAN_BEBE')" 
-                     class="service-card p-5 bg-white rounded-2xl border-2 border-slate-200 cursor-pointer transition-all hover:border-pink-400 hover:shadow-lg active:scale-98">
+                
+                <!-- Option SANS PATIENT -->
+                <div onclick="window.selectTypeCompte('SANS_PATIENT')" 
+                     class="service-card p-5 bg-white rounded-2xl border-2 border-slate-200 cursor-pointer transition-all hover:border-${themeColor}-400 hover:shadow-lg active:scale-98">
                     <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 rounded-xl bg-pink-50 flex items-center justify-center text-3xl">👶</div>
-                        <div class="flex-1">
-                            <h4 class="font-black text-slate-800 text-base">Maman & Bébé</h4>
-                            <p class="text-[10px] text-pink-500 font-bold uppercase tracking-wider">Post-partum • Nouveau-né • Allaitement</p>
+                        <div class="w-14 h-14 rounded-xl ${themeBgClass} flex items-center justify-center text-3xl">
+                            👤
                         </div>
-                        <i class="fa-solid fa-arrow-right text-slate-300"></i>
+                        <div class="flex-1">
+                            <h4 class="font-black text-slate-800 text-base">Sans patient</h4>
+                            <p class="text-[10px] ${themeTextClass} font-bold uppercase tracking-wider">Compte personnel</p>
+                            <p class="text-xs text-slate-500 mt-1">Je crée un compte pour moi-même. Je pourrai ajouter un patient plus tard si nécessaire.</p>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="text-[9px] text-slate-400">✓ Commandes personnelles</span>
+                                <span class="text-[9px] text-slate-400">✓ Pack Confort 24/7</span>
+                                <span class="text-[9px] text-slate-400">✓ Ajout patient possible</span>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-300"></i>
                     </div>
                 </div>
             </div>
         `;
         
         // ============================================
-        // ÉTAPE 1 : QUI PAYE ?
+        // ÉTAPE 1 : QUI PAYE ? (identique pour les deux types)
         // ============================================
-                case 1: return `
-                    <div class="text-center mb-8">
-                        <h3 class="text-xl font-black text-slate-800">Qui fait la demande ?</h3>
-                        <p class="text-xs text-slate-400 mt-1">Les informations du responsable</p>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="relative">
-                            <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input id="f-nom" class="app-input !pl-12 !py-3" placeholder="Votre nom complet" value="${registrationData.nom_famille || ''}">
-                        </div>
-                        <div class="relative">
-                            <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input id="f-email" type="email" class="app-input !pl-12 !py-3" placeholder="Votre email" value="${registrationData.email || ''}">
-                        </div>
-                        <div class="relative">
-                            <i class="fa-solid fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input id="f-tel" class="app-input !pl-12 !py-3" placeholder="Votre téléphone" value="${registrationData.tel_famille || ''}">
-                        </div>
-                        <div class="relative">
-                            <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input id="f-pass" type="password" class="app-input !pl-12 !py-3" placeholder="Choisissez un mot de passe">
-                        </div>
-                    </div>
-                `;
+        case 1: return `
+            <div class="text-center mb-8">
+                <h3 class="text-xl font-black text-slate-800">Qui fait la demande ?</h3>
+                <p class="text-xs text-slate-400 mt-1">Les informations du responsable</p>
+            </div>
+            <div class="space-y-4">
+                <div class="relative">
+                    <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input id="f-nom" class="app-input !pl-12 !py-3" placeholder="Votre nom complet" value="${registrationData.nom_famille || ''}">
+                </div>
+                <div class="relative">
+                    <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input id="f-email" type="email" class="app-input !pl-12 !py-3" placeholder="Votre email" value="${registrationData.email || ''}">
+                </div>
+                <div class="relative">
+                    <i class="fa-solid fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input id="f-tel" class="app-input !pl-12 !py-3" placeholder="Votre téléphone" value="${registrationData.tel_famille || ''}">
+                </div>
+                <div class="relative">
+                    <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input id="f-pass" type="password" class="app-input !pl-12 !py-3" placeholder="Choisissez un mot de passe">
+                </div>
+            </div>
+        `;
+        
         // ============================================
-        // ÉTAPE 2 : QUI A BESOIN D'AIDE ?
+        // ÉTAPE 2 : PATIENT (UNIQUEMENT si AVEC_PATIENT)
         // ============================================
-                      case 2: return `
-                    <div class="text-center mb-8">
-                        <h3 class="text-xl font-black text-slate-800">Pour qui ?</h3>
-                        <p class="text-xs text-slate-400 mt-1">Les informations de la personne à accompagner</p>
+        case 2: 
+            if (isSansPatient) {
+                // Pour SANS_PATIENT, passer directement à l'étape suivante
+                setTimeout(() => window.nextAuthStep(), 100);
+                return `<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div>`;
+            }
+            return `
+                <div class="text-center mb-8">
+                    <h3 class="text-xl font-black text-slate-800">Pour qui ?</h3>
+                    <p class="text-xs text-slate-400 mt-1">Les informations de la personne à accompagner</p>
+                </div>
+                <div class="space-y-4">
+                    <div class="relative">
+                        <i class="fa-solid fa-user-circle absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input id="p-nom" class="app-input !pl-12 !py-3" placeholder="Son nom complet" value="${registrationData.nom_patient || ''}">
                     </div>
-                    <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
                         <div class="relative">
-                            <i class="fa-solid fa-user-circle absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input id="p-nom" class="app-input !pl-12 !py-3" placeholder="Son nom complet" value="${registrationData.nom_patient || ''}">
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="relative">
-                                <i class="fa-solid fa-cake-candles absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                                <input id="p-age" type="number" class="app-input !pl-12 !py-3" placeholder="Âge">
-                            </div>
-                            <div class="relative">
-                                <i class="fa-solid fa-venus-mars absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                                <select id="p-sex" class="app-input !pl-12 !py-3">
-                                    <option value="">Sexe</option>
-                                    <option value="Homme">Homme</option>
-                                    <option value="Femme">Femme</option>
-                                </select>
-                            </div>
+                            <i class="fa-solid fa-cake-candles absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input id="p-age" type="number" class="app-input !pl-12 !py-3" placeholder="Âge">
                         </div>
                         <div class="relative">
-                            <i class="fa-solid fa-location-dot absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input id="p-addr" class="app-input !pl-12 !py-3" placeholder="Son adresse (quartier, rue)" value="${registrationData.adresse_patient || ''}">
-                        </div>
-                        <div class="relative">
-                            <i class="fa-solid fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input id="p-tel" class="app-input !pl-12 !py-3" placeholder="Son téléphone (optionnel)">
-                        </div>
-                        <div class="relative">
-                            <i class="fa-solid fa-address-card absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input id="p-urgence" class="app-input !pl-12 !py-3" placeholder="Contact d'urgence (voisin, famille)">
+                            <i class="fa-solid fa-venus-mars absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <select id="p-sex" class="app-input !pl-12 !py-3">
+                                <option value="">Sexe</option>
+                                <option value="Homme">Homme</option>
+                                <option value="Femme">Femme</option>
+                            </select>
                         </div>
                     </div>
-                `;
-                        
+                    <div class="relative">
+                        <i class="fa-solid fa-location-dot absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input id="p-addr" class="app-input !pl-12 !py-3" placeholder="Son adresse (quartier, rue)" value="${registrationData.adresse_patient || ''}">
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input id="p-tel" class="app-input !pl-12 !py-3" placeholder="Son téléphone (optionnel)">
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-address-card absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input id="p-urgence" class="app-input !pl-12 !py-3" placeholder="Contact d'urgence (voisin, famille)">
+                    </div>
+                </div>
+            `;
+        
         // ============================================
-        // ÉTAPE 3 : SANTÉ (Adapté selon Sénior ou Maman)
+        // ÉTAPE 3 : SANTÉ (UNIQUEMENT si AVEC_PATIENT)
         // ============================================
-        case 3: 
+        case 3:
+            if (isSansPatient) {
+                setTimeout(() => window.nextAuthStep(), 100);
+                return `<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div>`;
+            }
+            
             if (isMamanFlow) {
                 return `
                     <div class="text-center mb-8">
@@ -986,60 +1108,120 @@ function getStepHTML() {
             }
         
         // ============================================
-        // ÉTAPE 4 : FORFAIT
+        // ÉTAPE 4 : FORFAIT (adapté selon le type de compte)
         // ============================================
         case 4:
-            const packs = isMamanFlow ? [
-                { id: 'ESSENTIEL', name: 'Essentiel', desc: '2 visites par semaine', price: '50.000', features: ['2 visites/semaine', 'Suivi de base'] },
-                { id: 'CONFORT', name: 'Confort', desc: '3 à 4 visites par semaine', price: '85.000', features: ['3-4 visites/semaine', 'Aide à la toilette', 'Préparation repas'] },
-                { id: 'SERENITE', name: 'Sérénité', desc: '6 à 7 visites par semaine', price: '150.000', features: ['6-7 visites/semaine', 'Accompagnement complet', 'Urgence 24/7'] },
-                { id: 'MATERNITE', name: 'Spécial Maternité', desc: 'Suivi intensif 2 semaines', price: '70.000', features: ['Visite quotidienne', 'Aide bébé', 'Conseils allaitement'] }
-            ] : [
-                { id: 'PONCTUEL', name: 'Ponctuel', desc: 'À la demande', price: '10.000', features: ['Intervention unique', 'Accompagnement RDV'] },
-                { id: 'REGULIER', name: 'Régulier', desc: '2 à 3 visites/semaine', price: '60.000', features: ['2-3 visites/semaine', 'Suivi médical', 'Lien famille'] },
-                { id: 'COMPLET', name: 'Complet', desc: '5 à 6 visites/semaine', price: '150.000', features: ['5-6 visites/semaine', 'Présence renforcée', 'Veille sanitaire'] }
-            ];
-            
-            return `
-                <div class="text-center mb-8">
-                    <h3 class="text-xl font-black text-slate-800">Choisissez votre formule</h3>
-                    <p class="text-xs text-slate-400 mt-1">Tarifs mensuels en CFA</p>
-                </div>
-                <div id="pack-selector" class="space-y-3 max-h-96 overflow-y-auto">
-                    ${packs.map(pack => `
-                        <div onclick="window.selectPack('${pack.id}', '${pack.price}')" 
-                             class="pack-card p-4 bg-white rounded-xl border-2 cursor-pointer transition-all ${registrationData.type_pack === pack.id ? `border-${themeColor}-500 ${themeBgClass}` : 'border-slate-100'}"
-                             data-pack-id="${pack.id}">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-xl ${registrationData.type_pack === pack.id ? themeBgClass : 'bg-slate-50'} flex items-center justify-center">
-                                    <i class="fa-solid ${pack.id.includes('CONFORT') || pack.id.includes('REGULIER') ? 'fa-chart-line' : pack.id.includes('SERENITE') || pack.id.includes('COMPLET') ? 'fa-crown' : 'fa-seedling'} ${registrationData.type_pack === pack.id ? themeTextClass : 'text-slate-400'} text-xl"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex justify-between items-center">
-                                        <p class="font-black text-slate-800">${pack.name}</p>
-                                        <p class="text-base font-black ${themeTextClass}">${pack.price} F</p>
+            if (isSansPatient) {
+                // Pack Confort pour comptes SANS_PATIENT
+                const confortPacks = [
+                    { id: 'CONFORT_247_MENSUEL', name: 'Pack Confort Mensuel', desc: 'Accès complet', price: '25.000', duration: 1, features: ['Commandes illimitées', 'Support prioritaire', 'Accès contenu éducatif'] },
+                    { id: 'CONFORT_247_TRIMESTRIEL', name: 'Pack Confort 3 mois', desc: 'Économie 5%', price: '71.250', originalPrice: '75.000', duration: 3, features: ['Commandes illimitées', 'Support prioritaire', 'Accès contenu éducatif', 'Économie 5%'] },
+                    { id: 'CONFORT_247_ANNUEL', name: 'Pack Confort 1 an', desc: 'Économie 15%', price: '255.000', originalPrice: '300.000', duration: 12, features: ['Commandes illimitées', 'Support prioritaire', 'Accès contenu éducatif', 'Économie 15%'] }
+                ];
+                
+                return `
+                    <div class="text-center mb-8">
+                        <h3 class="text-xl font-black text-slate-800">Pack Confort 24/7</h3>
+                        <p class="text-xs text-slate-400 mt-1">Commandes illimitées et support prioritaire</p>
+                    </div>
+                    <div id="pack-selector" class="space-y-3 max-h-96 overflow-y-auto">
+                        ${confortPacks.map(pack => `
+                            <div onclick="window.selectPackConfort('${pack.id}', '${pack.price}', ${pack.duration})" 
+                                 class="pack-card p-4 bg-white rounded-xl border-2 cursor-pointer transition-all ${registrationData.type_pack === pack.id ? `border-${themeColor}-500 ${themeBgClass}` : 'border-slate-100'}"
+                                 data-pack-id="${pack.id}">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-xl ${registrationData.type_pack === pack.id ? themeBgClass : 'bg-slate-50'} flex items-center justify-center">
+                                        <i class="fa-solid fa-crown ${registrationData.type_pack === pack.id ? themeTextClass : 'text-slate-400'} text-xl"></i>
                                     </div>
-                                    <p class="text-[10px] text-slate-400">${pack.desc}</p>
-                                    <div class="flex flex-wrap gap-1 mt-1">
-                                        ${pack.features.map(f => `<span class="text-[8px] text-slate-400">✓ ${f}</span>`).join('')}
+                                    <div class="flex-1">
+                                        <div class="flex justify-between items-center">
+                                            <p class="font-black text-slate-800">${pack.name}</p>
+                                            <div class="text-right">
+                                                ${pack.originalPrice ? `<span class="text-[10px] text-slate-400 line-through mr-2">${pack.originalPrice} F</span>` : ''}
+                                                <p class="text-base font-black ${themeTextClass}">${pack.price} F</p>
+                                            </div>
+                                        </div>
+                                        <p class="text-[10px] text-slate-400">${pack.desc}</p>
+                                        <div class="flex flex-wrap gap-1 mt-1">
+                                            ${pack.features.map(f => `<span class="text-[8px] text-slate-400">✓ ${f}</span>`).join('')}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    `).join('')}
-                </div>
-                <div class="mt-6">
-                    <button onclick="window.nextAuthStep()" 
-                            id="pack-continue-btn"
-                            class="w-full py-4 rounded-xl font-black uppercase tracking-wider text-[10px] shadow-lg transition-all active:scale-95 ${registrationData.type_pack ? (isMamanFlow ? 'bg-pink-500' : 'bg-emerald-500') : 'bg-slate-200 text-slate-400 cursor-not-allowed'}"
-                            ${!registrationData.type_pack ? 'disabled' : ''}>
-                        Continuer
-                    </button>
-                </div>
-            `;
+                        `).join('')}
+                    </div>
+                    <div class="mt-4 p-3 bg-blue-50 rounded-xl">
+                        <p class="text-[9px] text-blue-600 font-medium">✨ Ce pack vous permet de :</p>
+                        <ul class="text-[9px] text-slate-500 mt-1 space-y-0.5">
+                            <li>• Passer des commandes de produits (couches, lait, médicaments, etc.)</li>
+                            <li>• Bénéficier d'un support prioritaire 24/7</li>
+                            <li>• Accéder à tous les contenus éducatifs</li>
+                            <li>• Ajouter un patient plus tard si nécessaire</li>
+                        </ul>
+                    </div>
+                    <div class="mt-6">
+                        <button onclick="window.nextAuthStep()" 
+                                id="pack-continue-btn"
+                                class="w-full py-4 rounded-xl font-black uppercase tracking-wider text-[10px] shadow-lg transition-all active:scale-95 ${registrationData.type_pack ? 'bg-emerald-500' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}"
+                                ${!registrationData.type_pack ? 'disabled' : ''}>
+                            Continuer
+                        </button>
+                    </div>
+                `;
+            } else {
+                // Packs médicaux pour comptes AVEC_PATIENT
+                const packs = isMamanFlow ? [
+                    { id: 'ESSENTIEL', name: 'Essentiel', desc: '2 visites par semaine', price: '50.000', features: ['2 visites/semaine', 'Suivi de base'] },
+                    { id: 'CONFORT', name: 'Confort', desc: '3 à 4 visites par semaine', price: '85.000', features: ['3-4 visites/semaine', 'Aide à la toilette', 'Préparation repas'] },
+                    { id: 'SERENITE', name: 'Sérénité', desc: '6 à 7 visites par semaine', price: '150.000', features: ['6-7 visites/semaine', 'Accompagnement complet', 'Urgence 24/7'] },
+                    { id: 'MATERNITE', name: 'Spécial Maternité', desc: 'Suivi intensif 2 semaines', price: '70.000', features: ['Visite quotidienne', 'Aide bébé', 'Conseils allaitement'] }
+                ] : [
+                    { id: 'PONCTUEL', name: 'Ponctuel', desc: 'À la demande', price: '10.000', features: ['Intervention unique', 'Accompagnement RDV'] },
+                    { id: 'REGULIER', name: 'Régulier', desc: '2 à 3 visites/semaine', price: '60.000', features: ['2-3 visites/semaine', 'Suivi médical', 'Lien famille'] },
+                    { id: 'COMPLET', name: 'Complet', desc: '5 à 6 visites/semaine', price: '150.000', features: ['5-6 visites/semaine', 'Présence renforcée', 'Veille sanitaire'] }
+                ];
+                
+                return `
+                    <div class="text-center mb-8">
+                        <h3 class="text-xl font-black text-slate-800">Choisissez votre formule</h3>
+                        <p class="text-xs text-slate-400 mt-1">Tarifs mensuels en CFA</p>
+                    </div>
+                    <div id="pack-selector" class="space-y-3 max-h-96 overflow-y-auto">
+                        ${packs.map(pack => `
+                            <div onclick="window.selectPack('${pack.id}', '${pack.price}')" 
+                                 class="pack-card p-4 bg-white rounded-xl border-2 cursor-pointer transition-all ${registrationData.type_pack === pack.id ? `border-${themeColor}-500 ${themeBgClass}` : 'border-slate-100'}"
+                                 data-pack-id="${pack.id}">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-xl ${registrationData.type_pack === pack.id ? themeBgClass : 'bg-slate-50'} flex items-center justify-center">
+                                        <i class="fa-solid ${pack.id.includes('CONFORT') || pack.id.includes('REGULIER') ? 'fa-chart-line' : pack.id.includes('SERENITE') || pack.id.includes('COMPLET') ? 'fa-crown' : 'fa-seedling'} ${registrationData.type_pack === pack.id ? themeTextClass : 'text-slate-400'} text-xl"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between items-center">
+                                            <p class="font-black text-slate-800">${pack.name}</p>
+                                            <p class="text-base font-black ${themeTextClass}">${pack.price} F</p>
+                                        </div>
+                                        <p class="text-[10px] text-slate-400">${pack.desc}</p>
+                                        <div class="flex flex-wrap gap-1 mt-1">
+                                            ${pack.features.map(f => `<span class="text-[8px] text-slate-400">✓ ${f}</span>`).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="mt-6">
+                        <button onclick="window.nextAuthStep()" 
+                                id="pack-continue-btn"
+                                class="w-full py-4 rounded-xl font-black uppercase tracking-wider text-[10px] shadow-lg transition-all active:scale-95 ${registrationData.type_pack ? (isMamanFlow ? 'bg-pink-500' : 'bg-emerald-500') : 'bg-slate-200 text-slate-400 cursor-not-allowed'}"
+                                ${!registrationData.type_pack ? 'disabled' : ''}>
+                            Continuer
+                        </button>
+                    </div>
+                `;
+            }
         
         // ============================================
-        // ÉTAPE 5 : CONFIRMATION
+        // ÉTAPE 5 : CONFIRMATION (identique pour les deux types)
         // ============================================
         case 5: return `
             <div class="text-center mb-8">
@@ -1058,11 +1240,6 @@ function getStepHTML() {
         `;
     }
 }
-
-
-
-
-
 // ============================================================
 // SÉLECTEUR DE CATÉGORIE (SENIOR / MAMAN)
 // ============================================================
@@ -1325,12 +1502,14 @@ window.prevAuthStep = () => {
         renderAuthView('register', currentStep);
     }
 };
+
+
 async function submitRegistration() {
     if(!registrationData.type_pack) return Swal.fire("Erreur", "Veuillez choisir une formule", "warning");
     
     registrationData.formule = registrationData.type_pack;
     registrationData.email = registrationData.email.trim().toLowerCase();
-    
+
     // ✅ Assure-toi que pathologies est bien un tableau
     if (registrationData.pathologies && !Array.isArray(registrationData.pathologies)) {
         registrationData.pathologies = registrationData.pathologies.split(',').map(s => s.trim());
@@ -1340,10 +1519,11 @@ async function submitRegistration() {
     const payload = {
         ...registrationData,
         pathologies: registrationData.pathologies || [],
-        categorie: registrationData.categorie
+        categorie: registrationData.categorie,
+        type_compte: registrationData.type_compte || 'AVEC_PATIENT'  // ← AJOUTÉ
     };
 
-    console.log("📤 Envoi inscription - Catégorie:", registrationData.categorie);
+    console.log("📤 Envoi inscription - Type compte:", payload.type_compte);
     console.log("📤 Payload complet:", payload);
     
     Swal.fire({ title: 'Création du dossier...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
@@ -1449,24 +1629,34 @@ function renderAuthView(mode = 'login', stepSource = 1) {
     // ============================================================
     // MODE REGISTER (avec marges externes)
     // ============================================================
-        else if (mode === 'register') {
-            const isServiceChoiceStep = currentStep === 0;
-            const isLastStep = currentStep === 5;
+    else if (mode === 'register') {
+        const isServiceChoiceStep = currentStep === 0;
+        const isLastStep = currentStep === 6;  // ← Changé de 5 à 6 (car on a une étape de plus)
         
+        // Déterminer si on est en mode AVEC_PATIENT ou SANS_PATIENT
+        const hasSelectedPatientType = registrationData.type_compte === 'AVEC_PATIENT';
+        const isSansPatient = registrationData.type_compte === 'SANS_PATIENT';
+        
+        // À l'étape 0, on affiche le choix du type de compte
+        if (currentStep === 0) {
+            dynamicContent = getTypeCompteChoiceHTML();
+        } 
+        // Pour les autres étapes, on vérifie d'abord que le type a été choisi
+        else if (!registrationData.type_compte) {
+            currentStep = 0;
+            dynamicContent = getTypeCompteChoiceHTML();
+        }
+        else {
             dynamicContent = `
                 <div class="flex flex-col min-h-0">
-        
                     <div 
                         class="flex-1 overflow-y-auto custom-scroll pr-1"
-                        style="
-                            max-height: clamp(360px, 52vh, 560px);
-                            padding-bottom: 4px;
-                        "
+                        style="max-height: clamp(360px, 52vh, 560px); padding-bottom: 4px;"
                     >
                         ${getStepHTML()}
                     </div>
-        
-                    ${currentStep !== 4 ? `
+    
+                    ${currentStep !== 4 && currentStep !== 5 ? `
                         <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4 bg-white">
                             ${currentStep > 1 ? `
                                 <button 
@@ -1476,21 +1666,20 @@ function renderAuthView(mode = 'login', stepSource = 1) {
                                     <i class="fa-solid fa-arrow-left"></i>
                                 </button>
                             ` : ''}
-        
-                            ${currentStep > 0 ? `
-                                <button 
-                                    onclick="window.nextAuthStep()" 
-                                    class="next-btn flex-1 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-md active:scale-95 transition-all" 
-                                    style="background: ${primaryColor}; color: white;"
-                                >
-                                    ${isLastStep ? 'Valider la demande' : 'Étape suivante'}
-                                </button>
-                            ` : ''}
+    
+                            <button 
+                                onclick="window.nextAuthStep()" 
+                                class="next-btn flex-1 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-md active:scale-95 transition-all" 
+                                style="background: ${primaryColor}; color: white;"
+                            >
+                                ${isLastStep ? 'Valider la demande' : 'Étape suivante'}
+                            </button>
                         </div>
                     ` : ''}
                 </div>
             `;
         }
+    }
     // ============================================================
     // MODE OTP
     // ============================================================
@@ -1641,6 +1830,10 @@ function renderMobileHub() {
     const isAidant = userRole === "AIDANT";
     const isCoordinateur = userRole === "COORDINATEUR";
     
+    // 🔥 Récupérer le type de compte
+    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+    const isSansPatient = typeCompte === "SANS_PATIENT";
+    
     // ============================================================
     // 🔥 COULEURS DYNAMIQUES SELON LE RÔLE
     // ============================================================
@@ -1648,7 +1841,6 @@ function renderMobileHub() {
     let primaryColor, primaryLight, goldColor, bannerIcon, bannerDesc, tileBgColor, tileIconColor, tileTextColor;
     
     if (isCoordinateur) {
-        // ADMIN - OR BRILLANT
         primaryColor = '#D4AF37';
         primaryLight = '#FEF9E6';
         goldColor = '#FFFFFF';
@@ -1659,7 +1851,6 @@ function renderMobileHub() {
         tileTextColor = '#0F172A';
     } 
     else if (isAidant) {
-        // AIDANT - OR DOUX
         primaryColor = '#C9A84C';
         primaryLight = '#FEF9E6';
         goldColor = '#FFFFFF';
@@ -1670,29 +1861,26 @@ function renderMobileHub() {
         tileTextColor = '#0F172A';
     }
     else if (isMaman) {
-        // MAMAN - ROSE (inchangé)
         primaryColor = '#E11D48';
         primaryLight = '#FFF1F2';
         goldColor = '#FFFFFF';
         bannerIcon = 'fa-baby-carriage';
-        bannerDesc = "Soutien et bien-être pour maman et bébé";
+        bannerDesc = isSansPatient ? "Votre espace personnel" : "Soutien et bien-être pour maman et bébé";
         tileBgColor = '#E11D48';
         tileIconColor = '#FFFFFF';
         tileTextColor = '#FFFFFF';
     }
     else if (isSenior) {
-        // SENIOR - VERT (inchangé)
         primaryColor = '#059669';
         primaryLight = '#ECFDF5';
         goldColor = '#FFFFFF';
         bannerIcon = 'fa-crown';
-        bannerDesc = "Maintien à domicile et soins au quotidien";
+        bannerDesc = isSansPatient ? "Votre espace personnel" : "Maintien à domicile et soins au quotidien";
         tileBgColor = '#059669';
         tileIconColor = '#FFFFFF';
         tileTextColor = '#FFFFFF';
     }
     else {
-        // DÉFAUT
         primaryColor = '#059669';
         primaryLight = '#ECFDF5';
         goldColor = '#FFFFFF';
@@ -1703,102 +1891,152 @@ function renderMobileHub() {
         tileTextColor = '#FFFFFF';
     }
     
-   const menuItems = [
-       { id: isMaman ? 'dashboard-maman' : (isCoordinateur ? 'dashboard' : 'patients'), 
-         label: isMaman ? 'Accueil' : (isCoordinateur ? 'Dashboard' : (isAidant ? 'Patients' : 'Mon suivi')), 
-         desc: isMaman ? 'Suivi quotidien' : (isCoordinateur ? 'Statistiques' : 'Mes dossiers'), 
-         icon: isMaman ? 'fa-home' : (isCoordinateur ? 'fa-chart-pie' : 'fa-folder-open'), 
-         roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-       { id: 'map', label: 'Radar', desc: 'Localisation GPS', icon: 'fa-location-dot', roles: ['COORDINATEUR', 'AIDANT', 'FAMILLE'] },
-       { id: 'visits', label: 'Visites', desc: 'Historique', icon: 'fa-calendar-check', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-       { id: 'feed', label: 'Journal', desc: 'Photos et messages', icon: 'fa-newspaper', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-       { id: 'commandes', label: isMaman ? 'Commandes bébé' : 'Commandes', desc: 'Produits et livraisons', icon: 'fa-box', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-       { id: 'billing', label: 'Factures', desc: 'Paiements', icon: 'fa-file-invoice-dollar', roles: ['COORDINATEUR', 'FAMILLE'] },
-       { id: 'subscription', label: 'Abonnement', desc: 'Formules', icon: 'fa-ticket', roles: ['FAMILLE'] },
-       { id: 'planning', label: 'Planning', desc: 'Agenda des soins', icon: 'fa-calendar-days', roles: ['COORDINATEUR', 'AIDANT'] },
-       { id: 'aidants', label: 'Équipe', desc: 'Gestion des aidants', icon: 'fa-user-nurse', roles: ['COORDINATEUR'] },
-       { id: 'rh-dashboard', label: 'RH', desc: 'Ressources humaines', icon: 'fa-users', roles: ['COORDINATEUR'] },
-       { id: 'users', label: 'Utilisateurs', desc: 'Gestion des comptes', icon: 'fa-users-gear', roles: ['COORDINATEUR'] },  
-       { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] }
-   ];
-
-    // Filtrer selon le rôle
-    const filteredMenu = menuItems.filter(item => item.roles.includes(userRole));
-
     // ============================================================
-    // 🔥 GÉNÉRATION DU HTML AVEC COULEURS DYNAMIQUES
+    // 🔥 MENU ITEMS ADAPTÉS SELON LE RÔLE ET LE TYPE DE COMPTE
     // ============================================================
     
- container.innerHTML = `
-    <div class="animate-fadeIn" style="background: #F8FAFC; padding-bottom: 20px;">
-      <!-- Bannière de bienvenue avec image de fond (sans calque) -->
-         <div class="relative rounded-2xl overflow-hidden mb-5" style="height: 160px;">
-             <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getBannerImage(userRole)}');"></div>
-             <!-- Contenu -->
-             <div class="relative z-10 h-full flex justify-between items-center p-5">
-                 <div>
-                     <div class="flex items-center gap-2 mb-2">
-                         <div class="bg-black/30 w-8 h-8 rounded-full flex items-center justify-center">
-                             <i class="fa-solid ${bannerIcon} text-white text-sm"></i>
-                         </div>
-                         <span class="text-[9px] font-bold uppercase tracking-wider text-white/80">BIENVENUE</span>
-                     </div>
-                     <h2 class="text-2xl font-black text-white drop-shadow-md">${userName?.split(' ')[0] || 'Utilisateur'}</h2>
-                     <p class="text-sm text-white drop-shadow-sm mt-1">${bannerDesc}</p>
-                 </div>
-                 <div class="bg-black/30 w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-sm relative">
-                     <i class="fa-regular fa-bell text-white text-xl"></i>
-                     <span id="mobile-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[8px] text-white flex items-center justify-center hidden">0</span>
-                 </div>
-             </div>
-         </div>
-                 
-                 <!-- Section info rapide -->
-                <!-- Prochaine intervention avec image de fond -->
-               <!-- Prochaine intervention avec image de fond (sans calque) -->
-         <div class="relative rounded-xl overflow-hidden mb-5" style="height: 90px;">
-             <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getNextVisitImage(userRole)}');"></div>
-             <div class="absolute inset-0 bg-black/30"></div>
-             <!-- Contenu -->
-             <div class="relative z-10 h-full flex justify-between items-center px-4">
-                 <div>
-                     <p class="text-[9px] font-bold uppercase tracking-wider text-white/80">${isMaman ? 'PROCHAINE VISITE' : (isAidant ? 'PROCHAINE MISSION' : 'PROCHAINE INTERVENTION')}</p>
-                     <p class="text-sm font-bold text-white mt-1">${isMaman ? 'Aujourd\'hui, 10h30' : (isAidant ? 'Patient: DIALLO Fatoumata' : 'À venir')}</p>
-                 </div>
-                 <div class="bg-black/30 w-8 h-8 rounded-full flex items-center justify-center">
-                     <i class="fa-solid fa-calendar-check text-white text-sm"></i>
-                 </div>
-             </div>
-         </div>
-        
-        <!-- Titre menu -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h4 style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: ${primaryColor};">MENU PRINCIPAL</h4>
-            <span style="font-size: 9px; color: #94A3B8;">${filteredMenu.length} services</span>
-        </div>
-        
-        <!-- Grille des tuiles -->
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;" id="menu-grid">
-            ${filteredMenu.map((item, index) => `
-                <div data-menu="${item.id}" onclick="window.switchView('${item.id}')" 
-                     style="background: ${tileBgColor}; border-radius: 20px; padding: 16px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: cardAppear 0.3s ease-out ${index * 0.03}s forwards; opacity: 0; position: relative;"
-                     ontouchstart="this.style.transform='scale(0.97)'"
-                     ontouchend="this.style.transform='scale(1)'"
-                     onmousedown="this.style.transform='scale(0.97)'"
-                     onmouseup="this.style.transform='scale(1)'">
-                    <div style="background: rgba(255,255,255,0.15); width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-                        <i class="fa-solid ${item.icon}" style="color: ${tileIconColor}; font-size: 22px;"></i>
-                    </div>
+    let menuItems = [];
+    
+    if (isCoordinateur) {
+        menuItems = [
+            { id: 'dashboard', label: 'Dashboard', desc: 'Statistiques', icon: 'fa-chart-pie', roles: ['COORDINATEUR'] },
+            { id: 'patients', label: 'Patients', desc: 'Dossiers', icon: 'fa-folder-open', roles: ['COORDINATEUR'] },
+            { id: 'aidants', label: 'Aidants', desc: 'Équipe', icon: 'fa-user-nurse', roles: ['COORDINATEUR'] },
+            { id: 'planning', label: 'Planning', desc: 'Agenda', icon: 'fa-calendar-days', roles: ['COORDINATEUR'] },
+            { id: 'map', label: 'Radar', desc: 'Localisation', icon: 'fa-location-dot', roles: ['COORDINATEUR'] },
+            { id: 'billing', label: 'Factures', desc: 'Paiements', icon: 'fa-file-invoice-dollar', roles: ['COORDINATEUR'] },
+            { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['COORDINATEUR'] }
+        ];
+    }
+    else if (isAidant) {
+        menuItems = [
+            { id: 'patients', label: 'Patients', desc: 'Mes dossiers', icon: 'fa-folder-open', roles: ['AIDANT'] },
+            { id: 'planning', label: 'Planning', desc: 'Agenda', icon: 'fa-calendar-days', roles: ['AIDANT'] },
+            { id: 'visits', label: 'Visites', desc: 'Historique', icon: 'fa-calendar-check', roles: ['AIDANT'] },
+            { id: 'commandes', label: 'Livraisons', desc: 'Commandes', icon: 'fa-box', roles: ['AIDANT'] },
+            { id: 'map', label: 'Radar', desc: 'Localisation', icon: 'fa-location-dot', roles: ['AIDANT'] },
+            { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['AIDANT'] }
+        ];
+    }
+    else if (isMaman) {
+        if (isSansPatient) {
+            menuItems = [
+                { id: 'home', label: 'Accueil', desc: 'Tableau de bord', icon: 'fa-home', roles: ['FAMILLE'] },
+                { id: 'commandes', label: 'Mes commandes', desc: 'Produits', icon: 'fa-box', roles: ['FAMILLE'] },
+                { id: 'education', label: 'Éducation', desc: 'Conseils', icon: 'fa-graduation-cap', roles: ['FAMILLE'] },
+                { id: 'billing', label: 'Factures', desc: 'Paiements', icon: 'fa-file-invoice-dollar', roles: ['FAMILLE'] },
+                { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['FAMILLE'] }
+            ];
+        } else {
+            menuItems = [
+                { id: 'dashboard-maman', label: 'Accueil', desc: 'Dashboard maman', icon: 'fa-home', roles: ['FAMILLE'] },
+                { id: 'feed', label: 'Journal', desc: 'Messages', icon: 'fa-newspaper', roles: ['FAMILLE'] },
+                { id: 'visits', label: 'Visites', desc: 'Historique', icon: 'fa-calendar-check', roles: ['FAMILLE'] },
+                { id: 'commandes', label: 'Commandes', desc: 'Bébé', icon: 'fa-box', roles: ['FAMILLE'] },
+                { id: 'education', label: 'Éducation', desc: 'Conseils', icon: 'fa-graduation-cap', roles: ['FAMILLE'] },
+                { id: 'billing', label: 'Factures', desc: 'Paiements', icon: 'fa-file-invoice-dollar', roles: ['FAMILLE'] },
+                { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['FAMILLE'] }
+            ];
+        }
+    }
+    else if (isSenior) {
+        if (isSansPatient) {
+            menuItems = [
+                { id: 'home', label: 'Accueil', desc: 'Tableau de bord', icon: 'fa-home', roles: ['FAMILLE'] },
+                { id: 'commandes', label: 'Mes commandes', desc: 'Produits', icon: 'fa-box', roles: ['FAMILLE'] },
+                { id: 'billing', label: 'Factures', desc: 'Paiements', icon: 'fa-file-invoice-dollar', roles: ['FAMILLE'] },
+                { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['FAMILLE'] }
+            ];
+        } else {
+            menuItems = [
+                { id: 'dashboard', label: 'Dashboard', desc: 'Statistiques', icon: 'fa-chart-line', roles: ['FAMILLE'] },
+                { id: 'feed', label: 'Journal', desc: 'Soins', icon: 'fa-newspaper', roles: ['FAMILLE'] },
+                { id: 'visits', label: 'Visites', desc: 'Historique', icon: 'fa-calendar-check', roles: ['FAMILLE'] },
+                { id: 'commandes', label: 'Commandes', desc: 'Médicaments', icon: 'fa-box', roles: ['FAMILLE'] },
+                { id: 'billing', label: 'Factures', desc: 'Paiements', icon: 'fa-file-invoice-dollar', roles: ['FAMILLE'] },
+                { id: 'subscription', label: 'Abonnement', desc: 'Formules', icon: 'fa-ticket', roles: ['FAMILLE'] },
+                { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['FAMILLE'] }
+            ];
+        }
+    }
+
+    // Filtrer selon le rôle (déjà fait dans la construction, mais sécurité)
+    const filteredMenu = menuItems;
+
+    // ============================================================
+    // 🔥 GÉNÉRATION DU HTML
+    // ============================================================
+    
+    container.innerHTML = `
+        <div class="animate-fadeIn" style="background: #F8FAFC; padding-bottom: 20px;">
+            <!-- Bannière de bienvenue -->
+            <div class="relative rounded-2xl overflow-hidden mb-5" style="height: 160px;">
+                <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getBannerImage(userRole)}');"></div>
+                <div class="relative z-10 h-full flex justify-between items-center p-5">
                     <div>
-                        <p style="font-weight: 700; color: ${tileTextColor}; font-size: 14px; margin-bottom: 2px;">${item.label}</p>
-                        <p style="font-size: 10px; color: ${isCoordinateur || isAidant ? 'rgba(15, 23, 42, 0.7)' : 'rgba(255,255,255,0.7)'};">${item.desc}</p>
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="bg-black/30 w-8 h-8 rounded-full flex items-center justify-center">
+                                <i class="fa-solid ${bannerIcon} text-white text-sm"></i>
+                            </div>
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-white/80">BIENVENUE</span>
+                        </div>
+                        <h2 class="text-2xl font-black text-white drop-shadow-md">${userName?.split(' ')[0] || 'Utilisateur'}</h2>
+                        <p class="text-sm text-white drop-shadow-sm mt-1">${bannerDesc}</p>
                     </div>
-                    <span class="menu-badge" style="position: absolute; top: -6px; right: -6px; background: #EF4444; color: white; font-size: 10px; font-weight: 800; min-width: 22px; height: 22px; border-radius: 22px; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(239,68,68,0.4); border: 2px solid white;"></span>
+                    <div class="bg-black/30 w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-sm relative">
+                        <i class="fa-regular fa-bell text-white text-xl"></i>
+                        <span id="mobile-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[8px] text-white flex items-center justify-center hidden">0</span>
+                    </div>
                 </div>
-            `).join('')}
+            </div>
+            
+            <!-- Prochaine intervention -->
+            <div class="relative rounded-xl overflow-hidden mb-5" style="height: 90px;">
+                <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getNextVisitImage(userRole)}');"></div>
+                <div class="absolute inset-0 bg-black/30"></div>
+                <div class="relative z-10 h-full flex justify-between items-center px-4">
+                    <div>
+                        <p class="text-[9px] font-bold uppercase tracking-wider text-white/80">
+                            ${isMaman ? 'PROCHAINE VISITE' : (isAidant ? 'PROCHAINE MISSION' : 'PROCHAINE INTERVENTION')}
+                        </p>
+                        <p class="text-sm font-bold text-white mt-1">
+                            ${isSansPatient ? 'Aucune visite prévue' : (isMaman ? 'Aujourd\'hui, 10h30' : (isAidant ? 'Patient: DIALLO Fatoumata' : 'À venir'))}
+                        </p>
+                    </div>
+                    <div class="bg-black/30 w-8 h-8 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-calendar-check text-white text-sm"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Titre menu -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h4 style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: ${primaryColor};">MENU PRINCIPAL</h4>
+                <span style="font-size: 9px; color: #94A3B8;">${filteredMenu.length} services</span>
+            </div>
+            
+            <!-- Grille des tuiles -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;" id="menu-grid">
+                ${filteredMenu.map((item, index) => `
+                    <div data-menu="${item.id}" onclick="window.switchView('${item.id}')" 
+                         style="background: ${tileBgColor}; border-radius: 20px; padding: 16px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: cardAppear 0.3s ease-out ${index * 0.03}s forwards; opacity: 0; position: relative;"
+                         ontouchstart="this.style.transform='scale(0.97)'"
+                         ontouchend="this.style.transform='scale(1)'"
+                         onmousedown="this.style.transform='scale(0.97)'"
+                         onmouseup="this.style.transform='scale(1)'">
+                        <div style="background: rgba(255,255,255,0.15); width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                            <i class="fa-solid ${item.icon}" style="color: ${tileIconColor}; font-size: 22px;"></i>
+                        </div>
+                        <div>
+                            <p style="font-weight: 700; color: ${tileTextColor}; font-size: 14px; margin-bottom: 2px;">${item.label}</p>
+                            <p style="font-size: 10px; color: ${isCoordinateur || isAidant ? 'rgba(15, 23, 42, 0.7)' : 'rgba(255,255,255,0.7)'};">${item.desc}</p>
+                        </div>
+                        <span class="menu-badge" style="position: absolute; top: -6px; right: -6px; background: #EF4444; color: white; font-size: 10px; font-weight: 800; min-width: 22px; height: 22px; border-radius: 22px; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(239,68,68,0.4); border: 2px solid white;"></span>
+                    </div>
+                `).join('')}
+            </div>
         </div>
-    </div>
-`;
+    `;
     
     // Initialiser les badges
     initHomeBadges();
@@ -1843,7 +2081,7 @@ function renderMobileHub() {
             
             const currentUserId = localStorage.getItem("user_id");
             
-            if (AppState.currentPatient) {
+            if (AppState.currentPatient && !isSansPatient) {
                 const lastRead = localStorage.getItem(`last_read_${AppState.currentPatient}`);
                 let messages = await secureFetch(`/messages?patient_id=${AppState.currentPatient}`);
                 if (!Array.isArray(messages)) messages = messages?.data || [];
@@ -1858,13 +2096,23 @@ function renderMobileHub() {
             }
             
             try {
-                const commandes = await secureFetch("/commandes", { noCache: true });
+                let commandes;
+                if (isSansPatient) {
+                    commandes = await secureFetch("/commandes/mes-commandes", { noCache: true });
+                } else {
+                    commandes = await secureFetch("/commandes", { noCache: true });
+                }
+                
                 if (userRole === "COORDINATEUR") {
                     commandesCount = commandes.filter(c => c.statut === "Livrée").length;
                 } else if (userRole === "AIDANT") {
                     commandesCount = commandes.filter(c => c.statut === "En attente" && !c.aidant_id).length;
                 } else if (userRole === "FAMILLE") {
-                    commandesCount = commandes.filter(c => c.statut === "En attente" || c.statut === "En cours de livraison").length;
+                    if (isSansPatient) {
+                        commandesCount = commandes.filter(c => c.statut === "En attente" || c.statut === "En cours de livraison").length;
+                    } else {
+                        commandesCount = commandes.filter(c => c.statut === "En attente" || c.statut === "En cours de livraison").length;
+                    }
                 }
             } catch (err) {}
             
@@ -2321,6 +2569,253 @@ if (installBtn) {
         updateBrandingColors();
     }, 50);
 }
+
+
+
+
+// ============================================================
+// ÉTAPE SANTÉ (pour AVEC_PATIENT)
+// ============================================================
+function getEtapeSanteHTML(isMamanFlow, themeBgClass, themeTextClass) {
+    if (isMamanFlow) {
+        return `
+            <div class="text-center mb-8">
+                <h3 class="text-xl font-black text-slate-800">Suivi Maman & Bébé</h3>
+                <p class="text-xs text-slate-400 mt-1">Quelques informations pour mieux vous accompagner</p>
+            </div>
+            <div class="space-y-4">
+                <div class="relative">
+                    <i class="fa-solid fa-hospital-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <select id="accouchement" class="app-input !pl-12 !py-3">
+                        <option value="">Type d'accouchement</option>
+                        <option value="voie_basse">Voie basse</option>
+                        <option value="cesarienne">Césarienne</option>
+                    </select>
+                </div>
+                <div class="relative">
+                    <i class="fa-solid fa-hand-holding-heart absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <select id="allaitement" class="app-input !pl-12 !py-3">
+                        <option value="">Allaitement</option>
+                        <option value="maternel">Maternel</option>
+                        <option value="mixte">Mixte</option>
+                        <option value="artificiel">Artificiel</option>
+                    </select>
+                </div>
+                <div>
+                    <textarea id="p-notes" class="app-input !py-3" rows="3" placeholder="Informations complémentaires (poids du bébé, sommeil, soucis particuliers...)"></textarea>
+                </div>
+            </div>
+        `;
+    } else {
+        return `
+            <div class="text-center mb-8">
+                <h3 class="text-xl font-black text-slate-800">Informations de santé</h3>
+                <p class="text-xs text-slate-400 mt-1">Pour un accompagnement adapté</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 ml-1 mb-2 block">Pathologies existantes</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-full text-xs"><input type="checkbox" class="med-hist" value="Diabète"> Diabète</label>
+                        <label class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-full text-xs"><input type="checkbox" class="med-hist" value="Hypertension"> Hypertension</label>
+                        <label class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-full text-xs"><input type="checkbox" class="med-hist" value="Arthrose"> Arthrose</label>
+                        <label class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-full text-xs"><input type="checkbox" class="med-hist" value="Alzheimer"> Alzheimer</label>
+                    </div>
+                </div>
+                <div>
+                    <textarea id="p-traitements" class="app-input !py-3" rows="2" placeholder="Traitements en cours (médicaments, posologies)"></textarea>
+                </div>
+                <div>
+                    <textarea id="p-allergies" class="app-input !py-3" rows="2" placeholder="Allergies connues"></textarea>
+                </div>
+                <div>
+                    <textarea id="p-notes" class="app-input !py-3" rows="2" placeholder="Autres informations (mobilité, habitudes, précautions)"></textarea>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// ============================================================
+// PACK MÉDICAL (pour AVEC_PATIENT)
+// ============================================================
+function getPackMedicalHTML(isMamanFlow, themeColor, themeBgClass, themeTextClass) {
+    const packs = isMamanFlow ? [
+        { id: 'ESSENTIEL', name: 'Essentiel', desc: '2 visites par semaine', price: '50.000', features: ['2 visites/semaine', 'Suivi de base'] },
+        { id: 'CONFORT', name: 'Confort', desc: '3 à 4 visites par semaine', price: '85.000', features: ['3-4 visites/semaine', 'Aide à la toilette', 'Préparation repas'] },
+        { id: 'SERENITE', name: 'Sérénité', desc: '6 à 7 visites par semaine', price: '150.000', features: ['6-7 visites/semaine', 'Accompagnement complet', 'Urgence 24/7'] },
+        { id: 'MATERNITE', name: 'Spécial Maternité', desc: 'Suivi intensif 2 semaines', price: '70.000', features: ['Visite quotidienne', 'Aide bébé', 'Conseils allaitement'] }
+    ] : [
+        { id: 'PONCTUEL', name: 'Ponctuel', desc: 'À la demande', price: '10.000', features: ['Intervention unique', 'Accompagnement RDV'] },
+        { id: 'REGULIER', name: 'Régulier', desc: '2 à 3 visites/semaine', price: '60.000', features: ['2-3 visites/semaine', 'Suivi médical', 'Lien famille'] },
+        { id: 'COMPLET', name: 'Complet', desc: '5 à 6 visites/semaine', price: '150.000', features: ['5-6 visites/semaine', 'Présence renforcée', 'Veille sanitaire'] }
+    ];
+    
+    return `
+        <div class="text-center mb-8">
+            <h3 class="text-xl font-black text-slate-800">Choisissez votre formule</h3>
+            <p class="text-xs text-slate-400 mt-1">Tarifs mensuels en CFA</p>
+        </div>
+        <div id="pack-selector" class="space-y-3 max-h-96 overflow-y-auto">
+            ${packs.map(pack => `
+                <div onclick="window.selectPack('${pack.id}', '${pack.price}')" 
+                     class="pack-card p-4 bg-white rounded-xl border-2 cursor-pointer transition-all ${registrationData.type_pack === pack.id ? `border-${themeColor}-500 ${themeBgClass}` : 'border-slate-100'}"
+                     data-pack-id="${pack.id}">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl ${registrationData.type_pack === pack.id ? themeBgClass : 'bg-slate-50'} flex items-center justify-center">
+                            <i class="fa-solid ${pack.id.includes('CONFORT') || pack.id.includes('REGULIER') ? 'fa-chart-line' : pack.id.includes('SERENITE') || pack.id.includes('COMPLET') ? 'fa-crown' : 'fa-seedling'} ${registrationData.type_pack === pack.id ? themeTextClass : 'text-slate-400'} text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center">
+                                <p class="font-black text-slate-800">${pack.name}</p>
+                                <p class="text-base font-black ${themeTextClass}">${pack.price} F</p>
+                            </div>
+                            <p class="text-[10px] text-slate-400">${pack.desc}</p>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                ${pack.features.map(f => `<span class="text-[8px] text-slate-400">✓ ${f}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        <div class="mt-6">
+            <button onclick="window.nextAuthStep()" 
+                    id="pack-continue-btn"
+                    class="w-full py-4 rounded-xl font-black uppercase tracking-wider text-[10px] shadow-lg transition-all active:scale-95 ${registrationData.type_pack ? (isMamanFlow ? 'bg-pink-500' : 'bg-emerald-500') : 'bg-slate-200 text-slate-400 cursor-not-allowed'}"
+                    ${!registrationData.type_pack ? 'disabled' : ''}>
+                Continuer
+            </button>
+        </div>
+    `;
+}
+
+// ============================================================
+// PACK CONFORT 24/7 (pour SANS_PATIENT)
+// ============================================================
+function getPackConfortHTML(themeColor, themeBgClass, themeTextClass) {
+    const packs = [
+        { id: 'CONFORT_247_MENSUEL', name: 'Pack Confort Mensuel', desc: 'Accès complet', price: '25.000', duration: 1, features: ['Commandes illimitées', 'Support prioritaire', 'Accès contenu éducatif'] },
+        { id: 'CONFORT_247_TRIMESTRIEL', name: 'Pack Confort 3 mois', desc: 'Économie 5%', price: '71.250', originalPrice: '75.000', duration: 3, features: ['Commandes illimitées', 'Support prioritaire', 'Accès contenu éducatif', 'Économie 5%'] },
+        { id: 'CONFORT_247_ANNUEL', name: 'Pack Confort 1 an', desc: 'Économie 15%', price: '255.000', originalPrice: '300.000', duration: 12, features: ['Commandes illimitées', 'Support prioritaire', 'Accès contenu éducatif', 'Économie 15%'] }
+    ];
+    
+    return `
+        <div class="text-center mb-8">
+            <h3 class="text-xl font-black text-slate-800">Pack Confort 24/7</h3>
+            <p class="text-xs text-slate-400 mt-1">Commandes illimitées et support prioritaire</p>
+        </div>
+        <div id="pack-selector" class="space-y-3 max-h-96 overflow-y-auto">
+            ${packs.map(pack => `
+                <div onclick="window.selectPackConfort('${pack.id}', '${pack.price}', ${pack.duration})" 
+                     class="pack-card p-4 bg-white rounded-xl border-2 cursor-pointer transition-all ${registrationData.type_pack === pack.id ? `border-${themeColor}-500 ${themeBgClass}` : 'border-slate-100'}"
+                     data-pack-id="${pack.id}">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl ${registrationData.type_pack === pack.id ? themeBgClass : 'bg-slate-50'} flex items-center justify-center">
+                            <i class="fa-solid fa-crown ${registrationData.type_pack === pack.id ? themeTextClass : 'text-slate-400'} text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center">
+                                <p class="font-black text-slate-800">${pack.name}</p>
+                                <div class="text-right">
+                                    ${pack.originalPrice ? `<span class="text-[10px] text-slate-400 line-through mr-2">${pack.originalPrice} F</span>` : ''}
+                                    <p class="text-base font-black ${themeTextClass}">${pack.price} F</p>
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-400">${pack.desc}</p>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                ${pack.features.map(f => `<span class="text-[8px] text-slate-400">✓ ${f}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        <div class="mt-4 p-3 bg-blue-50 rounded-xl">
+            <p class="text-[9px] text-blue-600 font-medium">✨ Ce pack vous permet de :</p>
+            <ul class="text-[9px] text-slate-500 mt-1 space-y-0.5">
+                <li>• Passer des commandes de produits (couches, lait, médicaments, etc.)</li>
+                <li>• Bénéficier d'un support prioritaire 24/7</li>
+                <li>• Accéder à tous les contenus éducatifs</li>
+                <li>• Ajouter un patient plus tard si nécessaire</li>
+            </ul>
+        </div>
+        <div class="mt-6">
+            <button onclick="window.nextAuthStep()" 
+                    id="pack-continue-btn"
+                    class="w-full py-4 rounded-xl font-black uppercase tracking-wider text-[10px] shadow-lg transition-all active:scale-95 ${registrationData.type_pack ? 'bg-emerald-500' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}"
+                    ${!registrationData.type_pack ? 'disabled' : ''}>
+                Continuer
+            </button>
+        </div>
+    `;
+}
+
+
+
+// ============================================================
+// SÉLECTION DU PACK CONFORT (pour comptes SANS_PATIENT)
+// ============================================================
+window.selectPackConfort = (packId, price, durationMonths) => {
+    registrationData.type_pack = packId;
+    registrationData.montant_prevu = price;
+    registrationData.duree_abonnement_mois = durationMonths;
+    
+    const isMamanFlow = registrationData.categorie === 'MAMAN_BEBE';
+    const themeColor = isMamanFlow ? 'pink' : 'emerald';
+    const themeBgClass = isMamanFlow ? 'bg-pink-50' : 'bg-emerald-50';
+    const themeBorderClass = isMamanFlow ? 'border-pink-200' : 'border-emerald-200';
+    const themeColorClass = isMamanFlow ? 'text-pink-600' : 'text-emerald-600';
+    const borderColorClass = isMamanFlow ? 'border-pink-500' : 'border-emerald-500';
+    const bgColorClass = isMamanFlow ? 'bg-pink-500' : 'bg-emerald-500';
+    
+    document.querySelectorAll('.pack-card').forEach(card => {
+        const cardPackId = card.dataset.packId;
+        if (cardPackId === packId) {
+            card.classList.add(borderColorClass);
+            card.classList.add(isMamanFlow ? 'bg-pink-50' : 'bg-emerald-50');
+            card.classList.add(isMamanFlow ? 'border-pink-200' : 'border-emerald-200');
+            card.classList.remove('border-slate-100');
+            
+            const iconDiv = card.querySelector('.w-12.h-12');
+            if (iconDiv) {
+                iconDiv.classList.add(isMamanFlow ? 'bg-pink-50' : 'bg-emerald-50');
+                iconDiv.classList.remove('bg-slate-50');
+                const icon = iconDiv.querySelector('i');
+                if (icon) {
+                    icon.classList.add(themeColorClass);
+                    icon.classList.remove('text-slate-400');
+                }
+            }
+        } else {
+            card.classList.remove(borderColorClass);
+            card.classList.remove(isMamanFlow ? 'bg-pink-50' : 'bg-emerald-50');
+            card.classList.remove(isMamanFlow ? 'border-pink-200' : 'border-emerald-200');
+            card.classList.add('border-slate-100');
+            
+            const iconDiv = card.querySelector('.w-12.h-12');
+            if (iconDiv) {
+                iconDiv.classList.remove(isMamanFlow ? 'bg-pink-50' : 'bg-emerald-50');
+                iconDiv.classList.add('bg-slate-50');
+                const icon = iconDiv.querySelector('i');
+                if (icon) {
+                    icon.classList.remove(themeColorClass);
+                    icon.classList.add('text-slate-400');
+                }
+            }
+        }
+    });
+    
+    const continueBtn = document.getElementById('pack-continue-btn');
+    if (continueBtn) {
+        continueBtn.disabled = false;
+        continueBtn.classList.remove('bg-slate-200', 'text-slate-400', 'cursor-not-allowed');
+        continueBtn.classList.add(isMamanFlow ? 'bg-pink-500' : 'bg-emerald-500');
+    }
+    
+    UI.vibrate('success');
+};
+
 // ============================================================
 // LIENS DE NAVIGATION (DESKTOP)
 // ============================================================
@@ -2331,13 +2826,17 @@ function getNavLinks(role, mode) {
     const isAidant = role === "AIDANT";
     const isCoordinateur = role === "COORDINATEUR";
     
+    // 🔥 NOUVEAU : Récupérer le type de compte
+    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+    const isSansPatient = typeCompte === "SANS_PATIENT";
+    
     // ============================================================
-    // DÉFINITION DES ONGLETS SELON LE RÔLE
+    // DÉFINITION DES ONGLETS SELON LE RÔLE ET LE TYPE DE COMPTE
     // ============================================================
     let tabs = [];
     
     if (isCoordinateur) {
-        // 👔 COORDINATEUR
+        // 👔 COORDINATEUR (inchangé)
         tabs = [
             { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard' },
             { id: 'patients', icon: 'fa-hospital-user', label: 'Patients' },
@@ -2347,11 +2846,11 @@ function getNavLinks(role, mode) {
             { id: 'map', icon: 'fa-location-dot', label: 'Radar' },
             { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
             { id: 'profile', icon: 'fa-user-circle', label: 'Profil' },
-           { id: 'users', icon: 'fa-users', label: 'Utilisateurs' }
+            { id: 'users', icon: 'fa-users', label: 'Utilisateurs' }
         ];
     } 
     else if (isAidant) {
-        // 🩺 AIDANT
+        // 🩺 AIDANT (inchangé)
         tabs = [
             { id: 'patients', icon: 'fa-folder-open', label: 'Mes patients' },
             { id: 'planning', icon: 'fa-calendar-days', label: 'Planning' },
@@ -2363,27 +2862,46 @@ function getNavLinks(role, mode) {
     } 
     else if (isFamily && isMaman) {
         // 🌸 MAMAN & BÉBÉ - Dashboard unique
-        tabs = [
-            { id: 'home', icon: 'fa-home', label: 'Accueil' },  
-            { id: 'feed', icon: 'fa-newspaper', label: 'Journal bébé' },
-            { id: 'visits', icon: 'fa-calendar-check', label: 'Visites' },  
-            { id: 'commandes', icon: 'fa-box', label: 'Commandes bébé' },
-            { id: 'education', icon: 'fa-graduation-cap', label: 'Éducation' },
-            { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
-            { id: 'profile', icon: 'fa-user-circle', label: 'Profil' }
-        ];
+        if (isSansPatient) {
+            tabs = [
+                { id: 'home', icon: 'fa-home', label: 'Accueil' },
+                { id: 'commandes', icon: 'fa-box', label: 'Mes commandes' },
+                { id: 'education', icon: 'fa-graduation-cap', label: 'Éducation' },
+                { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
+                { id: 'profile', icon: 'fa-user-circle', label: 'Profil' }
+            ];
+        } else {
+            tabs = [
+                { id: 'home', icon: 'fa-home', label: 'Accueil' },
+                { id: 'feed', icon: 'fa-newspaper', label: 'Journal bébé' },
+                { id: 'visits', icon: 'fa-calendar-check', label: 'Visites' },
+                { id: 'commandes', icon: 'fa-box', label: 'Commandes bébé' },
+                { id: 'education', icon: 'fa-graduation-cap', label: 'Éducation' },
+                { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
+                { id: 'profile', icon: 'fa-user-circle', label: 'Profil' }
+            ];
+        }
     }
     else if (isFamily && !isMaman) {
         // 👴 SENIOR
-        tabs = [
-            { id: 'dashboard', icon: 'fa-chart-line', label: 'Tableau de bord' },
-            { id: 'feed', icon: 'fa-newspaper', label: 'Journal de soins' },
-            { id: 'visits', icon: 'fa-calendar-check', label: 'Visites' },
-            { id: 'commandes', icon: 'fa-box', label: 'Commandes' },
-            { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
-            { id: 'subscription', icon: 'fa-ticket', label: 'Abonnement' },
-            { id: 'profile', icon: 'fa-user-circle', label: 'Profil' }
-        ];
+        if (isSansPatient) {
+            tabs = [
+                { id: 'home', icon: 'fa-home', label: 'Accueil' },
+                { id: 'commandes', icon: 'fa-box', label: 'Mes commandes' },
+                { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
+                { id: 'profile', icon: 'fa-user-circle', label: 'Profil' }
+            ];
+        } else {
+            tabs = [
+                { id: 'dashboard', icon: 'fa-chart-line', label: 'Tableau de bord' },
+                { id: 'feed', icon: 'fa-newspaper', label: 'Journal de soins' },
+                { id: 'visits', icon: 'fa-calendar-check', label: 'Visites' },
+                { id: 'commandes', icon: 'fa-box', label: 'Commandes' },
+                { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
+                { id: 'subscription', icon: 'fa-ticket', label: 'Abonnement' },
+                { id: 'profile', icon: 'fa-user-circle', label: 'Profil' }
+            ];
+        }
     }
 
     // ============================================================
@@ -2396,15 +2914,15 @@ function getNavLinks(role, mode) {
                 <span class="text-[8px] font-black uppercase tracking-tighter">${tab.label}</span>
             </button>
         `).join('');
-           } else {
-            return tabs.map(tab => `
-                <button onclick="window.switchView('${tab.id}')" data-view="${tab.id}" 
-                        class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all text-sm">
-                    <i class="fa-solid ${tab.icon} text-base w-5"></i>
-                    <span>${tab.label}</span>
-                </button>
-            `).join('');
-        }
+    } else {
+        return tabs.map(tab => `
+            <button onclick="window.switchView('${tab.id}')" data-view="${tab.id}" 
+                    class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all text-sm">
+                <i class="fa-solid ${tab.icon} text-base w-5"></i>
+                <span>${tab.label}</span>
+            </button>
+        `).join('');
+    }
 }
 
 // ============================================================
