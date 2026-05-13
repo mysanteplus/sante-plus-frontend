@@ -9,6 +9,8 @@ export async function loadBilling() {
   const table = document.getElementById("billing-table");
   const kpiContainer = document.getElementById("billing-kpis");
   const userRole = localStorage.getItem("user_role");
+  const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+  const isSansPatient = typeCompte === "SANS_PATIENT";
 
   if (!table || !kpiContainer) return;
 
@@ -24,28 +26,18 @@ export async function loadBilling() {
 
     // PAS DE FACTURES
     if (!abonnements || abonnements.length === 0) {
-      table.innerHTML = renderEmptyState(userRole);
+      table.innerHTML = renderEmptyState(userRole, isSansPatient);
       kpiContainer.innerHTML = renderEmptyKpis();
       return;
     }
 
     // IL Y A DES FACTURES
-    // Mise à jour du statut de paiement
-    const hasDebt = abonnements.some((abo) => 
-      abo.statut === "En retard" || abo.statut === "Expiré"
-    );
-    localStorage.setItem("payment_status", hasDebt ? "Expiré" : "A jour");
-    
-    // Récupérer le dernier abonnement payé
-    const paidAbonnement = abonnements.find(abo => abo.statut === "Payé" && abo.date_paiement);
-    
-    if (paidAbonnement) {
-      if (paidAbonnement.date_fin_abonnement) {
-        localStorage.setItem("subscription_end_date", paidAbonnement.date_fin_abonnement);
-      }
-      if (paidAbonnement.date_paiement) {
-        localStorage.setItem("last_payment_date", paidAbonnement.date_paiement);
-      }
+    // Mise à jour du statut de paiement (seulement pour comptes avec patient)
+    if (!isSansPatient) {
+      const hasDebt = abonnements.some((abo) => 
+        abo.statut === "En retard" || abo.statut === "Expiré"
+      );
+      localStorage.setItem("payment_status", hasDebt ? "Expiré" : "A jour");
     }
 
     let totalPaid = 0;
@@ -54,9 +46,28 @@ export async function loadBilling() {
 
     abonnements.forEach((abo) => {
       const statusBadge = getStatusBadge(abo.statut);
-      const actionButton = getActionButton(abo, userRole);
-      const expirationInfo = abo.date_fin_abonnement ? 
-        `<div class="text-[8px] text-slate-400 mt-1">Valable jusqu'au ${new Date(abo.date_fin_abonnement).toLocaleDateString('fr-FR')}</div>` : '';
+      const actionButton = getActionButton(abo, userRole, isSansPatient);
+      
+      // Gérer l'affichage selon le type de compte
+      let designation = "";
+      let expirationInfo = "";
+      
+      if (isSansPatient) {
+        // Pour les comptes SANS_PATIENT, afficher "Pack Confort"
+        designation = `<p class="font-black text-slate-800 text-xs uppercase">Pack Confort 24/7</p>`;
+        if (abo.date_fin_abonnement) {
+          expirationInfo = `<div class="text-[8px] text-slate-400 mt-1">Valable jusqu'au ${new Date(abo.date_fin_abonnement).toLocaleDateString('fr-FR')}</div>`;
+        }
+      } else {
+        // Pour les comptes AVEC_PATIENT, afficher le nom du patient
+        designation = `
+          <p class="font-black text-slate-800 text-xs uppercase">${escapeHtml(abo.patient?.nom_complet || 'Patient inconnu')}</p>
+          <p class="text-[9px] text-slate-400 font-bold">${escapeHtml(abo.type_pack?.replace(/_/g, ' ') || '-')}</p>
+        `;
+        if (abo.date_fin_abonnement) {
+          expirationInfo = `<div class="text-[8px] text-slate-400 mt-1">Valable jusqu'au ${new Date(abo.date_fin_abonnement).toLocaleDateString('fr-FR')}</div>`;
+        }
+      }
 
       totalPaid += abo.montant_paye || 0;
       if (abo.statut === "En retard" || abo.statut === "Expiré") {
@@ -66,19 +77,18 @@ export async function loadBilling() {
       table.innerHTML += `
         <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
           <td class="p-4">
-            <p class="font-black text-slate-800 text-xs uppercase">${escapeHtml(abo.patient?.nom_complet || 'Inconnu')}</p>
-            <p class="text-[9px] text-slate-400 font-bold">${escapeHtml(abo.patient?.formule || '-')}</p>
+            ${designation}
             ${expirationInfo}
           </td>
           <td class="p-4 text-[11px] font-bold text-slate-500">${abo.mois_annee}</td>
           <td class="p-4 text-right font-black text-slate-900 text-xs">${UI.formatMoney(abo.montant_du)}</td>
           <td class="p-4 text-center">${statusBadge}</td>
           <td class="p-4 text-center">${actionButton}</td>
-        </tr>
+        </table>
       `;
     });
 
-    kpiContainer.innerHTML = renderKpis(totalPaid, totalLate);
+    kpiContainer.innerHTML = renderKpis(totalPaid, totalLate, isSansPatient);
 
   } catch (err) {
     console.error("❌ Erreur loadBilling:", err.message);
@@ -93,22 +103,29 @@ export async function loadBilling() {
 // FONCTIONS DE RENDU
 // ============================================================
 
-function renderEmptyState(userRole) {
+function renderEmptyState(userRole, isSansPatient) {
+  let buttonText = "Souscrire au Pack Confort";
+  let buttonView = "subscription";
+  let message = "Aucune facture disponible pour le moment";
+  
+  if (!isSansPatient) {
+    buttonText = "Souscrire un abonnement médical";
+    buttonView = "subscription";
+    message = "Les factures apparaîtront après validation des paiements";
+  }
+  
   return `
     <tr>
       <td colspan="5" class="p-10 text-center">
         <div class="flex flex-col items-center gap-4">
           <i class="fa-solid fa-receipt text-4xl text-slate-300"></i>
-          <p class="text-slate-400 italic text-sm">Aucune facture disponible pour le moment</p>
-          <p class="text-[10px] text-slate-300">Les factures apparaîtront après validation des paiements</p>
+          <p class="text-slate-400 italic text-sm">${message}</p>
+          <p class="text-[10px] text-slate-300">${isSansPatient ? "Activez votre Pack Confort pour commencer" : "Les factures sont créées automatiquement le 1er du mois"}</p>
           ${userRole === "FAMILLE" ? `
-            <button onclick="window.switchView('subscription')" 
+            <button onclick="window.switchView('${buttonView}')" 
                     class="mt-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-emerald-700 transition-all">
-              🎁 Souscrire un abonnement
+              🎁 ${buttonText}
             </button>
-          ` : ''}
-          ${userRole === "COORDINATEUR" ? `
-            <p class="text-xs text-slate-400 mt-2">Les factures sont créées automatiquement le 1er du mois.</p>
           ` : ''}
         </div>
       </td>
@@ -155,18 +172,20 @@ function getStatusBadge(statut) {
 }
 
 
-function renderKpis(totalPaid, totalLate) {
+function renderKpis(totalPaid, totalLate, isSansPatient) {
+  const title = isSansPatient ? "Total dépensé" : "Total encaissé";
+  
   return `
     <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
       <div>
-        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total encaissé</p>
+        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">${title}</p>
         <h3 class="text-xl font-black text-emerald-600">${UI.formatMoney(totalPaid)}</h3>
       </div>
       <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
         <i class="fa-solid fa-sack-dollar text-xl"></i>
       </div>
     </div>
-    ${totalLate > 0 ? `
+    ${totalLate > 0 && !isSansPatient ? `
       <div class="bg-red-50 p-5 rounded-2xl border border-red-100 flex items-center justify-between">
         <div>
           <p class="text-[9px] font-black text-red-600 uppercase tracking-widest">Reste à recouvrer</p>
@@ -177,7 +196,6 @@ function renderKpis(totalPaid, totalLate) {
     ` : ""}
   `;
 }
-
 // ============================================================
 // PAIEMENT KIKIAPAY
 // ============================================================
@@ -278,17 +296,26 @@ window.markAsPaid = async (id, montant) => {
 };
 
 
-function getActionButton(abo, userRole) {
+function getActionButton(abo, userRole, isSansPatient) {
   if (userRole === "COORDINATEUR" && abo.statut !== "Payé") {
     return `<button onclick="window.markAsPaid('${abo.id}', ${abo.montant_du})" 
                    class="bg-slate-900 text-white px-3 py-1.5 rounded-lg font-bold text-[9px] uppercase">
               Valider Cash
             </button>`;
   } else if (userRole === "FAMILLE" && abo.statut !== "Payé") {
-    return `<button onclick="window.retryPayment('${abo.id}', ${abo.montant_du}, '${escapeHtml(abo.patient?.nom_complet || 'Patient')}', '${abo.type_pack || ''}', ${abo.duree_mois || 1})" 
+    if (isSansPatient) {
+      // Pack Confort
+      return `<button onclick="window.payConfortPack('${abo.id}', ${abo.montant_du})" 
+                   class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-bold text-[9px] uppercase shadow-lg">
+              💳 Payer Pack Confort
+            </button>`;
+    } else {
+      // Pack médical
+      return `<button onclick="window.retryPayment('${abo.id}', ${abo.montant_du}, '${escapeHtml(abo.patient?.nom_complet || 'Patient')}', '${abo.type_pack || ''}', ${abo.duree_mois || 1})" 
                    class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-bold text-[9px] uppercase shadow-lg">
               💳 Payer Mobile
             </button>`;
+    }
   } else if (abo.statut === "Payé") {
     return `<button onclick="window.viewInvoice('${abo.id}')" 
                    class="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg font-bold text-[9px]">
@@ -297,11 +324,6 @@ function getActionButton(abo, userRole) {
   }
   return '<span class="text-slate-300 text-[9px]">—</span>';
 }
-
-
-
-
-
 
 // ============================================================
 // 📄 VOIR LE DÉTAIL D'UNE FACTURE
@@ -370,7 +392,81 @@ window.viewInvoice = async (abonnementId) => {
 
 
 
-
+// ============================================================
+// 💳 PAYER LE PACK CONFORT (comptes SANS_PATIENT)
+// ============================================================
+window.payConfortPack = async (abonnementId, montant) => {
+  const confirm = await Swal.fire({
+    title: "Pack Confort 24/7",
+    html: `
+      <div class="text-center">
+        <div class="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+          <i class="fa-solid fa-crown text-emerald-500 text-3xl"></i>
+        </div>
+        <p class="text-sm font-bold text-slate-800 mb-2">Pack Confort 24/7</p>
+        <p class="text-xs text-slate-500">Montant: <span class="font-bold text-emerald-600">${montant.toLocaleString()} CFA</span></p>
+        <p class="text-xs text-slate-500 mt-1">Validité: 1 mois + 5 jours de grâce</p>
+        <div class="mt-4 p-3 bg-slate-50 rounded-xl">
+          <p class="text-[10px] text-slate-500">✨ Ce pack vous permet de :</p>
+          <ul class="text-[9px] text-slate-500 mt-1 text-left">
+            <li>• Passer des commandes de produits</li>
+            <li>• Bénéficier d'un support prioritaire 24/7</li>
+            <li>• Accéder aux contenus éducatifs</li>
+            <li>• Ajouter un patient plus tard</li>
+          </ul>
+        </div>
+      </div>
+    `,
+    icon: 'info',
+    showCancelButton: true,
+    confirmButtonText: '💳 Payer maintenant',
+    cancelButtonText: 'Annuler',
+    confirmButtonColor: '#10B981',
+    customClass: { popup: 'rounded-2xl p-6' }
+  });
+  
+  if (!confirm.isConfirmed) return;
+  
+  Swal.fire({
+    title: "Préparation...",
+    didOpen: () => Swal.showLoading(),
+    allowOutsideClick: false
+  });
+  
+  try {
+    // Appel à l'API pour initier le paiement FedaPay
+    const response = await secureFetch("/billing/subscribe-confort", {
+      method: "POST",
+      body: JSON.stringify({
+        montant: montant,
+        duree_mois: 1
+      })
+    });
+    
+    Swal.close();
+    
+    if (response.status === "success") {
+      Swal.fire({
+        icon: "success",
+        title: "Pack Confort activé !",
+        text: `Votre pack est actif jusqu'au ${new Date(response.date_fin).toLocaleDateString('fr-FR')}`,
+        confirmButtonText: "OK"
+      }).then(() => {
+        window.switchView("billing");
+      });
+    }
+    
+  } catch (err) {
+    Swal.close();
+    console.error("❌ Erreur paiement:", err);
+    Swal.fire({
+      icon: "error",
+      title: "Erreur",
+      text: err.message || "Impossible d'effectuer le paiement",
+      confirmButtonText: "OK"
+    });
+  }
+};
 
  
  // ============================================================
