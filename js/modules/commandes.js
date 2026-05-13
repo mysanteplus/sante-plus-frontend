@@ -36,7 +36,20 @@ export async function loadCommandes() {
     isLoading = true;
     
     try {
-        const data = await secureFetch("/commandes");
+        const userRole = localStorage.getItem("user_role");
+        const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+        const isSansPatient = typeCompte === "SANS_PATIENT";
+        
+        let data;
+        
+        if (isSansPatient && userRole === "FAMILLE") {
+            // Utiliser la route dédiée pour les comptes sans patient
+            data = await secureFetch("/commandes/mes-commandes");
+        } else {
+            // Route normale pour les autres
+            data = await secureFetch("/commandes");
+        }
+        
         console.log("📦 Commandes reçues:", data.length);
         renderCommandes(data);
     } catch (err) {
@@ -46,7 +59,6 @@ export async function loadCommandes() {
         isLoading = false;
     }
 }
-
 
 /**
  * 🖼️ OUVRIRE UNE IMAGE EN MODALE (grand format)
@@ -96,6 +108,10 @@ function renderCommandes(list) {
             const isCoordinateur = role === "COORDINATEUR";
             const currentUserId = localStorage.getItem("user_id");
             
+            // 🔥 NOUVEAU : Récupérer le type de compte
+            const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+            const isSansPatient = typeCompte === "SANS_PATIENT";
+            
             // Couleurs dynamiques
             const primaryColor = isMaman ? '#E11D48' : '#059669';
             const primaryLight = isMaman ? '#FFF1F2' : '#ECFDF5';
@@ -103,10 +119,34 @@ function renderCommandes(list) {
 
             if (!list.length) {
                 let emptyMessage = "Aucune commande";
-                if (isFamily && isMaman) emptyMessage = "Aucune commande bébé";
-                else if (isFamily && !isMaman) emptyMessage = "Aucune commande médicale";
+                if (isSansPatient) {
+                    emptyMessage = "Aucune commande personnelle";
+                } else if (isFamily && isMaman) {
+                    emptyMessage = "Aucune commande bébé";
+                } else if (isFamily && !isMaman) {
+                    emptyMessage = "Aucune commande médicale";
+                }
                 
                 container.innerHTML = `<div class="text-center py-20"><i class="fa-solid fa-box-open text-5xl text-slate-300"></i><p class="text-xs font-black uppercase mt-2 text-slate-400">${emptyMessage}</p></div>`;
+                
+                // Bouton "Nouvelle commande" pour les comptes sans patient
+                if (isSansPatient && isFamily) {
+                    const existingNewBtn = document.getElementById('new-commande-btn-container');
+                    if (!existingNewBtn) {
+                        const newBtnContainer = document.createElement('div');
+                        newBtnContainer.id = 'new-commande-btn-container';
+                        newBtnContainer.className = 'mb-4 flex justify-end';
+                        newBtnContainer.innerHTML = `
+                            <button onclick="window.openOrderModal()" 
+                                    class="px-4 py-2 text-white rounded-xl text-[10px] font-black uppercase shadow-md transition-all"
+                                    style="background: ${primaryColor};">
+                                + Nouvelle commande
+                            </button>
+                        `;
+                        container.parentNode.insertBefore(newBtnContainer, container);
+                    }
+                }
+                
                 isRendering = false;
                 return;
             }
@@ -145,6 +185,20 @@ function renderCommandes(list) {
                     'AUTRE': '📦 Autre'
                 };
                 const typeLabel = typeLabels[c.type_commande] || '📦 Commande';
+                
+                // 🔥 Affichage du destinataire adapté (patient ou utilisateur)
+                let destinataireDisplay = '';
+                if (isSansPatient) {
+                    destinataireDisplay = `
+                        <h4 class="font-black text-slate-800 text-sm">Commande personnelle</h4>
+                        <p class="text-[9px] text-slate-400">${typeLabel}</p>
+                    `;
+                } else {
+                    destinataireDisplay = `
+                        <h4 class="font-black text-slate-800 text-sm">${c.patient?.nom_complet || 'Patient inconnu'}</h4>
+                        <p class="text-[9px] text-slate-400">${typeLabel}</p>
+                    `;
+                }
                 
                 // 📸 GALERIE DES IMAGES DE LA COMMANDE
                 const imagesHtml = c.images && c.images.length > 0 ? `
@@ -240,8 +294,7 @@ function renderCommandes(list) {
                                     <span class="text-[8px] font-black text-slate-300 uppercase tracking-widest">#${c.id?.substring(0, 8)}</span>
                                     ${urgentBadge}
                                 </div>
-                                <h4 class="font-black text-slate-800 text-sm mt-1">${c.patient?.nom_complet || 'Patient inconnu'}</h4>
-                                <p class="text-[9px] text-slate-400">${typeLabel}</p>
+                                ${destinataireDisplay}
                             </div>
                             <span class="px-2 py-1 rounded-md text-[8px] font-black uppercase ${statusColor} whitespace-nowrap ml-2">${statusIcon} ${statusText}</span>
                         </div>
@@ -313,6 +366,30 @@ function renderCommandes(list) {
             // Mise à jour unique du DOM
             container.innerHTML = html;
             
+            // 🔥 Bouton "Nouvelle commande" pour les comptes sans patient
+            if (isSansPatient && isFamily) {
+                let existingNewBtn = document.getElementById('new-commande-btn-container');
+                if (!existingNewBtn) {
+                    const newBtnContainer = document.createElement('div');
+                    newBtnContainer.id = 'new-commande-btn-container';
+                    newBtnContainer.className = 'mb-4 flex justify-end';
+                    newBtnContainer.innerHTML = `
+                        <button onclick="window.openOrderModal()" 
+                                class="px-4 py-2 text-white rounded-xl text-[10px] font-black uppercase shadow-md transition-all"
+                                style="background: ${primaryColor};">
+                            + Nouvelle commande
+                        </button>
+                    `;
+                    container.parentNode.insertBefore(newBtnContainer, container);
+                }
+            } else {
+                // Supprimer le bouton si existant (pour les autres types de comptes)
+                const existingNewBtn = document.getElementById('new-commande-btn-container');
+                if (existingNewBtn) {
+                    existingNewBtn.remove();
+                }
+            }
+            
             // Bouton "Faire le point du jour" pour le coordinateur
             if (isCoordinateur) {
                 let existingBtn = document.getElementById('validate-all-deliveries-btn');
@@ -330,6 +407,12 @@ function renderCommandes(list) {
                     container.parentNode.insertBefore(todayBtn, container);
                 }
                 loadAidantsForSelect();
+            } else {
+                // Supprimer le bouton si existant (pour les autres types de comptes)
+                const existingBtn = document.getElementById('validate-all-deliveries-btn');
+                if (existingBtn) {
+                    existingBtn.remove();
+                }
             }
             
         } catch (err) {
@@ -346,7 +429,6 @@ function renderCommandes(list) {
         }
     });
 }
-
 
 /**
  * 🚚 AIDANT - PRENDRE EN CHARGE UNE COMMANDE
@@ -706,35 +788,41 @@ export async function openOrderModal() {
     const isMaman = localStorage.getItem("user_is_maman") === "true";
     const isFamily = localStorage.getItem("user_role") === "FAMILLE";
     const userRole = localStorage.getItem("user_role");
+    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+    const isSansPatient = typeCompte === "SANS_PATIENT";
     
-    // Récupérer l'ID du patient
-    let patientId = AppState.currentPatient;
+    let patientId = null;
     
-    if (!patientId) {
-        try {
-            const patients = await secureFetch('/patients');
-            if (patients && patients.length > 0) {
-                patientId = patients[0].id;
-                AppState.currentPatient = patientId;
-                localStorage.setItem("current_patient_id", patientId);
-            } else {
+    // 🔥 Pour les comptes SANS_PATIENT, pas besoin de patient_id
+    if (!isSansPatient) {
+        patientId = AppState.currentPatient;
+        
+        if (!patientId) {
+            try {
+                const patients = await secureFetch('/patients');
+                if (patients && patients.length > 0) {
+                    patientId = patients[0].id;
+                    AppState.currentPatient = patientId;
+                    localStorage.setItem("current_patient_id", patientId);
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Aucun patient",
+                        text: "Vous n'avez aucun patient associé à votre compte.",
+                        confirmButtonColor: "#0F172A"
+                    });
+                    return;
+                }
+            } catch (err) {
+                console.error("Erreur:", err);
                 Swal.fire({
                     icon: "error",
-                    title: "Aucun patient",
-                    text: "Vous n'avez aucun patient associé à votre compte.",
+                    title: "Erreur",
+                    text: "Impossible de charger les informations du patient.",
                     confirmButtonColor: "#0F172A"
                 });
                 return;
             }
-        } catch (err) {
-            console.error("Erreur:", err);
-            Swal.fire({
-                icon: "error",
-                title: "Erreur",
-                text: "Impossible de charger les informations du patient.",
-                confirmButtonColor: "#0F172A"
-            });
-            return;
         }
     }
     
@@ -744,7 +832,11 @@ export async function openOrderModal() {
     let confirmButtonText = "Envoyer la commande";
     let placeholder = "Décrivez précisément votre commande...\n\nExemples:\n- Médicaments: (nom, dosage, quantité)\n- Matériel médical\n- Produits de puériculture\n- Aliments spécifiques\n- Autres besoins...";
     
-    if (isFamily && isMaman) {
+    if (isSansPatient) {
+        modalTitle = "📦 Ma commande personnelle";
+        modalSubtitle = "Commandez ce dont vous avez besoin";
+        confirmButtonText = "📤 Passer ma commande";
+    } else if (isFamily && isMaman) {
         modalTitle = "🍼 Commandes bébé";
         modalSubtitle = "Couches, lait, puériculture, médicaments bébé";
         placeholder = "Listez vos besoins pour bébé...\n\nExemples:\n- Couches taille M (x2 paquets)\n- Lait 1er âge (x3 boîtes)\n- Vêtements naissance\n- Produits de toilette bébé\n- Ordonnance médicale (joindre photo)";
@@ -979,14 +1071,27 @@ export async function openOrderModal() {
         
         console.log("📸 Toutes les images uploadées:", uploadedImages);
         
-        // Envoyer la commande
-        const commandeData = {
-            patient_id: patientId,
-            liste_medocs: description,
-            type_commande: type,
-            urgent: urgent,
-            images: uploadedImages
-        };
+        // 🔥 ENVOI DE LA COMMANDE - ADAPTÉ POUR SANS_PATIENT
+        let commandeData;
+        
+        if (isSansPatient) {
+            // Compte SANS_PATIENT : pas de patient_id
+            commandeData = {
+                liste_medocs: description,
+                type_commande: type,
+                urgent: urgent,
+                images: uploadedImages
+            };
+        } else {
+            // Compte AVEC_PATIENT : avec patient_id
+            commandeData = {
+                patient_id: patientId,
+                liste_medocs: description,
+                type_commande: type,
+                urgent: urgent,
+                images: uploadedImages
+            };
+        }
         
         console.log("📦 Envoi commande:", commandeData);
         
@@ -1004,11 +1109,10 @@ export async function openOrderModal() {
             showConfirmButton: false
         });
 
-                    // ✅ FORCER LE RAFRAÎCHISSEMENT
-            window.dispatchEvent(new CustomEvent('app-data-updated', {
-                detail: { endpoint: '/commandes', method: 'POST', resourceType: 'commande_created' }
-            }));
-        
+        // ✅ FORCER LE RAFRAÎCHISSEMENT
+        window.dispatchEvent(new CustomEvent('app-data-updated', {
+            detail: { endpoint: '/commandes', method: 'POST', resourceType: 'commande_created' }
+        }));
         
     } catch(e) {
         console.error("❌ Erreur:", e);
@@ -1020,7 +1124,6 @@ export async function openOrderModal() {
         });
     }
 }
-
 
 /**
  * 📦 AIDANT - LIVRAISON AVEC MULTIPLES PHOTOS (VERSION CORRIGÉE)
