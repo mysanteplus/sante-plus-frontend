@@ -45,6 +45,18 @@ const messaging = window.messaging;
 
 async function initPushNotifications() {
     try {
+        // ✅ Vérifier que le navigateur supporte les notifications
+        if (!("Notification" in window)) {
+            console.log("⚠️ Ce navigateur ne supporte pas les notifications");
+            return;
+        }
+        
+        // ✅ Vérifier que Firebase Messaging est disponible
+        if (!window.messaging || typeof window.messaging.getToken !== 'function') {
+            console.warn("⚠️ Firebase Messaging non disponible ou non initialisé");
+            return;
+        }
+        
         const permission = await Notification.requestPermission();
 
         if (permission !== "granted") {
@@ -52,30 +64,50 @@ async function initPushNotifications() {
             return;
         }
 
-        const registration = await navigator.serviceWorker.register('/sw.js');
+        // ✅ Vérifier que le service worker est enregistré
+        let registration;
+        try {
+            registration = await navigator.serviceWorker.ready;
+            if (!registration) {
+                registration = await navigator.serviceWorker.register('/sw.js');
+            }
+        } catch (swErr) {
+            console.warn("⚠️ Service Worker non disponible:", swErr.message);
+            return;
+        }
         
+        // ✅ Obtenir le token FCM
         const token = await window.messaging.getToken({
             vapidKey: "BNeY_I69yPNM2R-kjlAWMjghL21XVvG9-EPTet200rg6S4TEJvRDsbAeWO5TqODp9h1tZS5LtlLOBb5lDoQGz6M",
             serviceWorkerRegistration: registration
         });
 
-        console.log("🔥 PUSH TOKEN:", token);
+        if (!token) {
+            console.log("⚠️ Aucun token FCM reçu");
+            return;
+        }
+
+        console.log("🔥 PUSH TOKEN:", token.substring(0, 20) + "...");
         console.log("📱 Appareil enregistré pour les notifications push");
 
-        await secureFetch('/save-push-token', {
-            method: 'POST',
-            body: JSON.stringify({
-                token,
-                user_id: localStorage.getItem("user_id")
-            })      
-        });
+        // ✅ Envoyer le token au backend
+        const userId = localStorage.getItem("user_id");
+        if (userId && token) {
+            await secureFetch('/save-push-token', {
+                method: 'POST',
+                body: JSON.stringify({
+                    token,
+                    user_id: userId
+                })
+            });
+            console.log("✅ Token push sauvegardé");
+        }
 
     } catch (err) {
-        console.error("❌ Erreur push:", err);
+        // ⚠️ Ne pas bloquer l'application en cas d'erreur push
+        console.error("❌ Erreur initPushNotifications:", err.message);
     }
 }
-
-
 
 
 console.log("🔍 [main.js] Imports vérifiés:");
@@ -3311,11 +3343,14 @@ async function performViewSwitch(viewName) {
     const titleElement = document.getElementById("view-title");
     if (!container) return;
 
+    // ✅ Déclarer TOUTES les variables au début
     const userRole = localStorage.getItem("user_role");
     const isMaman = localStorage.getItem("user_is_maman") === "true";
     const isFamily = userRole === "FAMILLE";
     const paymentStatus = localStorage.getItem("payment_status");
-
+    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+    const isSansPatient = typeCompte === "SANS_PATIENT";
+    
     // ============================================================
     // 1. VÉRIFICATIONS D'ACCÈS
     // ============================================================
