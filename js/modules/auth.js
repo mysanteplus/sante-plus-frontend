@@ -42,6 +42,11 @@ export async function handleLogin() {
     localStorage.setItem("user_role", data.role);
     localStorage.setItem("user_name", data.nom);
     localStorage.setItem("user_email", email);
+
+    // 🔥 NOUVEAU : Stocker le type de compte
+    if (data.type_compte) {
+        localStorage.setItem("user_type_compte", data.type_compte);
+    }
     
     if (data.photo_url) {
       localStorage.setItem("user_photo", data.photo_url);
