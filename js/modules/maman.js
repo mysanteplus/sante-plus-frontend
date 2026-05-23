@@ -676,14 +676,17 @@ async function loadRealPacks() {
 function getPacksFromConfig(isMaman) {
     if (isMaman) {
         return [
-            { id: 'ESSENTIEL', name: 'Essentiel', desc: '2 visites / semaine', priceDisplay: '45.000 CFA', popular: false },
-            { id: 'CONFORT', name: 'Confort', desc: '3-4 visites / semaine', priceDisplay: '85.000 CFA', popular: true },
-            { id: 'SERENITE', name: 'Sérénité', desc: '6-7 visites / semaine', priceDisplay: '150.000 CFA', popular: false }
+            { id: 'ESSENTIEL_MAMAN', name: 'Essentiel', desc: '2 semaines', priceDisplay: '65.000 CFA', popular: false },
+            { id: 'CONFORT_MAMAN', name: 'Confort', desc: '3 semaines', priceDisplay: '100.000 CFA', popular: true },
+            { id: 'SERENITE_MAMAN', name: 'Sérénité', desc: '4 semaines', priceDisplay: '140.000 CFA', popular: false },
+            { id: 'PRIVILEGE_MAMAN', name: 'Privilège', desc: '5 semaines', priceDisplay: '200.000 CFA', popular: false }
         ];
     }
     return [
-        { id: 'REGULIER', name: 'Régulier', desc: '2-3 visites / semaine', priceDisplay: '60.000 CFA', popular: true },
-        { id: 'COMPLET', name: 'Complet', desc: '5-6 visites / semaine', priceDisplay: '150.000 CFA', popular: false }
+        { id: 'ESSENTIEL_SENIOR', name: 'Essentiel', desc: '4 visites/mois', priceDisplay: '45.000 CFA', popular: false },
+        { id: 'ACCOMPAGNEMENT_SENIOR', name: 'Accompagnement', desc: '8 visites/mois', priceDisplay: '80.000 CFA', popular: true },
+        { id: 'SERENITE_SENIOR', name: 'Sérénité', desc: '12 visites/mois', priceDisplay: '100.000 CFA', popular: false },
+        { id: 'PRIVILEGE_SENIOR', name: 'Privilège', desc: 'Illimité', priceDisplay: '200.000 CFA', popular: false }
     ];
 }
 
