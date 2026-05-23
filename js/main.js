@@ -1201,17 +1201,17 @@ function getStepHTML() {
                     </div>
                 `;
             } else {
-                // Packs médicaux pour comptes AVEC_PATIENT
-                const packs = isMamanFlow ? [
-                    { id: 'ESSENTIEL', name: 'Essentiel', desc: '2 visites par semaine', price: '50.000', features: ['2 visites/semaine', 'Suivi de base'] },
-                    { id: 'CONFORT', name: 'Confort', desc: '3 à 4 visites par semaine', price: '85.000', features: ['3-4 visites/semaine', 'Aide à la toilette', 'Préparation repas'] },
-                    { id: 'SERENITE', name: 'Sérénité', desc: '6 à 7 visites par semaine', price: '150.000', features: ['6-7 visites/semaine', 'Accompagnement complet', 'Urgence 24/7'] },
-                    { id: 'MATERNITE', name: 'Spécial Maternité', desc: 'Suivi intensif 2 semaines', price: '70.000', features: ['Visite quotidienne', 'Aide bébé', 'Conseils allaitement'] }
-                ] : [
-                    { id: 'PONCTUEL', name: 'Ponctuel', desc: 'À la demande', price: '10.000', features: ['Intervention unique', 'Accompagnement RDV'] },
-                    { id: 'REGULIER', name: 'Régulier', desc: '2 à 3 visites/semaine', price: '60.000', features: ['2-3 visites/semaine', 'Suivi médical', 'Lien famille'] },
-                    { id: 'COMPLET', name: 'Complet', desc: '5 à 6 visites/semaine', price: '150.000', features: ['5-6 visites/semaine', 'Présence renforcée', 'Veille sanitaire'] }
-                ];
+                   const packs = isMamanFlow ? [
+                       { id: 'ESSENTIEL_MAMAN', name: 'Essentiel', desc: '2 semaines', price: '65.000', features: ['Suivi post-partum', '2 semaines'] },
+                       { id: 'CONFORT_MAMAN', name: 'Confort', desc: '3 semaines', price: '100.000', features: ['Accompagnement standard', '3 semaines'] },
+                       { id: 'SERENITE_MAMAN', name: 'Sérénité', desc: '4 semaines', price: '140.000', features: ['Suivi rapproché', '4 semaines'] },
+                       { id: 'PRIVILEGE_MAMAN', name: 'Privilège', desc: '5 semaines', price: '200.000', features: ['Coaching complet', '5 semaines'] }
+                   ] : [
+                       { id: 'ESSENTIEL_SENIOR', name: 'Essentiel', desc: '4 visites/mois', price: '45.000', features: ['4 visites/mois', 'Suivi léger'] },
+                       { id: 'ACCOMPAGNEMENT_SENIOR', name: 'Accompagnement', desc: '8 visites/mois', price: '80.000', features: ['8 visites/mois', 'Convalescence'] },
+                       { id: 'SERENITE_SENIOR', name: 'Sérénité', desc: '12 visites/mois', price: '100.000', features: ['12 visites/mois', 'Suivi régulier'] },
+                       { id: 'PRIVILEGE_SENIOR', name: 'Privilège', desc: 'Illimité', price: '200.000', features: ['Visites illimitées', 'Coordination totale'] }
+                   ];
                 
                 return `
                     <div class="text-center mb-8">
