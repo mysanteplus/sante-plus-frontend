@@ -558,32 +558,98 @@ main {
 }
 
 /* ============================================
-   CHAT MODERNE STYLE WHATSAPP
+   CHAT - RESPONSIVE (WHATSAPP & DESKTOP)
    ============================================ */
 
-.chat-container {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    height: 100dvh;
-    background: #efeae2;
-    position: relative;
+/* Pour mobile : plein écran */
+@media (max-width: 1023px) {
+    .chat-whatsapp-container {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 9999 !important;
+        background: #efeae2 !important;
+    }
+    
+    body:has(.chat-whatsapp-container) main,
+    body:has(.chat-whatsapp-container) #main-content,
+    body:has(.chat-whatsapp-container) .main-wrapper {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        height: 100vh !important;
+    }
+    
+    body:has(.chat-whatsapp-container) #view-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+    }
+    
+    body:has(.chat-whatsapp-container) footer,
+    body:has(.chat-whatsapp-container) .fab-container,
+    body:has(.chat-whatsapp-container) aside,
+    body:has(.chat-whatsapp-container) header {
+        display: none !important;
+    }
 }
 
-.chat-header {
+/* Pour desktop : version intégrée */
+@media (min-width: 1024px) {
+    #view-container:has(.chat-whatsapp-container) {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        height: 100% !important;
+    }
+    
+    .chat-whatsapp-container {
+        position: relative !important;
+        display: flex !important;
+        flex-direction: column !important;
+        height: calc(100vh - 100px) !important;
+        min-height: 500px !important;
+        width: 100% !important;
+        background: #efeae2 !important;
+        border-radius: 1.5rem !important;
+        overflow: hidden !important;
+    }
+    
+    body:has(.chat-whatsapp-container) aside {
+        display: flex !important;
+    }
+    
+    body:has(.chat-whatsapp-container) header {
+        display: flex !important;
+    }
+    
+    body:has(.chat-whatsapp-container) main {
+        padding: 1.5rem !important;
+    }
+}
+
+/* Header du chat */
+.chat-whatsapp-header {
     background: #202c33;
     color: white;
-    padding: 10px 16px;
+    padding: 12px 16px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+    gap: 12px;
+    flex-shrink: 0;
+    z-index: 10;
 }
 
-.chat-header-back {
+.chat-whatsapp-back {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -593,13 +659,14 @@ main {
     cursor: pointer;
     transition: background 0.2s;
 }
-.chat-header-back:hover { background: rgba(255,255,255,0.1); }
 
-.chat-header-avatar {
+.chat-whatsapp-back:hover { background: rgba(255,255,255,0.1); }
+.chat-whatsapp-back:active { transform: scale(0.95); }
+
+.chat-whatsapp-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    object-fit: cover;
     background: linear-gradient(135deg, var(--role-primary), var(--role-primary-dark));
     display: flex;
     align-items: center;
@@ -607,30 +674,76 @@ main {
     font-weight: bold;
     font-size: 18px;
     color: white;
+    flex-shrink: 0;
 }
 
-.chat-header-info { flex: 1; }
-.chat-header-name { font-weight: 600; font-size: 16px; line-height: 1.2; }
-.chat-header-status { font-size: 12px; opacity: 0.8; display: flex; align-items: center; gap: 4px; }
-.chat-header-status.online { color: #25D366; }
+.chat-whatsapp-info {
+    flex: 1;
+    min-width: 0;
+}
 
-.chat-header-actions { display: flex; gap: 8px; }
-.chat-header-actions button {
+.chat-whatsapp-name {
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-whatsapp-status {
+    font-size: 12px;
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.online-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #25D366;
+}
+
+.chat-whatsapp-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-whatsapp-actions button {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     background: transparent;
     border: none;
     color: white;
     cursor: pointer;
     transition: background 0.2s;
 }
-.chat-header-actions button:hover { background: rgba(255,255,255,0.1); }
 
-.chat-messages {
+.chat-whatsapp-actions button:hover { background: rgba(255,255,255,0.1); }
+.chat-whatsapp-actions button:active { transform: scale(0.95); }
+
+/* Barre de visibilité */
+.chat-visibility-bar {
+    background: #202c33;
+    padding: 8px 16px;
+    border-bottom: 1px solid #2a3942;
+    flex-shrink: 0;
+}
+
+.visibility-btn {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.visibility-btn:active {
+    transform: scale(0.95);
+}
+
+/* Zone des messages */
+.chat-whatsapp-messages {
     flex: 1;
     overflow-y: auto;
     padding: 16px;
@@ -638,56 +751,24 @@ main {
     flex-direction: column;
     gap: 4px;
     scroll-behavior: smooth;
+    background: #efeae2;
 }
 
-.chat-messages::-webkit-scrollbar { width: 6px; }
-.chat-messages::-webkit-scrollbar-track { background: transparent; }
-.chat-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
-
-/* Messages */
-.message { display: flex; margin-bottom: 4px; animation: messageSlideIn 0.2s ease-out; }
-.message.sent { justify-content: flex-end; }
-.message.received { justify-content: flex-start; }
-
-@keyframes messageSlideIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.chat-whatsapp-messages::-webkit-scrollbar {
+    width: 6px;
 }
 
-/* Bulles de message */
-.chat-message-sent {
-    background: var(--role-primary);
-    color: white;
-    border-radius: 18px;
-    border-bottom-right-radius: 4px;
-    padding: 10px 14px;
-    max-width: 75%;
-    word-wrap: break-word;
+.chat-whatsapp-messages::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-.chat-message-received {
-    background: #F1F5F9;
-    color: #1E293B;
-    border-radius: 18px;
-    border-bottom-left-radius: 4px;
-    padding: 10px 14px;
-    max-width: 75%;
-    word-wrap: break-word;
+.chat-whatsapp-messages::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 3px;
 }
-
-.chat-time {
-    font-size: 9px;
-    color: #94A3B8;
-    margin-top: 4px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.message-image { max-width: 250px; max-height: 250px; border-radius: 12px; cursor: pointer; margin-bottom: 4px; }
 
 /* Typing indicator */
-.typing-indicator {
+.chat-whatsapp-typing {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -696,7 +777,12 @@ main {
     border-radius: 18px;
     border-bottom-left-radius: 4px;
     width: fit-content;
-    margin-bottom: 8px;
+    margin: 0 16px 8px 16px;
+    flex-shrink: 0;
+}
+
+.chat-whatsapp-typing.hidden {
+    display: none;
 }
 
 .typing-dot {
@@ -706,6 +792,7 @@ main {
     background: #8696a0;
     animation: typingBounce 1.4s infinite ease-in-out;
 }
+
 .typing-dot:nth-child(1) { animation-delay: 0s; }
 .typing-dot:nth-child(2) { animation-delay: 0.2s; }
 .typing-dot:nth-child(3) { animation-delay: 0.4s; }
@@ -715,20 +802,22 @@ main {
     30% { transform: translateY(-6px); opacity: 1; }
 }
 
-.typing-text { font-size: 12px; color: #667781; }
+.typing-text {
+    font-size: 12px;
+    color: #667781;
+}
 
-/* Zone de saisie chat */
-.chat-input-area {
+/* Zone de saisie */
+.chat-whatsapp-input {
     background: #202c33;
     padding: 10px 16px;
     display: flex;
     align-items: center;
     gap: 12px;
-    position: sticky;
-    bottom: 0;
+    flex-shrink: 0;
 }
 
-.chat-input-attach {
+.chat-whatsapp-attach {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -741,9 +830,11 @@ main {
     cursor: pointer;
     transition: background 0.2s;
 }
-.chat-input-attach:hover { background: rgba(255,255,255,0.1); }
 
-.chat-input-wrapper {
+.chat-whatsapp-attach:hover { background: rgba(255,255,255,0.1); }
+.chat-whatsapp-attach:active { transform: scale(0.95); }
+
+.chat-whatsapp-input-wrapper {
     flex: 1;
     background: #2a3942;
     border-radius: 24px;
@@ -753,7 +844,7 @@ main {
     padding: 4px 12px;
 }
 
-.chat-input {
+.chat-whatsapp-input-field {
     flex: 1;
     background: transparent;
     border: none;
@@ -762,9 +853,12 @@ main {
     font-size: 15px;
     padding: 10px 0;
 }
-.chat-input::placeholder { color: #8696a0; }
 
-.chat-input-send {
+.chat-whatsapp-input-field::placeholder {
+    color: #8696a0;
+}
+
+.chat-whatsapp-send {
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -777,7 +871,256 @@ main {
     cursor: pointer;
     transition: all 0.2s ease;
 }
-.chat-input-send:active { transform: scale(0.92); }
+
+.chat-whatsapp-send:active {
+    transform: scale(0.92);
+}
+
+/* Bulles de messages */
+.chat-message-sent {
+    background: var(--role-primary);
+    color: white;
+    border-radius: 18px;
+    border-bottom-right-radius: 4px;
+    padding: 6px 12px;
+    display: inline-block;
+    max-width: 75%;
+    word-break: break-word;
+}
+
+.chat-message-received {
+    background: white;
+    color: #1E293B;
+    border-radius: 18px;
+    border-bottom-left-radius: 4px;
+    padding: 6px 12px;
+    display: inline-block;
+    max-width: 75%;
+    word-break: break-word;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+}
+
+@keyframes messageSlideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message-item {
+    animation: messageSlideIn 0.2s ease-out;
+}
+
+/* Alignement des messages */
+.flex.justify-end {
+    justify-content: flex-end !important;
+}
+
+.flex.items-start {
+    justify-content: flex-start !important;
+}
+
+/* ============================================
+   CHAT - VERSION DESKTOP (STYLE SLACK/TEAMS)
+   ============================================ */
+
+@media (min-width: 1024px) {
+    .chat-desktop-container {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 120px);
+        min-height: 500px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    .chat-desktop-header {
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+    }
+    
+    .chat-desktop-patient {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .chat-desktop-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--role-primary), var(--role-primary-dark));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: white;
+    }
+    
+    .chat-desktop-name {
+        font-weight: 700;
+        font-size: 16px;
+        color: #1e293b;
+    }
+    
+    .chat-desktop-status {
+        font-size: 12px;
+        color: #10b981;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .chat-desktop-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        border: none;
+        cursor: pointer;
+        color: #64748b;
+    }
+    
+    .chat-desktop-visibility {
+        background: #f8fafc;
+        padding: 10px 24px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    
+    .visibility-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+    
+    .visibility-buttons {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .vis-btn {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+        background: #f1f5f9;
+        color: #64748b;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .vis-btn.active {
+        background: var(--role-primary);
+        color: white;
+    }
+    
+    .chat-desktop-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: #ffffff;
+    }
+    
+    .message-desktop-sent {
+        align-self: flex-end;
+        background: var(--role-primary);
+        color: white;
+        border-radius: 18px;
+        border-bottom-right-radius: 4px;
+        padding: 10px 16px;
+        max-width: 60%;
+        font-size: 14px;
+    }
+    
+    .message-desktop-received {
+        align-self: flex-start;
+        background: #f1f5f9;
+        color: #1e293b;
+        border-radius: 18px;
+        border-bottom-left-radius: 4px;
+        padding: 10px 16px;
+        max-width: 60%;
+        font-size: 14px;
+    }
+    
+    .chat-desktop-input-area {
+        background: white;
+        border-top: 1px solid #e2e8f0;
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+    
+    .chat-desktop-input {
+        flex: 1;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+    }
+    
+    .chat-desktop-input:focus {
+        border-color: var(--role-primary);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    
+    .chat-desktop-buttons {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .chat-desktop-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: #f1f5f9;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        color: #64748b;
+    }
+    
+    .chat-desktop-btn:hover {
+        background: #e2e8f0;
+    }
+    
+    .chat-desktop-btn:active {
+        transform: scale(0.95);
+    }
+    
+    .chat-desktop-send {
+        background: var(--role-primary);
+        color: white;
+    }
+    
+    .chat-desktop-send:hover {
+        background: var(--role-primary-dark);
+    }
+}
 
 /* ============================================
    DASHBOARD MAMAN & BÉBÉ
@@ -801,6 +1144,7 @@ main {
     position: relative;
     overflow: hidden;
 }
+
 .maman-header::before {
     content: '';
     position: absolute;
@@ -837,6 +1181,7 @@ main {
     border: 1px solid #F1F5F9;
     transition: all 0.2s;
 }
+
 .maman-pack-card:active { transform: scale(0.98); }
 
 .maman-nav-btn {
@@ -853,6 +1198,7 @@ main {
     color: #64748B;
     transition: all 0.2s;
 }
+
 .maman-nav-btn:active { transform: scale(0.95); background: #FDF2F8; }
 
 .maman-mood-tracker {
@@ -871,6 +1217,7 @@ main {
     border: none;
     cursor: pointer;
 }
+
 .mood-btn:active div { transform: scale(0.92); transition: transform 0.05s ease; }
 
 /* ============================================
@@ -885,6 +1232,7 @@ main {
     transition: all 0.2s ease;
     border: 1px solid rgba(0, 0, 0, 0.03);
 }
+
 .dashboard-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); }
 .dashboard-card:active { transform: scale(0.98); }
 
@@ -912,6 +1260,7 @@ main {
     align-items: center;
     justify-content: center;
 }
+
 .dashboard-card-icon i { font-size: 24px; color: var(--role-primary); }
 
 /* ============================================
@@ -930,6 +1279,7 @@ main {
     transition: all 0.2s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
 .btn-primary:hover { background: var(--role-primary-dark); transform: scale(1.02); }
 .btn-primary:active { transform: scale(0.98); }
 
@@ -944,6 +1294,7 @@ main {
     cursor: pointer;
     transition: all 0.2s ease;
 }
+
 .btn-outline:hover { background: var(--role-primary-light); }
 
 .btn-transition { transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1); }
@@ -1019,6 +1370,7 @@ header {
     text-align: center;
     padding: 3rem;
 }
+
 .onboarding-slide.active { display: flex; animation: slideInCustom 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
 .onboarding-image-container {
@@ -1050,6 +1402,7 @@ header {
     background: #E2E8F0;
     transition: all 0.3s;
 }
+
 .onboarding-dot.active { width: 24px; background: var(--role-primary); }
 
 /* ============================================
@@ -1061,6 +1414,7 @@ header {
     animation: slideIn 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards;
     opacity: 0;
 }
+
 .animate-page { animation: fadeInUp 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards; }
 .animate-spin { animation: spin 0.8s linear infinite; }
 
@@ -1068,23 +1422,28 @@ header {
     from { opacity: 0; transform: scale(0.98); }
     to { opacity: 1; transform: scale(1); }
 }
+
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
 @keyframes slideIn {
     from { opacity: 0; transform: translateX(20px); }
     to { opacity: 1; transform: translateX(0); }
 }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .card-animate { animation: cardAppear 0.3s ease-out forwards; }
+
 @keyframes cardAppear {
     from { opacity: 0; transform: scale(0.95); }
     to { opacity: 1; transform: scale(1); }
 }
 
 .list-item-animate { animation: listItemSlide 0.2s ease-out forwards; }
+
 @keyframes listItemSlide {
     from { opacity: 0; transform: translateX(-10px); }
     to { opacity: 1; transform: translateX(0); }
@@ -1111,6 +1470,7 @@ header {
     background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
     transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 #initial-loader.hidden { display: none !important; }
 #initial-loader.fade-out { opacity: 0; pointer-events: none; }
 
@@ -1139,6 +1499,7 @@ header {
 }
 
 .loader-dots { display: flex; gap: 6px; margin-top: 20px; }
+
 .loader-dot {
     width: 6px;
     height: 6px;
@@ -1146,6 +1507,7 @@ header {
     background-color: var(--role-primary);
     animation: bounce 0.6s ease-in-out infinite;
 }
+
 .loader-dot:nth-child(1) { animation-delay: 0s; }
 .loader-dot:nth-child(2) { animation-delay: 0.15s; }
 .loader-dot:nth-child(3) { animation-delay: 0.3s; }
@@ -1173,7 +1535,9 @@ header {
     justify-content: center;
     transition: opacity 0.2s ease;
 }
+
 .global-loader.hidden { opacity: 0; pointer-events: none; visibility: hidden; }
+
 .global-loader .loader-text {
     margin-top: 1rem;
     font-size: 10px;
@@ -1187,6 +1551,7 @@ header {
     0% { transform: scale(0.8); opacity: 0.5; }
     100% { transform: scale(1.2); opacity: 0; }
 }
+
 @keyframes bounce {
     0%, 100% { transform: translateY(0); opacity: 0.3; }
     50% { transform: translateY(-6px); opacity: 1; }
@@ -1202,6 +1567,7 @@ header {
     animation: shimmer 1.2s ease-in-out infinite;
     border-radius: 0.75rem;
 }
+
 @keyframes shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
@@ -1240,6 +1606,7 @@ header {
     background: rgba(30, 41, 59, 0.95);
     max-width: 90%;
 }
+
 .toast-notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast-notification.success { background: rgba(16, 185, 129, 0.95); }
 .toast-notification.error { background: rgba(244, 63, 94, 0.95); }
@@ -1271,6 +1638,7 @@ header {
     transition: transform 0.3s ease;
     z-index: 1000;
 }
+
 #pull-to-refresh.active { transform: translateY(0); }
 
 .refresh-indicator {
@@ -1284,6 +1652,7 @@ header {
     margin-bottom: 10px;
     animation: slideDown 0.3s ease;
 }
+
 @keyframes slideDown {
     from { opacity: 0; transform: translateY(-20px); }
     to { opacity: 1; transform: translateY(0); }
@@ -1301,6 +1670,7 @@ header {
     transition: all 0.1s ease;
     cursor: grab;
 }
+
 .fab-container:active { cursor: grabbing; }
 
 @media (min-width: 1024px) { .fab-container { display: none !important; } }
@@ -1319,6 +1689,7 @@ header {
     transition: all 0.3s ease;
     border: 3px solid white;
 }
+
 .fab-button:active { transform: scale(0.95); }
 .fab-button i { font-size: 24px; color: white; transition: transform 0.3s ease; }
 .fab-button.active i { transform: rotate(45deg); }
@@ -1339,6 +1710,7 @@ header {
     transition: all 0.3s ease;
     border: 1px solid rgba(16, 185, 129, 0.2);
 }
+
 .fab-menu.open { opacity: 1; visibility: visible; left: 75px; pointer-events: auto; }
 .fab-menu { pointer-events: none; }
 
@@ -1354,6 +1726,7 @@ header {
     transition: all 0.2s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
+
 .fab-menu-item:active { transform: scale(0.9); }
 
 .fab-menu-item[data-view="home"] i { color: var(--role-primary); }
@@ -1366,6 +1739,7 @@ header {
     background: linear-gradient(135deg, var(--role-primary) 0%, var(--role-primary-dark) 100%);
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
+
 .fab-menu-item.active i { color: white !important; }
 
 @media (max-width: 640px) {
@@ -1382,6 +1756,7 @@ header {
     0% { opacity: 0; transform: scale(0); }
     100% { opacity: 1; transform: scale(1); }
 }
+
 .fab-menu.open .fab-menu-item { animation: menuPopIn 0.25s cubic-bezier(0.34, 1.2, 0.64, 1) forwards; }
 
 /* ============================================
@@ -1396,10 +1771,12 @@ header {
     font-weight: 800;
     color: var(--role-primary);
 }
+
 .brand-plus-md, .brand-plus-sidebar, .brand-plus-footer {
     color: #D4AF37;
     font-weight: 800;
 }
+
 .brand-service-md, .brand-service-sidebar, .brand-service-footer {
     color: #64748B;
     font-weight: 800;
@@ -1413,6 +1790,7 @@ header {
     background: linear-gradient(135deg, #D4AF37 0%, #FDE68A 50%, #D4AF37 100%);
     color: #0F172A;
 }
+
 .maman-banner {
     background: linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%);
     border: 1px solid #FBCFE8;
@@ -1425,10 +1803,12 @@ header {
 
 .service-card { transition: all 0.2s ease; }
 .service-card:active { transform: scale(0.98); }
+
 .service-card[data-type="SENIOR"]:hover {
     border-color: #10B981;
     background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
 }
+
 .service-card[data-type="MAMAN"]:hover {
     border-color: #DB2777;
     background: linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%);
@@ -1444,23 +1824,27 @@ header {
     width: 90% !important;
     max-width: 320px !important;
 }
+
 .swal2-title {
     font-size: 1.125rem !important;
     font-weight: 800 !important;
     padding: 0 !important;
     margin-bottom: 0.5rem !important;
 }
+
 .swal2-html-container {
     font-size: 0.75rem !important;
     padding: 0 !important;
     margin: 0 !important;
 }
+
 .swal2-confirm, .swal2-cancel {
     padding: 0.625rem 1rem !important;
     font-size: 0.6875rem !important;
     border-radius: 0.75rem !important;
     font-weight: 700 !important;
 }
+
 .swal2-actions { margin-top: 1rem !important; gap: 0.5rem !important; }
 
 /* ============================================
@@ -1474,12 +1858,15 @@ header {
     white-space: normal;
     max-width: 100%;
 }
+
 .message-card, [class*="rounded-2xl"].bg-white {
     max-width: 100%;
     overflow-x: hidden;
 }
+
 .document-card { transition: all 0.2s ease; }
 .document-card:hover { transform: translateY(-2px); }
+
 .document-icon {
     width: 48px;
     height: 48px;
@@ -1490,6 +1877,7 @@ header {
 }
 
 .reply-thread { margin-left: 1.5rem; padding-left: 1rem; border-left: 3px solid #f59e0b; margin-top: 0.75rem; }
+
 .message-item {
     margin-bottom: 1rem;
     padding: 1rem;
@@ -1515,12 +1903,14 @@ header {
 }
 
 .message-thread { position: relative; }
+
 .message-thread .reply-item {
     margin-left: 2rem;
     padding-left: 1rem;
     border-left: 3px solid #fbbf24;
     position: relative;
 }
+
 .message-thread .reply-item::before {
     content: '';
     position: absolute;
@@ -1531,6 +1921,7 @@ header {
     background: #fbbf24;
     border-radius: 50%;
 }
+
 @media (max-width: 640px) {
     .message-thread .reply-item { margin-left: 0.75rem; padding-left: 0.75rem; }
 }
@@ -1554,10 +1945,12 @@ header {
         line-height: 1.3 !important;
         letter-spacing: -0.02em !important;
     }
+    
     h2, .title-medium, .font-black.text-xl {
         font-size: 1rem !important;
         line-height: 1.35 !important;
     }
+    
     p, .text-base { font-size: 0.8125rem !important; line-height: 1.45 !important; }
     label, .text-xs, .text-sm { font-size: 0.6875rem !important; letter-spacing: 0.02em !important; }
     
@@ -1583,6 +1976,7 @@ header {
         background-color: #F8FAFC !important;
         border: 1px solid #E2E8F0 !important;
     }
+    
     .app-input:focus {
         background-color: #FFFFFF !important;
         border-color: var(--gold-premium) !important;
@@ -1631,6 +2025,7 @@ header {
 .fa-spin { animation: spin 1s linear infinite; }
 
 #emoji-picker-container { animation: fadeInUp 0.2s ease; }
+
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -1640,8 +2035,11 @@ header {
     transform: translateY(100px);
     transition: transform 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
 }
+
 #install-reminder.show { transform: translateY(0); }
+
 .animate-slideUp { animation: slideUp 0.3s cubic-bezier(0.34, 1.2, 0.64, 1) forwards; }
+
 @keyframes slideUp {
     from { opacity: 0; transform: translateY(100px); }
     to { opacity: 1; transform: translateY(0); }
@@ -1652,14 +2050,6 @@ header {
 
 /* Ombres douces */
 .shadow-sm, .shadow-md, .shadow-lg { --tw-shadow-color: rgba(0, 0, 0, 0.03); }
-
-
-
-
-
-
-
-
 
 /* ============================================
    DYNAMISME GLOBAL - COULEURS VIVES
@@ -1750,8 +2140,6 @@ a, .text-link, .text-emerald-600, .text-pink-600 {
     color: var(--role-primary);
 }
 
-
-
 /* Formulaires dynamiques */
 .form-input:focus, .app-input:focus {
     border-color: var(--role-primary) !important;
@@ -1772,9 +2160,8 @@ input[type="range"] {
     accent-color: var(--role-primary);
 }
 
-
 /* ============================================
-   CLASSES DYNAMIQUES - ÉTAPE 1
+   CLASSES DYNAMIQUES
    ============================================ */
 
 /* Badge dynamique */
@@ -1838,7 +2225,6 @@ input[type="range"] {
     font-size: 16px;
 }
 
-
 /* ============================================
    CARTES PATIENTS MODERNES
    ============================================ */
@@ -1866,20 +2252,6 @@ input[type="range"] {
     font-weight: 800;
     font-size: 18px;
 }
-
-.badge-dynamic {
-    background: var(--role-primary-light);
-    color: var(--role-primary);
-    border-radius: 20px;
-    padding: 4px 10px;
-    font-size: 9px;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-
 
 /* ============================================
    EFFETS TACTILES POUR MOBILE
@@ -1952,12 +2324,6 @@ input[type="range"] {
     }
 }
 
-
-
-
-
-
-
 /* ============================================
    ANIMATIONS D'APPARITION POUR LISTES
    ============================================ */
@@ -2014,8 +2380,6 @@ input[type="range"] {
 .animate-pulse-soft {
     animation: softPulse 1.5s ease-in-out infinite;
 }
-
-
 
 /* ============================================
    BOUTONS DYNAMIQUES
@@ -2091,7 +2455,6 @@ button[type="submit"]:active,
     color: white;
 }
 
-
 /* ============================================
    ONGLETS ET FILTRES DYNAMIQUES
    ============================================ */
@@ -2145,7 +2508,6 @@ button[type="submit"]:active,
 .loader-color {
     border-top-color: var(--role-primary) !important;
 }
-
 
 /* ============================================
    INDICATEURS DE CHARGEMENT DYNAMIQUES
@@ -2203,7 +2565,6 @@ button[type="submit"]:active,
 .skeleton-text-custom:last-child {
     margin-bottom: 0;
 }
-
 
 /* ============================================
    TRANSITIONS ENTRE LES VUES
@@ -2278,7 +2639,6 @@ button[type="submit"]:active,
     }
 }
 
-
 /* ============================================
    BOUTONS DU FORMULAIRE D'INSCRIPTION
    ============================================ */
@@ -2348,9 +2708,10 @@ button[type="submit"]:active,
     background: var(--role-primary-dark) !important;
 }
 
+/* ============================================
+   MENU LATÉRAL (DRAWER)
+   ============================================ */
 
-
-/* Menu latéral (drawer) */
 #mobile-drawer {
     transition: visibility 0.3s ease;
 }
@@ -2367,9 +2728,10 @@ button[type="submit"]:active,
     transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
 }
 
+/* ============================================
+   BOTTOM BAR NAVIGATION
+   ============================================ */
 
-
-/* Bottom bar navigation */
 .bottom-nav-btn.active {
     color: var(--role-primary);
 }
@@ -2388,20 +2750,11 @@ button[type="submit"]:active,
     transform: scale(0.92);
 }
 
-
-
-
-
-
-
-
-
-
-
 /* ============================================
-   THÈME AIDANT (OR + BEIGE + VERT FADÉ)
+   THÈMES (AIDANT, COORDINATEUR, MAMAN, SENIOR)
    ============================================ */
 
+/* Thème Aidant */
 body.aidant-mode {
     --role-primary: #C9A84C;
     --role-primary-dark: #B8942E;
@@ -2414,54 +2767,56 @@ body.aidant-mode {
     --role-border: #E8E2D4;
 }
 
-/* Boutons aidant */
 body.aidant-mode .btn-primary,
 body.aidant-mode button[type="submit"],
 body.aidant-mode .bg-emerald-500,
-body.aidant-mode .bg-emerald-600 {
+body.aidant-mode .bg-emerald-600,
+body.aidant-mode .next-btn,
+body.aidant-mode #btn-login,
+body.aidant-mode .chat-input-send {
     background: var(--role-primary) !important;
 }
+
 body.aidant-mode .btn-primary:hover,
 body.aidant-mode button[type="submit"]:hover {
     background: var(--role-primary-dark) !important;
 }
 
-/* Badges aidant */
-body.aidant-mode .badge-dynamic {
+body.aidant-mode .badge-dynamic,
+body.aidant-mode .badge-notification {
     background: var(--role-primary-light);
     color: var(--role-primary);
     border: 1px solid var(--role-primary);
 }
 
-/* Messages aidant (chat) */
 body.aidant-mode .chat-message-sent {
     background: var(--role-primary);
     color: white;
 }
+
 body.aidant-mode .chat-message-received {
-    background: #F1F5F9;
-    color: #1E293B;
     border-left: 3px solid var(--role-primary);
 }
 
-/* Cartes dashboard aidant */
 body.aidant-mode .dashboard-card {
     border-left: 4px solid var(--role-primary);
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 
-/* Section headers aidant */
 body.aidant-mode .section-title {
     color: var(--role-primary);
     border-left: 3px solid var(--role-primary);
 }
 
-/* ============================================
-   THÈME ADMIN (GRIS + OR + VERT FADÉ)
-   ============================================ */
+body.aidant-mode .sidebar-link.active,
+body.aidant-mode .nav-btn.active {
+    color: var(--role-primary) !important;
+}
 
+body.aidant-mode .planning-card {
+    border-left: 4px solid var(--role-primary) !important;
+}
+
+/* Thème Coordinateur */
 body.coordinateur-mode {
     --role-primary: #1E293B;
     --role-primary-dark: #0F172A;
@@ -2474,169 +2829,6 @@ body.coordinateur-mode {
     --role-border: #CBD5E1;
 }
 
-/* Boutons admin */
-body.coordinateur-mode .btn-primary,
-body.coordinateur-mode button[type="submit"],
-body.coordinateur-mode .bg-emerald-500,
-body.coordinateur-mode .bg-emerald-600 {
-    background: var(--role-primary) !important;
-}
-body.coordinateur-mode .btn-primary:hover,
-body.coordinateur-mode button[type="submit"]:hover {
-    background: var(--role-primary-dark) !important;
-}
-
-/* Boutons secondaires admin (or) */
-body.coordinateur-mode .btn-secondary {
-    background: var(--role-secondary);
-    color: #1E293B;
-}
-
-/* Badges admin */
-body.coordinateur-mode .badge-dynamic {
-    background: var(--role-primary-light);
-    color: var(--role-primary);
-}
-
-/* Messages admin (chat) */
-body.coordinateur-mode .chat-message-sent {
-    background: var(--role-primary);
-    color: white;
-}
-body.coordinateur-mode .chat-message-received {
-    background: white;
-    color: #1E293B;
-    border-left: 3px solid var(--role-secondary);
-}
-
-/* Cartes dashboard admin */
-body.coordinateur-mode .dashboard-card {
-    border-top: 4px solid var(--role-secondary);
-    background: white;
-    border-radius: 20px;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-/* ============================================
-   THÈME AIDANT (OR + BEIGE)
-   ============================================ */
-
-body.aidant-mode {
-    --role-primary: #C9A84C;
-    --role-primary-dark: #B8942E;
-    --role-primary-light: #FEF9E6;
-    --role-secondary: #D4AF37;
-    --role-accent: #A3C9A8;
-    --role-text: #4A5D4E;
-}
-
-/* Boutons */
-body.aidant-mode .btn-primary,
-body.aidant-mode button[type="submit"],
-body.aidant-mode .bg-emerald-500,
-body.aidant-mode .bg-emerald-600,
-body.aidant-mode .next-btn,
-body.aidant-mode #btn-login,
-body.aidant-mode .chat-input-send {
-    background: var(--role-primary) !important;
-}
-body.aidant-mode .btn-primary:hover,
-body.aidant-mode button[type="submit"]:hover {
-    background: var(--role-primary-dark) !important;
-}
-
-/* Liens et textes cliquables */
-body.aidant-mode a:not(.no-style),
-body.aidant-mode .text-link,
-body.aidant-mode .sidebar-link.active {
-    color: var(--role-primary) !important;
-}
-
-/* Bordures actives / focus */
-body.aidant-mode input:focus,
-body.aidant-mode textarea:focus,
-body.aidant-mode select:focus {
-    border-color: var(--role-primary) !important;
-    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1) !important;
-}
-
-/* Badges */
-body.aidant-mode .badge-dynamic,
-body.aidant-mode .badge-notification {
-    background: var(--role-primary-light);
-    color: var(--role-primary);
-    border: 1px solid var(--role-primary);
-}
-
-/* Indicateur online */
-body.aidant-mode .online-dot {
-    background: var(--role-primary);
-}
-
-/* Onglet actif */
-body.aidant-mode .tab-active,
-body.aidant-mode .nav-btn.active {
-    color: var(--role-primary) !important;
-    border-bottom-color: var(--role-primary) !important;
-}
-
-/* Messages chat - envoyés */
-body.aidant-mode .chat-message-sent {
-    background: var(--role-primary);
-    color: white;
-}
-
-/* Messages chat - reçus */
-body.aidant-mode .chat-message-received {
-    border-left: 3px solid var(--role-primary);
-}
-
-/* Checkbox / radio checked */
-body.aidant-mode input[type="checkbox"]:checked,
-body.aidant-mode input[type="radio"]:checked {
-    accent-color: var(--role-primary);
-}
-
-/* Toggle / switch actif */
-body.aidant-mode .peer-checked {
-    background-color: var(--role-primary) !important;
-}
-
-/* Pagination active */
-body.aidant-mode .pagination .active {
-    background: var(--role-primary);
-    color: white;
-}
-
-/* Focus outline */
-body.aidant-mode *:focus-visible {
-    outline-color: var(--role-primary);
-}
-
-/* ============================================
-   THÈME ADMIN (GRIS + OR)
-   ============================================ */
-
-body.coordinateur-mode {
-    --role-primary: #1E293B;
-    --role-primary-dark: #0F172A;
-    --role-primary-light: #E2E8F0;
-    --role-secondary: #C9A84C;
-    --role-accent: #A3C9A8;
-    --role-text: #334155;
-}
-
-/* Boutons */
 body.coordinateur-mode .btn-primary,
 body.coordinateur-mode button[type="submit"],
 body.coordinateur-mode .bg-emerald-500,
@@ -2646,708 +2838,46 @@ body.coordinateur-mode #btn-login,
 body.coordinateur-mode .chat-input-send {
     background: var(--role-primary) !important;
 }
-body.coordinateur-mode .btn-primary:hover,
-body.coordinateur-mode button[type="submit"]:hover {
-    background: var(--role-primary-dark) !important;
-}
 
-/* Boutons secondaires (or) */
 body.coordinateur-mode .btn-secondary {
     background: var(--role-secondary);
     color: #1E293B;
 }
 
-/* Liens et textes cliquables - OR */
-body.coordinateur-mode a:not(.no-style),
-body.coordinateur-mode .text-link,
-body.coordinateur-mode .sidebar-link.active {
-    color: var(--role-secondary) !important;
-}
-
-/* Bordures actives / focus - OR */
-body.coordinateur-mode input:focus,
-body.coordinateur-mode textarea:focus,
-body.coordinateur-mode select:focus {
-    border-color: var(--role-secondary) !important;
-    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1) !important;
-}
-
-/* Badges */
 body.coordinateur-mode .badge-dynamic {
     background: var(--role-primary-light);
     color: var(--role-primary);
 }
 
-/* Indicateur online - OR */
-body.coordinateur-mode .online-dot {
-    background: var(--role-secondary);
-}
-
-/* Onglet actif - OR */
-body.coordinateur-mode .tab-active,
-body.coordinateur-mode .nav-btn.active {
-    color: var(--role-secondary) !important;
-    border-bottom-color: var(--role-secondary) !important;
-}
-
-/* Messages chat - envoyés (gris) */
 body.coordinateur-mode .chat-message-sent {
     background: var(--role-primary);
     color: white;
 }
 
-/* Messages chat - reçus (bordure or) */
 body.coordinateur-mode .chat-message-received {
     border-left: 3px solid var(--role-secondary);
 }
 
-/* Checkbox / radio checked - OR */
-body.coordinateur-mode input[type="checkbox"]:checked,
-body.coordinateur-mode input[type="radio"]:checked {
-    accent-color: var(--role-secondary);
-}
-
-/* Toggle / switch actif - OR */
-body.coordinateur-mode .peer-checked {
-    background-color: var(--role-secondary) !important;
-}
-
-/* Pagination active - OR */
-body.coordinateur-mode .pagination .active {
-    background: var(--role-secondary);
-    color: #1E293B;
-}
-
-/* Focus outline - OR */
-body.coordinateur-mode *:focus-visible {
-    outline-color: var(--role-secondary);
-}
-
-/* Header navigation active */
-body.coordinateur-mode .sidebar-link.active {
-    background: var(--role-secondary) !important;
-    color: #1E293B !important;
-}
-
-
-
-/* ============================================
-   CHAT PLEIN ÉCRAN - SUPPRESSION DES MARGES
-   ============================================ */
-
-/* Forcer le conteneur principal à être plein écran */
-body:has(.chat-whatsapp-container) {
-    overflow: hidden !important;
-}
-
-/* Cibler spécifiquement quand le chat est ouvert */
-.chat-whatsapp-container {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    z-index: 9999 !important;
-    background: #efeae2 !important;
-}
-
-/* Supprimer les marges du parent main quand le chat est ouvert */
-body:has(.chat-whatsapp-container) main,
-body:has(.chat-whatsapp-container) #main-content,
-body:has(.chat-whatsapp-container) .main-wrapper {
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: hidden !important;
-    height: 100vh !important;
-}
-
-/* Supprimer les marges du view-container */
-body:has(.chat-whatsapp-container) #view-container {
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: hidden !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-}
-
-/* Cacher le footer mobile quand le chat est ouvert */
-body:has(.chat-whatsapp-container) footer,
-body:has(.chat-whatsapp-container) .fab-container {
-    display: none !important;
-}
-
-/* Cacher la sidebar et le header quand le chat est ouvert */
-body:has(.chat-whatsapp-container) aside,
-body:has(.chat-whatsapp-container) header {
-    display: none !important;
-}
-
-
-/* ============================================
-   CORRECTION DES BULLES DE MESSAGE - TEXTE NON COUPÉ
-   ============================================ */
-
-/* Messages envoyés (à droite) */
-.chat-message-sent,
-.chat-message-received {
-    padding: 10px 14px !important;
-    border-radius: 18px !important;
-    word-wrap: break-word !important;
-    word-break: break-word !important;
-    white-space: normal !important;
-    line-height: 1.4 !important;
-    min-height: auto !important;
-    height: auto !important;
-    overflow: visible !important;
-}
-
-/* Texte dans les bulles */
-.chat-message-sent p,
-.chat-message-received p {
-    margin: 0 !important;
-    padding: 0 !important;
-    font-size: 14px !important;
-    line-height: 1.4 !important;
-    color: inherit !important;
-    overflow-wrap: break-word !important;
-    white-space: pre-wrap !important;
-}
-
-/* Conteneur des messages */
-.chat-whatsapp-messages {
-    padding: 16px !important;
-    gap: 6px !important;
-}
-
-/* Chaque ligne de message */
-.message-item {
-    max-width: 85% !important;
-    margin-bottom: 4px !important;
-}
-
-/* Messages courts comme "cc" */
-.chat-message-sent:has(p:only-child:empty),
-.chat-message-sent:has(p:only-child:contains('cc')),
-.chat-message-sent:has(p:only-child:contains('ok')) {
-    min-width: 50px !important;
-    width: auto !important;
-    display: inline-block !important;
-}
-
-/* Forcer les messages à avoir une hauteur adaptée au contenu */
-.chat-message-sent br,
-.chat-message-received br {
-    display: block !important;
-    content: "" !important;
-    margin: 4px 0 !important;
-}
-
-
-/* ============================================
-   CORRECTION DÉFINITIVE DES BULLES DE MESSAGE
-   ============================================ */
-
-/* Reset complet pour les messages */
-.chat-message-sent,
-.chat-message-received {
-    display: inline-block !important;
-    padding: 8px 14px !important;
-    border-radius: 18px !important;
-    font-size: 14px !important;
-    line-height: 1.4 !important;
-    min-height: 36px !important;
-    height: auto !important;
-    max-width: 75% !important;
-    word-break: break-word !important;
-    white-space: pre-wrap !important;
-}
-
-/* Forcer les paragraphes à bien s'afficher */
-.chat-message-sent p,
-.chat-message-received p {
-    margin: 0 !important;
-    padding: 0 !important;
-    font-size: 14px !important;
-    line-height: 1.4 !important;
-    display: block !important;
-}
-
-/* Supprimer les espaces supplémentaires */
-.chat-message-sent br,
-.chat-message-received br {
-    display: none;
-}
-
-/* Alignement vertical correct */
-.message-item {
-    display: flex !important;
-    margin-bottom: 6px !important;
-}
-
-.message.sent {
-    justify-content: flex-end !important;
-}
-
-.message.received {
-    justify-content: flex-start !important;
-}
-
-/* Container des messages */
-.chat-whatsapp-messages {
-    padding: 12px 16px !important;
-}
-
-
-
-
-
-
-
-
-
-/* ============================================
-   CORRECTION FINALE - BULLES COMPACTES
-   ============================================ */
-
-/* Réduction des espaces dans les bulles */
-.chat-message-sent,
-.chat-message-received {
-    padding: 6px 12px !important;
-    margin: 2px 0 !important;
-    line-height: 1.3 !important;
-    font-size: 13px !important;
-}
-
-/* Supprimer les marges internes */
-.chat-message-sent p,
-.chat-message-received p {
-    margin: 0 !important;
-    padding: 0 !important;
-    line-height: 1.3 !important;
-}
-
-/* Espacement entre les messages */
-.message-item {
-    margin-bottom: 4px !important;
-}
-
-/* Messages très courts (ex: "cc") */
-.chat-message-sent:has(span:only-child:empty),
-.chat-message-sent:has(span:only-child:contains('c')),
-.chat-message-sent:has(span:only-child:contains('cc')),
-.chat-message-received:has(span:only-child:contains('c')),
-.chat-message-received:has(span:only-child:contains('cc')) {
-    padding: 4px 10px !important;
-    min-height: 28px !important;
-}
-
-
-/* STYLES PRIORITAIRES POUR LE CHAT */
-.chat-message-sent {
-    background: var(--role-primary) !important;
-    color: white !important;
-    border-radius: 18px !important;
-    border-bottom-right-radius: 4px !important;
-    padding: 6px 12px !important;
-    display: inline-block !important;
-    max-width: 75% !important;
-    word-break: break-word !important;
-}
-
-.chat-message-sent span {
-    color: white !important;
-    font-size: 13px !important;
-    line-height: 1.3 !important;
-    display: inline !important;
-}
-
-.chat-message-received {
-    background: white !important;
-    color: #1E293B !important;
-    border-radius: 18px !important;
-    border-bottom-left-radius: 4px !important;
-    padding: 6px 12px !important;
-    display: inline-block !important;
-    max-width: 75% !important;
-    word-break: break-word !important;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.05) !important;
-}
-
-.chat-message-received span {
-    color: #1E293B !important;
-    font-size: 13px !important;
-    line-height: 1.3 !important;
-    display: inline !important;
-}
-
-/* Alignement des messages */
-.flex.justify-end {
-    justify-content: flex-end !important;
-}
-
-.flex.items-start {
-    justify-content: flex-start !important;
-}
-
-
-
-/* ============================================
-   BARRE DE SÉLECTION DE VISIBILITÉ
-   ============================================ */
-
-.chat-visibility-bar {
-    background: #202c33;
-    padding: 8px 16px;
-    border-bottom: 1px solid #2a3942;
-    flex-shrink: 0;
-}
-
-.visibility-btn {
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.visibility-btn:active {
-    transform: scale(0.95);
-}
-
-/* Barre de sélection de visibilité */
-.chat-visibility-bar {
-    background: #202c33;
-    padding: 8px 16px;
-    border-bottom: 1px solid #2a3942;
-    flex-shrink: 0;
-}
-
-.visibility-btn {
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.visibility-btn:active {
-    transform: scale(0.95);
-}
-
-/* Force l'affichage des émojis */
-body, .maman-dashboard-container, .chat-whatsapp-messages {
-    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
-}
-
-/* Style pour les icônes FontAwesome */
-.fa, .fas, .far, .fal, .fab, .fa-solid, .fa-regular {
-    font-family: "Font Awesome 6 Free" !important;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-/* ============================================
-   THÈME COORDINATEUR (OR EN PREMIER PLAN)
-   ============================================ */
-
-body.coordinateur-mode {
-    --role-primary: #D4AF37;
-    --role-primary-dark: #B8942E;
-    --role-primary-light: #FEF9E6;
-}
-
-/* ============================================
-   1. PAGE D'ACCUEIL - BANNIÈRE & FONDS
-   ============================================ */
-
-/* Bannière de bienvenue (tout en haut) */
-body.coordinateur-mode .bg-gradient-to-r,
-body.coordinateur-mode [class*="bg-gradient-to-r"] {
-    background: linear-gradient(135deg, #D4AF37 0%, #B8942E 100%) !important;
-    color: #0F172A !important;
-}
-
-/* Fonds des blocs / cartes / bentos */
-body.coordinateur-mode .bg-white,
-body.coordinateur-mode .bg-white.rounded-xl,
-body.coordinateur-mode .bg-white.rounded-2xl,
-body.coordinateur-mode .dashboard-card,
-body.coordinateur-mode .bento-card,
-body.coordinateur-mode .patient-card-modern,
-body.coordinateur-mode .menu-tile {
-    background: white !important;
-}
-
-/* Fonds verts clairs → beige */
-body.coordinateur-mode .bg-emerald-50,
-body.coordinateur-mode .bg-green-50,
-body.coordinateur-mode .bg-emerald-100,
-body.coordinateur-mode [class*="bg-emerald-"]:not(.bg-emerald-500):not(.bg-emerald-600) {
-    background: #FEF9E6 !important;
-}
-
-/* ============================================
-   2. BLOC D'INFORMATION RAPIDE (carte info)
-   ============================================ */
-
-body.coordinateur-mode .bg-emerald-50.p-4.rounded-xl,
-body.coordinateur-mode .bg-slate-50.p-4.rounded-xl {
-    background: #FEF9E6 !important;
-    border: 1px solid #D4AF37 !important;
-}
-
-body.coordinateur-mode .text-emerald-600,
-body.coordinateur-mode .text-emerald-700,
-body.coordinateur-mode .text-green-600 {
-    color: #D4AF37 !important;
-}
-
-/* ============================================
-   3. DASHBOARD - CARTES STATS
-   ============================================ */
-
 body.coordinateur-mode .dashboard-card {
-    border-top: 3px solid #D4AF37 !important;
+    border-top: 4px solid var(--role-secondary);
 }
 
-body.coordinateur-mode .dashboard-card-stat {
-    color: #D4AF37 !important;
-    font-size: 28px !important;
-    font-weight: 800 !important;
-}
-
-body.coordinateur-mode .dashboard-card-icon {
-    background: #FEF9E6 !important;
-}
-
-body.coordinateur-mode .dashboard-card-icon i {
-    color: #D4AF37 !important;
-}
-
-/* ============================================
-   4. JOURNAL (FEED) - CARTES DE MESSAGES
-   ============================================ */
-
-body.coordinateur-mode .message-card,
-body.coordinateur-mode .bg-white.rounded-2xl.p-5 {
-    background: white !important;
-    border: 1px solid #E2E8F0 !important;
-}
-
-body.coordinateur-mode .chat-message-sent {
-    background: #D4AF37 !important;
-    color: #0F172A !important;
-}
-
-body.coordinateur-mode .chat-message-received {
-    border-left: 3px solid #D4AF37 !important;
-}
-
-/* ============================================
-   5. VISITES - CARTES
-   ============================================ */
-
-body.coordinateur-mode .visit-card,
-body.coordinateur-mode .bg-white.rounded-2xl {
-    background: white !important;
-    border: 1px solid #E2E8F0 !important;
-}
-
-body.coordinateur-mode .status-pill.validated {
-    background: #FEF9E6 !important;
-    color: #D4AF37 !important;
-    border: 1px solid #D4AF37 !important;
-}
-
-/* ============================================
-   6. COMMANDES - CARTES
-   ============================================ */
-
-body.coordinateur-mode .commande-card,
-body.coordinateur-mode .bg-white.rounded-2xl {
-    background: white !important;
-    border: 1px solid #E2E8F0 !important;
-}
-
-/* ============================================
-   7. PLANNING - CARTES
-   ============================================ */
-
-body.coordinateur-mode .planning-card,
-body.coordinateur-mode .bg-white.rounded-xl {
-    background: white !important;
-    border-left: 4px solid #D4AF37 !important;
-}
-
-/* ============================================
-   8. BENTOS (grille d'accueil)
-   ============================================ */
-
-body.coordinateur-mode .bento-card {
-    background: white !important;
-    border: 1px solid #E2E8F0 !important;
-    border-top: 3px solid #D4AF37 !important;
-}
-
-body.coordinateur-mode .bento-card i {
-    color: #D4AF37 !important;
-}
-
-body.coordinateur-mode .bento-card:hover {
-    border-top: 3px solid #E5C65C !important;
-    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.12) !important;
-}
-
-/* ============================================
-   9. BOUTONS PRINCIPAUX
-   ============================================ */
-
-body.coordinateur-mode .btn-primary,
-body.coordinateur-mode button[type="submit"],
-body.coordinateur-mode .next-btn,
-body.coordinateur-mode #btn-login,
-body.coordinateur-mode .chat-input-send {
-    background: #D4AF37 !important;
-    color: #0F172A !important;
-}
-
-body.coordinateur-mode .btn-primary:hover {
-    background: #C9A84C !important;
-}
-
-/* ============================================
-   10. SIDEBAR & NAVIGATION
-   ============================================ */
-
-body.coordinateur-mode .sidebar-link.active {
-    background: #D4AF37 !important;
-    color: #0F172A !important;
-}
-
+body.coordinateur-mode .sidebar-link.active,
 body.coordinateur-mode .nav-btn.active {
-    color: #D4AF37 !important;
+    color: var(--role-secondary) !important;
 }
 
-/* ============================================
-   11. BADGES & TAGS
-   ============================================ */
-
-body.coordinateur-mode .badge-dynamic,
-body.coordinateur-mode .badge-primary,
-body.coordinateur-mode .status-pill {
-    background: #FEF9E6 !important;
-    color: #D4AF37 !important;
-    border: 1px solid #D4AF37 !important;
+body.coordinateur-mode .planning-card {
+    border-left: 4px solid var(--role-secondary) !important;
 }
 
 body.coordinateur-mode #notification-badge,
 body.coordinateur-mode .menu-badge {
-    background: #D4AF37 !important;
+    background: var(--role-secondary) !important;
     color: #0F172A !important;
 }
 
-
-
-
-
-
-
-
-
-
-/* ============================================
-   THÈME AIDANT (OR DOUX EN PREMIER PLAN)
-   ============================================ */
-
-body.aidant-mode {
-    --role-primary: #C9A84C;
-    --role-primary-dark: #B8942E;
-    --role-primary-light: #FEF9E6;
-}
-
-/* Bannière */
-body.aidant-mode .bg-gradient-to-r {
-    background: linear-gradient(135deg, #C9A84C 0%, #B8942E 100%) !important;
-    color: #0F172A !important;
-}
-
-/* Fonds verts clairs */
-body.aidant-mode .bg-emerald-50,
-body.aidant-mode .bg-green-50 {
-    background: #FEF9E6 !important;
-}
-
-/* Cartes stats */
-body.aidant-mode .dashboard-card {
-    border-top: 3px solid #C9A84C !important;
-}
-
-body.aidant-mode .dashboard-card-stat {
-    color: #C9A84C !important;
-}
-
-body.aidant-mode .dashboard-card-icon {
-    background: #FEF9E6 !important;
-}
-
-body.aidant-mode .dashboard-card-icon i {
-    color: #C9A84C !important;
-}
-
-/* Chat */
-body.aidant-mode .chat-message-sent {
-    background: #C9A84C !important;
-    color: #0F172A !important;
-}
-
-body.aidant-mode .chat-message-received {
-    border-left: 3px solid #C9A84C !important;
-}
-
-/* Boutons */
-body.aidant-mode .btn-primary,
-body.aidant-mode button[type="submit"] {
-    background: #C9A84C !important;
-    color: #0F172A !important;
-}
-
-/* Badges */
-body.aidant-mode .badge-dynamic {
-    background: #FEF9E6 !important;
-    color: #C9A84C !important;
-    border: 1px solid #C9A84C !important;
-}
-
-/* Sidebar */
-body.aidant-mode .sidebar-link.active {
-    background: #C9A84C !important;
-    color: #0F172A !important;
-}
-
-/* Navigation */
-body.aidant-mode .nav-btn.active {
-    color: #C9A84C !important;
-}
-
-/* Planning */
-body.aidant-mode .planning-card {
-    border-left: 4px solid #C9A84C !important;
-}
-
-
-
-/* ============================================
-   THÈME MAMAN (ROSE ÉLÉGANT - SANS SURCHARGE)
-   ============================================ */
-
+/* Thème Maman */
 body.maman-mode {
     --role-primary: #E11D48;
     --role-primary-dark: #BE123C;
@@ -3355,10 +2885,6 @@ body.maman-mode {
     --role-secondary: #F43F5E;
     --role-text: #881337;
 }
-
-/* ============================================
-   1. BOUTONS (rose vif)
-   ============================================ */
 
 body.maman-mode .btn-primary,
 body.maman-mode button[type="submit"],
@@ -3371,43 +2897,22 @@ body.maman-mode .bg-emerald-600 {
     color: white !important;
 }
 
-body.maman-mode .btn-primary:hover {
-    background: #BE123C !important;
-}
-
-/* ============================================
-   2. STATISTIQUES (chiffres en rose)
-   ============================================ */
-
 body.maman-mode .dashboard-card-stat,
 body.maman-mode .stat-number {
     color: #E11D48 !important;
 }
 
-/* ============================================
-   3. BANNIÈRE DASHBOARD MAMAN (dégradé rose)
-   ============================================ */
-
 body.maman-mode .maman-header {
     background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%) !important;
 }
 
-/* ============================================
-   4. CARTES MÉTRIQUES (bordure rose subtile)
-   ============================================ */
-
 body.maman-mode .maman-metric-card {
     border-top: 3px solid #E11D48 !important;
-    background: white !important;
 }
 
 body.maman-mode .maman-metric-card i {
     color: #E11D48 !important;
 }
-
-/* ============================================
-   5. BADGES (rose sur fond clair)
-   ============================================ */
 
 body.maman-mode .badge-dynamic,
 body.maman-mode .badge-primary {
@@ -3416,46 +2921,13 @@ body.maman-mode .badge-primary {
     border: 1px solid #FCE7F3 !important;
 }
 
-/* ============================================
-   6. PROCHAINE VISITE (carte avec accent rose)
-   ============================================ */
-
 body.maman-mode .maman-next-visit {
     border-left: 4px solid #E11D48 !important;
 }
 
-body.maman-mode .maman-next-visit .text-pink-600 {
-    color: #E11D48 !important;
-}
-
-/* ============================================
-   7. PACKS (bordure rose sur le populaire)
-   ============================================ */
-
-body.maman-mode .maman-pack-card {
-    border: 1px solid #FCE7F3 !important;
-}
-
-body.maman-mode .maman-pack-card.border-pink-200 {
-    border-color: #F43F5E !important;
-    background: #FFF1F2 !important;
-}
-
-/* ============================================
-   8. NAVIGATION RAPIDE (icônes roses)
-   ============================================ */
-
 body.maman-mode .maman-nav-btn i {
     color: #E11D48 !important;
 }
-
-body.maman-mode .maman-nav-btn:active {
-    background: #FFF1F2 !important;
-}
-
-/* ============================================
-   9. CHAT MAMAN (messages envoyés roses)
-   ============================================ */
 
 body.maman-mode .chat-message-sent {
     background: #E11D48 !important;
@@ -3466,42 +2938,33 @@ body.maman-mode .chat-message-received {
     border-left: 3px solid #E11D48 !important;
 }
 
-/* ============================================
-   10. SIDEBAR ACTIF (rose)
-   ============================================ */
-
-body.maman-mode .sidebar-link.active {
+body.maman-mode .sidebar-link.active,
+body.maman-mode .nav-btn.active {
+    color: #E11D48 !important;
     background: #E11D48 !important;
     color: white !important;
 }
-
-body.maman-mode .nav-btn.active {
-    color: #E11D48 !important;
-}
-
-/* ============================================
-   11. PROGRESS BAR (rose)
-   ============================================ */
 
 body.maman-mode .progress-bar-fill {
     background: #E11D48 !important;
 }
 
-/* ============================================
-   12. CHECKBOX & RADIO (rose)
-   ============================================ */
-
-body.maman-mode input[type="checkbox"]:checked,
-body.maman-mode input[type="radio"]:checked {
-    accent-color: #E11D48 !important;
+/* Thème Senior (défaut) */
+body.senior-mode {
+    --role-primary: #059669;
+    --role-primary-dark: #047857;
+    --role-primary-light: #ECFDF5;
 }
 
+body.senior-mode .btn-primary,
+body.senior-mode button[type="submit"] {
+    background: #059669 !important;
+}
 
+/* ============================================
+   INSTALL DRAWER BTN
+   ============================================ */
 
-
-
-
-/* Bouton installer dans le drawer */
 .install-drawer-btn {
     transition: all 0.2s ease;
 }
@@ -3510,44 +2973,36 @@ body.maman-mode input[type="radio"]:checked {
     transform: scale(0.98);
 }
 
-/* Pour le thème Maman */
 body.maman-mode .install-drawer-btn {
     background: #FFF1F2 !important;
     color: #E11D48 !important;
 }
 
-/* Pour le thème Senior */
 body.senior-mode .install-drawer-btn {
     background: #ECFDF5 !important;
     color: #059669 !important;
 }
 
-/* Pour le thème Coordinateur (or) */
 body.coordinateur-mode .install-drawer-btn {
     background: #FEF9E6 !important;
     color: #D4AF37 !important;
 }
 
-/* Pour le thème Aidant */
 body.aidant-mode .install-drawer-btn {
     background: #FEF9E6 !important;
     color: #C9A84C !important;
 }
 
+/* ============================================
+   CORRECTION FONT AWESOME
+   ============================================ */
 
-
-
-
-
-
-
-
-/* Correction Font Awesome local */
 @font-face {
     font-family: 'Font Awesome 6 Free';
     font-style: normal;
     font-weight: 900;
     src: url('/assets/fontawesome/webfonts/fa-solid-900.woff2') format('woff2');
+    font-display: block;
 }
 
 @font-face {
@@ -3555,6 +3010,7 @@ body.aidant-mode .install-drawer-btn {
     font-style: normal;
     font-weight: 400;
     src: url('/assets/fontawesome/webfonts/fa-regular-400.woff2') format('woff2');
+    font-display: block;
 }
 
 @font-face {
@@ -3562,6 +3018,7 @@ body.aidant-mode .install-drawer-btn {
     font-style: normal;
     font-weight: 400;
     src: url('/assets/fontawesome/webfonts/fa-brands-400.woff2') format('woff2');
+    font-display: block;
 }
 
 .fa, .fas, .fa-solid {
@@ -3579,439 +3036,64 @@ body.aidant-mode .install-drawer-btn {
     font-weight: 400;
 }
 
-
 /* Forcer l'affichage des icônes immédiatement */
 i, .fa, .fas, .far, .fab, .fa-solid, .fa-regular, .fa-brands {
     visibility: visible !important;
     opacity: 1 !important;
 }
 
-/* Éviter le flash d'icônes cassées */
-body:not(.fontawesome-loaded) i[class*="fa-"] {
-    visibility: hidden;
-}
+/* ============================================
+   FALLBACK POUR LES ICÔNES CASSÉES
+   ============================================ */
 
-
-
-
-
-
-
-
-
-/* Fallback pour les icônes cassées - remplacement par des équivalents solides */
 .fa-folder-open:before,
-.fa-folder:before {
-    content: "\f07b" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
+.fa-folder:before { content: "\f07b" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
 
 .fa-file-alt:before,
-.fa-file-lines:before {
-    content: "\f15c" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-}
-
-.fa-chart-line:before {
-    content: "\f201" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-.fa-calendar-check:before {
-    content: "\f274" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-.fa-box:before {
-    content: "\f466" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-.fa-receipt:before {
-    content: "\f543" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-}
-
-.fa-ticket:before {
-    content: "\f3ff" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-.fa-user-circle:before {
-    content: "\f2bd" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-}
-
-.fa-chart-pie:before {
-    content: "\f200" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-.fa-users:before {
-    content: "\f0c0" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-.fa-location-dot:before {
-    content: "\f3c5" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-.fa-newspaper:before {
-    content: "\f1ea" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-}
-
-.fa-calendar-days:before {
-    content: "\f073" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-}
-
-.fa-user-nurse:before {
-    content: "\f82f" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-
-
-/* Forcer le chargement des polices pour les icônes solides */
-@font-face {
-    font-family: 'Font Awesome 6 Free';
-    font-style: normal;
-    font-weight: 900;
-    src: url('/assets/fontawesome/webfonts/fa-solid-900.woff2') format('woff2');
-    font-display: block;
-}
-
-/* S'assurer que les icônes solides utilisent la bonne police */
-.fa-solid, .fas, .fa-chart-line, .fa-seedling, .fa-crown {
-    font-family: 'Font Awesome 6 Free' !important;
-    font-weight: 900 !important;
-}
-
-
-/* CORRECTION FORCÉE FONT AWESOME */
-.fa,
-.fas,
-.far,
-.fal,
-.fad,
-.fab,
-.fa-solid,
-.fa-regular,
-.fa-brands,
-.fa-chart-line,
-.fa-seedling,
-.fa-crown,
-.fa-chart-simple,
-.fa-arrow-trend-up {
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    font-style: normal !important;
-    font-variant: normal !important;
-    text-rendering: auto !important;
-    -webkit-font-smoothing: antialiased !important;
-}
-
-.fa-regular,
-.far {
-    font-weight: 400 !important;
-}
-
-.fa-brands,
-.fab {
-    font-family: "Font Awesome 6 Brands" !important;
-    font-weight: 400 !important;
-}
-
-/* Forcer l'affichage des icônes spécifiques */
-.fa-chart-line:before {
-    content: "\f201" !important;
-}
-
-.fa-seedling:before {
-    content: "\f4d8" !important;
-}
-
-.fa-crown:before {
-    content: "\f521" !important;
-}
-
-
-/* SOLUTION DÉFINITIVE POUR LES ICÔNES CASSÉES */
-.fa-chart-line:before {
-    content: "\f201" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    display: inline-block !important;
-}
-
-.fa-seedling:before {
-    content: "\f4d8" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    display: inline-block !important;
-}
-
-.fa-crown:before {
-    content: "\f521" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    display: inline-block !important;
-}
-
-.fa-chart-simple:before {
-    content: "\f201" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    display: inline-block !important;
-}
-
-.fa-arrow-trend-up:before {
-    content: "\f201" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    display: inline-block !important;
-}
-
-.fa-box:before {
-    content: "\f466" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    display: inline-block !important;
-}
-
-.fa-calendar-check:before {
-    content: "\f274" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    display: inline-block !important;
-}
-
-.fa-newspaper:before {
-    content: "\f1ea" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-    display: inline-block !important;
-}
-
-.fa-location-dot:before {
-    content: "\f3c5" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    display: inline-block !important;
-}
-
-.fa-receipt:before {
-    content: "\f543" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-    display: inline-block !important;
-}
-
-.fa-ticket:before {
-    content: "\f3ff" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    display: inline-block !important;
-}
-
-.fa-user-circle:before {
-    content: "\f2bd" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-    display: inline-block !important;
-}
-
-.fa-user-nurse:before {
-    content: "\f82f" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    display: inline-block !important;
-}
-
-.fa-chart-pie:before {
-    content: "\f200" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    display: inline-block !important;
-}
-
-.fa-users:before {
-    content: "\f0c0" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    display: inline-block !important;
-}
-
-
-
-
-
-
-
-/* CORRECTION DÉFINITIVE POUR TOUTES LES ICÔNES MANQUANTES */
-
-/* Icône Facture dans le menu */
-.fa-receipt:before {
-    content: "\f543" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-}
-
-/* Icône Dossier / Badge Confort */
-.fa-chart-line:before {
-    content: "\f201" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-/* Icône Badge Essentiel / Régulier */
-.fa-seedling:before {
-    content: "\f4d8" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-/* Icône Badge Sérénité / Premium */
-.fa-crown:before {
-    content: "\f521" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-/* Icône Abonnement */
-.fa-ticket:before {
-    content: "\f3ff" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-/* Icône Journal / Feed */
-.fa-newspaper:before {
-    content: "\f1ea" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-}
-
-/* Icône Visites */
-.fa-calendar-check:before {
-    content: "\f274" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-/* Icône Commandes */
-.fa-box:before {
-    content: "\f466" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-/* Icône Planning */
-.fa-calendar-days:before {
-    content: "\f073" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-}
-
-/* Icône Localisation */
-.fa-location-dot:before {
-    content: "\f3c5" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-/* Icône Profil */
-.fa-user-circle:before {
-    content: "\f2bd" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-}
-
-/* Icône Dashboard */
-.fa-chart-pie:before {
-    content: "\f200" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-/* Icône Aidants */
-.fa-user-nurse:before {
-    content: "\f82f" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-/* Icône RH */
-.fa-users:before {
-    content: "\f0c0" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-/* Icône Dossier (dans la liste des patients) */
-.fa-folder-open:before {
-    content: "\f07c" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-}
-
-
-
-/* 1. Icône de la tuile FACTURE dans la page d'accueil (bento) */
-.fa-receipt:before {
-    content: "\f543" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-}
-
-/* 2. Icône du badge CONFORT dans les dossiers patients */
-.fa-chart-line:before {
-    content: "\f201" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-/* 2b. Icône du badge ESSENTIEL / REGULIER */
-.fa-seedling:before {
-    content: "\f4d8" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-/* 2c. Icône du badge SERENITE / PREMIUM */
-.fa-crown:before {
-    content: "\f521" !important;
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-}
-
-
-/* Supprimer les bordures noires sur les images de login */
+.fa-file-lines:before { content: "\f15c" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 400 !important; }
+
+.fa-chart-line:before { content: "\f201" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
+
+.fa-calendar-check:before { content: "\f274" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
+
+.fa-box:before { content: "\f466" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
+
+.fa-receipt:before { content: "\f543" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 400 !important; }
+
+.fa-ticket:before { content: "\f3ff" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
+
+.fa-user-circle:before { content: "\f2bd" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 400 !important; }
+
+.fa-chart-pie:before { content: "\f200" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
+
+.fa-users:before { content: "\f0c0" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
+
+.fa-location-dot:before { content: "\f3c5" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
+
+.fa-newspaper:before { content: "\f1ea" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 400 !important; }
+
+.fa-calendar-days:before { content: "\f073" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 400 !important; }
+
+.fa-user-nurse:before { content: "\f82f" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
+
+.fa-seedling:before { content: "\f4d8" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
+
+.fa-crown:before { content: "\f521" !important; font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
+
+/* ============================================
+   AUTHENTIFICATION - DIVERS
+   ============================================ */
+
 #auth-logo-img {
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
 }
 
+/* ============================================
+   ONBOARDING - COULEURS
+   ============================================ */
 
-
-/* Onboarding - Couleurs du thème */
 .onboarding-dot.active {
     background: var(--role-primary, #10B981) !important;
     width: 24px !important;
@@ -4022,7 +3104,6 @@ body:not(.fontawesome-loaded) i[class*="fa-"] {
     transition: all 0.3s ease;
 }
 
-/* Bouton de l'onboarding */
 .onboarding-next-btn {
     background: var(--role-primary, #10B981) !important;
     color: white !important;
@@ -4041,8 +3122,10 @@ body:not(.fontawesome-loaded) i[class*="fa-"] {
     color: var(--role-primary-dark, #047857) !important;
 }
 
+/* ============================================
+   FOND DYNAMIQUE POUR LA PAGE DE CONNEXION
+   ============================================ */
 
-/* Fond dynamique pour la page de connexion */
 .auth-page {
     transition: background 0.3s ease;
 }
@@ -4063,7 +3146,6 @@ body:not(.fontawesome-loaded) i[class*="fa-"] {
     background: linear-gradient(135deg, #F1F5F9 0%, #FFFFFF 100%);
 }
 
-/* Effets de fond flous */
 .auth-blur {
     position: absolute;
     width: 300px;
@@ -4094,131 +3176,10 @@ body:not(.fontawesome-loaded) i[class*="fa-"] {
     opacity: 0.1;
 }
 
-/* Renforcement des couleurs de fond */
-.bg-gradient-to-br.from-emerald-300 {
-    background: linear-gradient(135deg, #A7F3D0 0%, #CCFBF1 50%, #99F6E4 100%);
-}
-.bg-gradient-to-br.from-pink-300 {
-    background: linear-gradient(135deg, #FBCFE8 0%, #FCE7F3 50%, #FBCFE8 100%);
-}
-.bg-gradient-to-br.from-amber-300 {
-    background: linear-gradient(135deg, #FDE68A 0%, #FEF3C7 50%, #FDE68A 100%);
-}
-.bg-gradient-to-br.from-slate-700 {
-    background: linear-gradient(135deg, #334155 0%, #475569 50%, #334155 100%);
-}
-
-
 /* ============================================
-   DESIGN LOGIN MODERNE & ÉPURÉ
+   FONDS DYNAMIQUES POUR L'APP CONNECTÉE
    ============================================ */
 
-.auth-card {
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(20px) !important;
-    border-radius: 2rem !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.auth-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Titre épuré */
-.auth-card .shrink-0 {
-    padding-top: 1.5rem !important;
-}
-
-/* Champs de saisie modernes */
-.app-input {
-    background: #F8FAFC !important;
-    border: 1px solid #E2E8F0 !important;
-    border-radius: 1rem !important;
-    padding: 1rem 1rem 1rem 2.75rem !important;
-    font-size: 0.875rem !important;
-    transition: all 0.2s ease;
-}
-
-.app-input:focus {
-    background: white !important;
-    border-color: var(--role-primary, #10B981) !important;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
-    outline: none;
-}
-
-/* Icônes dans les champs */
-.app-input + i,
-.relative i {
-    color: #94A3B8;
-    transition: color 0.2s ease;
-}
-
-.relative:focus-within i {
-    color: var(--role-primary, #10B981);
-}
-
-/* Bouton principal */
-#btn-login, .next-btn {
-    background: var(--role-primary, #0F172A) !important;
-    border-radius: 1rem !important;
-    padding: 0.875rem !important;
-    font-weight: 800 !important;
-    letter-spacing: 0.1em !important;
-    transition: all 0.2s ease;
-}
-
-#btn-login:hover, .next-btn:hover {
-    transform: scale(1.02);
-    filter: brightness(1.05);
-}
-
-#btn-login:active, .next-btn:active {
-    transform: scale(0.98);
-}
-
-/* Liens */
-.auth-card .text-right button {
-    font-size: 0.7rem;
-    font-weight: 600;
-    transition: color 0.2s ease;
-}
-
-/* Onglets */
-#auth-tabs .bg-slate-100\/50 {
-    background: #F1F5F9 !important;
-    border-radius: 1rem !important;
-    padding: 0.25rem !important;
-}
-
-#auth-tabs button {
-    border-radius: 0.75rem !important;
-    font-size: 0.7rem !important;
-    font-weight: 800 !important;
-    padding: 0.5rem !important;
-    transition: all 0.2s ease;
-}
-
-/* Logo */
-.auth-card img#auth-logo-img {
-    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
-}
-
-/* Progress bar */
-#auth-progress .h-1 {
-    height: 0.25rem !important;
-    border-radius: 1rem !important;
-}
-
-/* Message d'erreur (SweetAlert adapté) */
-.swal2-popup {
-    border-radius: 1.5rem !important;
-}
-
-
-/* Fond dynamique pour l'application connectée */
 body.coordinateur-mode {
     background: linear-gradient(135deg, #F1F5F9 0%, #FFFFFF 100%);
 }
@@ -4235,7 +3196,6 @@ body.maman-mode {
     background: linear-gradient(135deg, #FFF1F2 0%, #FFFFFF 100%);
 }
 
-/* Effets de fond flous pour l'app connectée */
 body::before {
     content: '';
     position: fixed;
@@ -4263,758 +3223,18 @@ body.maman-mode::before {
     background: radial-gradient(circle at 20% 30%, rgba(225, 29, 72, 0.08) 0%, transparent 70%);
 }
 
-
-
-/* ============================================
-   FONDS DYNAMIQUES SELON LE RÔLE
-   ============================================ */
-
-/* Fond pour le mode Senior (vert) */
-body.senior-mode {
-    background: linear-gradient(135deg, #ECFDF5 0%, #FFFFFF 100%);
-    min-height: 100vh;
-}
-
-body.senior-mode::before {
-    content: '';
-    position: fixed;
-    top: -20%;
-    left: -20%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.12) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: -1;
-}
-
-/* Fond pour le mode Maman (rose) */
-body.maman-mode {
-    background: linear-gradient(135deg, #FFF1F2 0%, #FFFFFF 100%);
-    min-height: 100vh;
-}
-
-body.maman-mode::before {
-    content: '';
-    position: fixed;
-    top: -20%;
-    left: -20%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 20% 30%, rgba(225, 29, 72, 0.1) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: -1;
-}
-
-/* Fond pour le mode Aidant (or doux) */
-body.aidant-mode {
-    background: linear-gradient(135deg, #FEF9E6 0%, #FFFFFF 100%);
-    min-height: 100vh;
-}
-
-body.aidant-mode::before {
-    content: '';
-    position: fixed;
-    top: -20%;
-    left: -20%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 20% 30%, rgba(201, 168, 76, 0.12) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: -1;
-}
-
-/* Fond pour le mode Coordinateur (gris) */
-body.coordinateur-mode {
-    background: linear-gradient(135deg, #F1F5F9 0%, #FFFFFF 100%);
-    min-height: 100vh;
-}
-
-body.coordinateur-mode::before {
-    content: '';
-    position: fixed;
-    top: -20%;
-    left: -20%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 20% 30%, rgba(30, 41, 59, 0.08) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: -1;
-}
-
-/* Container principal transparent pour laisser voir le fond */
 #app {
     background: transparent !important;
 }
 
+/* ============================================
+   BANNIÈRE AVEC IMAGE DE FOND
+   ============================================ */
 
-/* Bannière avec image de fond */
 .banner-image {
     transition: transform 0.3s ease;
 }
 
 .banner-image:hover {
     transform: scale(1.05);
-}
-
-
-
-/* ============================================
-   CHAT PLEIN ÉCRAN - CORRIGÉ POUR DESKTOP
-   ============================================ */
-
-/* Pour mobile : plein écran */
-@media (max-width: 1023px) {
-    .chat-whatsapp-container {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        z-index: 9999 !important;
-        background: #efeae2 !important;
-    }
-    
-    body:has(.chat-whatsapp-container) main,
-    body:has(.chat-whatsapp-container) #main-content,
-    body:has(.chat-whatsapp-container) .main-wrapper {
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: hidden !important;
-        height: 100vh !important;
-    }
-    
-    body:has(.chat-whatsapp-container) #view-container {
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: hidden !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-    }
-    
-    body:has(.chat-whatsapp-container) footer,
-    body:has(.chat-whatsapp-container) .fab-container {
-        display: none !important;
-    }
-    
-    body:has(.chat-whatsapp-container) aside,
-    body:has(.chat-whatsapp-container) header {
-        display: none !important;
-    }
-}
-
-/* Pour desktop : occupe tout l'espace restant à droite de la sidebar */
-@media (min-width: 1024px) {
-    .chat-whatsapp-container {
-        position: relative !important;
-        display: flex !important;
-        flex-direction: column !important;
-        height: calc(100vh - 120px) !important;
-        min-height: 500px !important;
-        width: 100% !important;
-        background: #efeae2 !important;
-        border-radius: 1.5rem !important;
-        overflow: hidden !important;
-    }
-    
-    /* Ne pas cacher la sidebar sur desktop */
-    body:has(.chat-whatsapp-container) aside {
-        display: flex !important;
-    }
-    
-    body:has(.chat-whatsapp-container) header {
-        display: flex !important;
-    }
-    
-    body:has(.chat-whatsapp-container) main {
-        padding: 1.5rem !important;
-    }
-}
-
-
-
-
-/* ============================================
-   CHAT WHATSAPP - RESPONSIVE
-   ============================================ */
-
-/* Version mobile : plein écran */
-@media (max-width: 1023px) {
-    .chat-whatsapp-container {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        z-index: 9999 !important;
-        background: #efeae2 !important;
-    }
-    
-    /* Cacher la sidebar et le header sur mobile */
-    body:has(.chat-whatsapp-container) aside,
-    body:has(.chat-whatsapp-container) header {
-        display: none !important;
-    }
-    
-    body:has(.chat-whatsapp-container) main {
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: hidden !important;
-    }
-    
-    body:has(.chat-whatsapp-container) #view-container {
-        padding: 0 !important;
-        margin: 0 !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-    }
-    
-    body:has(.chat-whatsapp-container) footer,
-    body:has(.chat-whatsapp-container) .fab-container {
-        display: none !important;
-    }
-}
-
-/* Version desktop : occupe l'espace à droite de la sidebar */
-@media (min-width: 1024px) {
-    .chat-whatsapp-container {
-        position: relative !important;
-        display: flex !important;
-        flex-direction: column !important;
-        height: calc(100vh - 130px) !important;
-        min-height: 500px !important;
-        width: 100% !important;
-        background: #efeae2 !important;
-        border-radius: 1.5rem !important;
-        overflow: hidden !important;
-    }
-    
-    /* La sidebar reste visible sur desktop */
-    body:has(.chat-whatsapp-container) aside {
-        display: flex !important;
-    }
-    
-    body:has(.chat-whatsapp-container) header {
-        display: flex !important;
-    }
-    
-    body:has(.chat-whatsapp-container) main {
-        padding: 1.5rem !important;
-    }
-    
-    /* Conteneur principal sans marges supplémentaires */
-    #view-container:has(.chat-whatsapp-container) {
-        max-width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-}
-
-/* Styles communs pour tous les appareils */
-.chat-whatsapp-header {
-    background: #202c33;
-    color: white;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-    z-index: 10;
-}
-
-.chat-whatsapp-back {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.chat-whatsapp-back:hover { background: rgba(255,255,255,0.1); }
-.chat-whatsapp-back:active { transform: scale(0.95); }
-
-.chat-whatsapp-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--role-primary), var(--role-primary-dark));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 18px;
-    color: white;
-    flex-shrink: 0;
-}
-
-.chat-whatsapp-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.chat-whatsapp-name {
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.chat-whatsapp-status {
-    font-size: 12px;
-    opacity: 0.8;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.online-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #25D366;
-}
-
-.chat-whatsapp-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.chat-whatsapp-actions button {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: transparent;
-    border: none;
-    color: white;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.chat-whatsapp-actions button:hover { background: rgba(255,255,255,0.1); }
-.chat-whatsapp-actions button:active { transform: scale(0.95); }
-
-.chat-visibility-bar {
-    background: #202c33;
-    padding: 8px 16px;
-    border-bottom: 1px solid #2a3942;
-    flex-shrink: 0;
-}
-
-.visibility-btn {
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.visibility-btn:active {
-    transform: scale(0.95);
-}
-
-.chat-whatsapp-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    scroll-behavior: smooth;
-    background: #efeae2;
-}
-
-.chat-whatsapp-messages::-webkit-scrollbar {
-    width: 6px;
-}
-
-.chat-whatsapp-messages::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.chat-whatsapp-messages::-webkit-scrollbar-thumb {
-    background: rgba(0,0,0,0.2);
-    border-radius: 3px;
-}
-
-.chat-whatsapp-typing {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 8px 12px;
-    background: white;
-    border-radius: 18px;
-    border-bottom-left-radius: 4px;
-    width: fit-content;
-    margin: 0 16px 8px 16px;
-    flex-shrink: 0;
-}
-
-.chat-whatsapp-typing.hidden {
-    display: none;
-}
-
-.typing-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #8696a0;
-    animation: typingBounce 1.4s infinite ease-in-out;
-}
-
-.typing-dot:nth-child(1) { animation-delay: 0s; }
-.typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes typingBounce {
-    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-    30% { transform: translateY(-6px); opacity: 1; }
-}
-
-.typing-text {
-    font-size: 12px;
-    color: #667781;
-}
-
-.chat-whatsapp-input {
-    background: #202c33;
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-}
-
-.chat-whatsapp-attach {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    color: #aebac1;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.chat-whatsapp-attach:hover { background: rgba(255,255,255,0.1); }
-.chat-whatsapp-attach:active { transform: scale(0.95); }
-
-.chat-whatsapp-input-wrapper {
-    flex: 1;
-    background: #2a3942;
-    border-radius: 24px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 12px;
-}
-
-.chat-whatsapp-input-field {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #e9edef;
-    font-size: 15px;
-    padding: 10px 0;
-}
-
-.chat-whatsapp-input-field::placeholder {
-    color: #8696a0;
-}
-
-.chat-whatsapp-send {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #25D366;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.chat-whatsapp-send:active {
-    transform: scale(0.92);
-}
-
-/* Messages */
-.chat-message-sent {
-    background: var(--role-primary);
-    color: white;
-    border-radius: 18px;
-    border-bottom-right-radius: 4px;
-    padding: 10px 14px;
-    max-width: 75%;
-    word-wrap: break-word;
-}
-
-.chat-message-received {
-    background: white;
-    color: #1E293B;
-    border-radius: 18px;
-    border-bottom-left-radius: 4px;
-    padding: 10px 14px;
-    max-width: 75%;
-    word-wrap: break-word;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-
-@keyframes messageSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.message-item {
-    animation: messageSlideIn 0.2s ease-out;
-}
-
-
-
-/* ============================================
-   CHAT - VERSION DESKTOP (STYLE SLACK/TEAMS)
-   ============================================ */
-
-/* Version desktop : design épuré */
-@media (min-width: 1024px) {
-    
-    /* Conteneur principal */
-    .chat-desktop-container {
-        background: white;
-        border-radius: 1.5rem;
-        border: 1px solid #e2e8f0;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        height: calc(100vh - 140px);
-        min-height: 500px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    
-    /* Header desktop */
-    .chat-desktop-header {
-        background: white;
-        border-bottom: 1px solid #e2e8f0;
-        padding: 16px 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-shrink: 0;
-    }
-    
-    .chat-desktop-patient {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    
-    .chat-desktop-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, var(--role-primary), var(--role-primary-dark));
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 16px;
-        color: white;
-    }
-    
-    .chat-desktop-name {
-        font-weight: 700;
-        font-size: 16px;
-        color: #1e293b;
-    }
-    
-    .chat-desktop-status {
-        font-size: 12px;
-        color: #10b981;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    
-    /* Barre de visibilité desktop */
-    .chat-desktop-visibility {
-        background: #f8fafc;
-        padding: 10px 24px;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex-wrap: wrap;
-    }
-    
-    .visibility-label {
-        font-size: 11px;
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-    }
-    
-    .visibility-buttons {
-        display: flex;
-        gap: 8px;
-    }
-    
-    .vis-btn {
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 500;
-        background: #f1f5f9;
-        color: #64748b;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    
-    .vis-btn.active {
-        background: var(--role-primary);
-        color: white;
-    }
-    
-    /* Zone des messages desktop */
-    .chat-desktop-messages {
-        flex: 1;
-        overflow-y: auto;
-        padding: 20px 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        background: #ffffff;
-    }
-    
-    /* Messages desktop */
-    .message-desktop-sent {
-        align-self: flex-end;
-        background: var(--role-primary);
-        color: white;
-        border-radius: 18px;
-        border-bottom-right-radius: 4px;
-        padding: 10px 16px;
-        max-width: 60%;
-        font-size: 14px;
-    }
-    
-    .message-desktop-received {
-        align-self: flex-start;
-        background: #f1f5f9;
-        color: #1e293b;
-        border-radius: 18px;
-        border-bottom-left-radius: 4px;
-        padding: 10px 16px;
-        max-width: 60%;
-        font-size: 14px;
-    }
-    
-    /* Input desktop */
-    .chat-desktop-input-area {
-        background: white;
-        border-top: 1px solid #e2e8f0;
-        padding: 16px 24px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-shrink: 0;
-    }
-    
-    .chat-desktop-input {
-        flex: 1;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 12px 16px;
-        font-size: 14px;
-        outline: none;
-        transition: all 0.2s;
-    }
-    
-    .chat-desktop-input:focus {
-        border-color: var(--role-primary);
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-    }
-    
-    .chat-desktop-buttons {
-        display: flex;
-        gap: 8px;
-    }
-    
-    .chat-desktop-btn {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        background: #f1f5f9;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-        color: #64748b;
-    }
-    
-    .chat-desktop-btn:hover {
-        background: #e2e8f0;
-    }
-    
-    .chat-desktop-btn:active {
-        transform: scale(0.95);
-    }
-    
-    .chat-desktop-send {
-        background: var(--role-primary);
-        color: white;
-    }
-    
-    .chat-desktop-send:hover {
-        background: var(--role-primary-dark);
-    }
-}
-
-/* Version mobile : style WhatsApp (inchangé) */
-@media (max-width: 1023px) {
-    .chat-whatsapp-container {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        z-index: 9999 !important;
-        background: #efeae2 !important;
-    }
-    
-    body:has(.chat-whatsapp-container) aside,
-    body:has(.chat-whatsapp-container) header {
-        display: none !important;
-    }
-    
-    body:has(.chat-whatsapp-container) main {
-        padding: 0 !important;
-    }
 }
