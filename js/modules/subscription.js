@@ -200,30 +200,128 @@ function getConfortPacks() {
 // DÉFINITION DES PACKS
 // ============================================================
 
-// ============================================================
-// PACKS MÉDICAUX (pour comptes AVEC_PATIENT)
-// ============================================================
-
 function getMedicalPacks(isMaman) {
     if (isMaman) {
+        // Packs MAMAN & BÉBÉ
         return [
-            { id: 'MENSUEL_ESSENTIEL', name: 'Essentiel', desc: '2 visites / semaine', price: 100, priceDisplay: '100 CFA', duration: 1, durationText: '1 mois', features: ['2 visites par semaine', 'Suivi de base', 'Rapport hebdomadaire'], icon: 'fa-seedling', color: 'text-emerald-600', bg: 'bg-emerald-50', popular: false },
-            { id: 'MENSUEL_CONFORT', name: 'Confort', desc: '3 à 4 visites / semaine', price: 85000, priceDisplay: '85.000 CFA', duration: 1, durationText: '1 mois', features: ['3-4 visites par semaine', 'Aide à la toilette', 'Préparation repas', 'Rapport détaillé'], icon: 'fa-chart-line', color: 'text-blue-600', bg: 'bg-blue-50', popular: true },
-            { id: 'MENSUEL_SERENITE', name: 'Sérénité', desc: 'Présence quasi quotidienne', price: 150000, priceDisplay: '150.000 CFA', duration: 1, durationText: '1 mois', features: ['6-7 visites par semaine', 'Accompagnement complet', 'Urgence 24/7', 'Rapport en temps réel'], icon: 'fa-crown', color: 'text-gold-primary', bg: 'bg-amber-50', popular: false },
-            { id: 'TRIMESTRIEL_ESSENTIEL', name: 'Essentiel 3 mois', desc: '2 visites / semaine', price: 142500, priceDisplay: '142.500 CFA', originalPrice: 150000, duration: 3, durationText: '3 mois', features: ['2 visites par semaine', 'Suivi de base', 'Rapport hebdomadaire', 'Économie 5%'], icon: 'fa-calendar-alt', color: 'text-emerald-600', bg: 'bg-emerald-50', popular: false, badge: '-5%' },
-            { id: 'TRIMESTRIEL_CONFORT', name: 'Confort 3 mois', desc: '3 à 4 visites / semaine', price: 242250, priceDisplay: '242.250 CFA', originalPrice: 255000, duration: 3, durationText: '3 mois', features: ['3-4 visites par semaine', 'Aide à la toilette', 'Préparation repas', 'Rapport détaillé', 'Économie 5%'], icon: 'fa-calendar-alt', color: 'text-blue-600', bg: 'bg-blue-50', popular: false, badge: '-5%' },
-            { id: 'ANNUEL_ESSENTIEL', name: 'Essentiel 1 an', desc: '2 visites / semaine', price: 510000, priceDisplay: '510.000 CFA', originalPrice: 600000, duration: 12, durationText: '12 mois', features: ['2 visites par semaine', 'Suivi de base', 'Rapport hebdomadaire', 'Économie 15%', 'Paiement unique'], icon: 'fa-calendar-year', color: 'text-emerald-600', bg: 'bg-emerald-50', popular: false, badge: '-15%' },
-            { id: 'ANNUEL_CONFORT', name: 'Confort 1 an', desc: '3 à 4 visites / semaine', price: 867000, priceDisplay: '867.000 CFA', originalPrice: 1020000, duration: 12, durationText: '12 mois', features: ['3-4 visites par semaine', 'Aide à la toilette', 'Préparation repas', 'Rapport détaillé', 'Économie 15%', 'Paiement unique'], icon: 'fa-calendar-year', color: 'text-blue-600', bg: 'bg-blue-50', popular: true, badge: '-15%' },
-            { id: 'MATERNITE', name: 'Spécial Sortie Maternité', desc: 'Suivi intensif sur 2 semaines', price: 70000, priceDisplay: '70.000 CFA', duration: 0.5, durationText: '2 semaines', features: ['Visite quotidienne', 'Aide bébé', 'Conseils allaitement', 'Suivi personnalisé'], icon: 'fa-baby-carriage', color: 'text-pink-600', bg: 'bg-pink-50', popular: false }
+            { 
+                id: 'ESSENTIEL_MAMAN', 
+                name: 'Essentiel', 
+                desc: '2 semaines', 
+                price: 65000, 
+                priceDisplay: '65.000 CFA', 
+                duration: 0.5, 
+                durationText: '2 semaines',
+                features: ['Découverte post-partum', 'Suivi de base'],
+                icon: 'fa-seedling',
+                color: 'text-emerald-600',
+                bg: 'bg-emerald-50',
+                popular: false
+            },
+            { 
+                id: 'CONFORT_MAMAN', 
+                name: 'Confort', 
+                desc: '3 semaines', 
+                price: 100000, 
+                priceDisplay: '100.000 CFA', 
+                duration: 0.75, 
+                durationText: '3 semaines',
+                features: ['Accompagnement standard', 'Aide à l\'allaitement'],
+                icon: 'fa-chart-line',
+                color: 'text-blue-600',
+                bg: 'bg-blue-50',
+                popular: true
+            },
+            { 
+                id: 'SERENITE_MAMAN', 
+                name: 'Sérénité', 
+                desc: '4 semaines', 
+                price: 140000, 
+                priceDisplay: '140.000 CFA', 
+                duration: 1, 
+                durationText: '4 semaines',
+                features: ['Suivi rapproché premium', 'Accompagnement complet'],
+                icon: 'fa-crown',
+                color: 'text-gold-primary',
+                bg: 'bg-amber-50',
+                popular: false
+            },
+            { 
+                id: 'PRIVILEGE_MAMAN', 
+                name: 'Privilège', 
+                desc: '5 semaines', 
+                price: 200000, 
+                priceDisplay: '200.000 CFA', 
+                duration: 1.25, 
+                durationText: '5 semaines',
+                features: ['Coaching complet', 'Service diaspora', 'Support 24/7'],
+                icon: 'fa-star',
+                color: 'text-purple-600',
+                bg: 'bg-purple-50',
+                popular: false,
+                badge: '⭐ Premium'
+            }
         ];
     } else {
+        // Packs SENIOR
         return [
-            { id: 'MENSUEL_PONCTUEL', name: 'Ponctuel', desc: 'Intervention à la demande', price: 100, priceDisplay: '100 CFA', duration: 1, durationText: '1 mois', features: ['Intervention à la demande', 'Accompagnement RDV', 'Flexibilité totale'], icon: 'fa-clock', color: 'text-slate-600', bg: 'bg-slate-100', popular: false },
-            { id: 'MENSUEL_REGULIER', name: 'Régulier', desc: '2 à 3 visites / semaine', price: 60000, priceDisplay: '60.000 CFA', duration: 1, durationText: '1 mois', features: ['2-3 visites par semaine', 'Suivi médical', 'Lien famille', 'Rapport détaillé'], icon: 'fa-calendar-week', color: 'text-emerald-600', bg: 'bg-emerald-50', popular: true },
-            { id: 'MENSUEL_COMPLET', name: 'Complet', desc: 'Présence soutenue', price: 150000, priceDisplay: '150.000 CFA', duration: 1, durationText: '1 mois', features: ['5-6 visites par semaine', 'Présence renforcée', 'Veille sanitaire', 'Rapport en temps réel'], icon: 'fa-star', color: 'text-gold-primary', bg: 'bg-amber-50', popular: false },
-            { id: 'TRIMESTRIEL_REGULIER', name: 'Régulier 3 mois', desc: '2 à 3 visites / semaine', price: 171000, priceDisplay: '171.000 CFA', originalPrice: 180000, duration: 3, durationText: '3 mois', features: ['2-3 visites par semaine', 'Suivi médical', 'Lien famille', 'Rapport détaillé', 'Économie 5%'], icon: 'fa-calendar-alt', color: 'text-emerald-600', bg: 'bg-emerald-50', popular: false, badge: '-5%' },
-            { id: 'ANNUEL_REGULIER', name: 'Régulier 1 an', desc: '2 à 3 visites / semaine', price: 612000, priceDisplay: '612.000 CFA', originalPrice: 720000, duration: 12, durationText: '12 mois', features: ['2-3 visites par semaine', 'Suivi médical', 'Lien famille', 'Rapport détaillé', 'Économie 15%', 'Paiement unique'], icon: 'fa-calendar-year', color: 'text-emerald-600', bg: 'bg-emerald-50', popular: true, badge: '-15%' },
-            { id: 'ANNUEL_COMPLET', name: 'Complet 1 an', desc: 'Présence soutenue', price: 1530000, priceDisplay: '1.530.000 CFA', originalPrice: 1800000, duration: 12, durationText: '12 mois', features: ['5-6 visites par semaine', 'Présence renforcée', 'Veille sanitaire', 'Rapport en temps réel', 'Économie 15%', 'Paiement unique'], icon: 'fa-calendar-year', color: 'text-gold-primary', bg: 'bg-amber-50', popular: false, badge: '-15%' }
+            { 
+                id: 'ESSENTIEL_SENIOR', 
+                name: 'Essentiel', 
+                desc: '4 visites / mois', 
+                price: 45000, 
+                priceDisplay: '45.000 CFA', 
+                duration: 1, 
+                durationText: '1 mois',
+                features: ['4 visites par mois', 'Suivi léger'],
+                icon: 'fa-seedling',
+                color: 'text-emerald-600',
+                bg: 'bg-emerald-50',
+                popular: false
+            },
+            { 
+                id: 'ACCOMPAGNEMENT_SENIOR', 
+                name: 'Accompagnement', 
+                desc: '8 visites / mois', 
+                price: 80000, 
+                priceDisplay: '80.000 CFA', 
+                duration: 1, 
+                durationText: '1 mois',
+                features: ['8 visites par mois', 'Sortie hôpital', 'Convalescence'],
+                icon: 'fa-hand-holding-heart',
+                color: 'text-blue-600',
+                bg: 'bg-blue-50',
+                popular: true
+            },
+            { 
+                id: 'SERENITE_SENIOR', 
+                name: 'Sérénité Seniors', 
+                desc: '12 visites / mois', 
+                price: 100000, 
+                priceDisplay: '100.000 CFA', 
+                duration: 1, 
+                durationText: '1 mois',
+                features: ['12 visites par mois', 'Suivi régulier', 'Personnes âgées'],
+                icon: 'fa-crown',
+                color: 'text-gold-primary',
+                bg: 'bg-amber-50',
+                popular: false
+            },
+            { 
+                id: 'PRIVILEGE_SENIOR', 
+                name: 'Privilège Famille', 
+                desc: 'Visites illimitées', 
+                price: 200000, 
+                priceDisplay: '200.000 CFA', 
+                duration: 1, 
+                durationText: '1 mois',
+                features: ['Visites illimitées', 'Coordination totale', 'Support prioritaire'],
+                icon: 'fa-star',
+                color: 'text-purple-600',
+                bg: 'bg-purple-50',
+                popular: false,
+                badge: '⭐ Premium'
+            }
         ];
     }
 }
