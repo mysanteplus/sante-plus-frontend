@@ -3238,3 +3238,25 @@ body.maman-mode::before {
 .banner-image:hover {
     transform: scale(1.05);
 }
+
+
+/* Correction pour les messages très courts */
+.chat-message-sent span,
+.chat-message-received span {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.message-item {
+    display: flex !important;
+    align-items: flex-end !important;
+    gap: 4px;
+}
+
+.message.sent {
+    justify-content: flex-end;
+}
+
+.message.received {
+    justify-content: flex-start;
+}
