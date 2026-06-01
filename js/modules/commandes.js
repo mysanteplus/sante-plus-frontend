@@ -2,12 +2,17 @@ import { CONFIG } from "../core/config.js";
 import { UI, compressImage } from "../core/utils.js";
 import { secureFetch, clearApiCache } from "../core/api.js";
 
+// ============================================================
+// VARIABLES GLOBALES
+// ============================================================
 
-
-// Anti-double appel
 let isRendering = false;
 let pendingRender = null;
+let isLoading = false;
 
+// ============================================================
+// FONCTIONS UTILITAIRES
+// ============================================================
 
 function escapeHtml(str) {
     if (!str) return '';
@@ -20,10 +25,21 @@ function escapeHtml(str) {
 }
 
 /**
+ * 🔍 VÉRIFICATION ABONNEMENT
+ */
+async function checkUserSubscription() {
+    try {
+        const response = await secureFetch("/billing/subscription-status");
+        return response.active === true;
+    } catch (err) {
+        console.error("❌ Erreur vérification abonnement:", err);
+        return false;
+    }
+}
+
+/**
  * 📋 CHARGER LA LISTE DES COMMANDES
  */
-let isLoading = false;
-
 export async function loadCommandes() {
     if (isLoading) {
         console.log("⏳ Chargement déjà en cours, ignoré");
@@ -33,20 +49,39 @@ export async function loadCommandes() {
     const listContainer = document.getElementById("commandes-list");
     if (!listContainer) return;
 
+    // ✅ VÉRIFICATION ABONNEMENT
+    const userRole = localStorage.getItem("user_role");
+    if (userRole === "FAMILLE") {
+        const hasSubscription = await checkUserSubscription();
+        if (!hasSubscription) {
+            listContainer.innerHTML = `
+                <div class="text-center py-20">
+                    <div class="w-16 h-16 mx-auto bg-amber-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-lock text-amber-500 text-2xl"></i>
+                    </div>
+                    <p class="text-sm font-bold text-slate-700">Abonnement requis</p>
+                    <p class="text-xs text-slate-400 mt-2">Vous devez avoir un abonnement actif pour voir vos commandes.</p>
+                    <button onclick="window.switchView('subscription')" 
+                            class="mt-4 px-6 py-2 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase">
+                        Voir les offres
+                    </button>
+                </div>
+            `;
+            return;
+        }
+    }
+
     isLoading = true;
     
     try {
-        const userRole = localStorage.getItem("user_role");
         const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
         const isSansPatient = typeCompte === "SANS_PATIENT";
         
         let data;
         
         if (isSansPatient && userRole === "FAMILLE") {
-            // Utiliser la route dédiée pour les comptes sans patient
             data = await secureFetch("/commandes/mes-commandes");
         } else {
-            // Route normale pour les autres
             data = await secureFetch("/commandes");
         }
         
@@ -61,7 +96,7 @@ export async function loadCommandes() {
 }
 
 /**
- * 🖼️ OUVRIRE UNE IMAGE EN MODALE (grand format)
+ * 🖼️ OUVRIRE UNE IMAGE EN MODALE
  */
 window.openImageModal = (imageUrl, title = "📸 Image") => {
     Swal.fire({
@@ -78,12 +113,11 @@ window.openImageModal = (imageUrl, title = "📸 Image") => {
         }
     });
 };
-/**
- * 🎨 AFFICHER LES COMMANDES (Version améliorée avec galeries horizontales)
- */
 
+/**
+ * 🎨 AFFICHER LES COMMANDES
+ */
 function renderCommandes(list) {
-    // Éviter les rendus multiples simultanés
     if (isRendering) {
         console.log("⏳ Render déjà en cours, mise en attente...");
         pendingRender = list;
@@ -92,7 +126,6 @@ function renderCommandes(list) {
     
     isRendering = true;
     
-    // Utiliser requestAnimationFrame pour éviter les flashs
     requestAnimationFrame(() => {
         try {
             const container = document.getElementById("commandes-list");
@@ -107,15 +140,11 @@ function renderCommandes(list) {
             const isAidant = role === "AIDANT";
             const isCoordinateur = role === "COORDINATEUR";
             const currentUserId = localStorage.getItem("user_id");
-            
-            // 🔥 NOUVEAU : Récupérer le type de compte
             const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
             const isSansPatient = typeCompte === "SANS_PATIENT";
             
-            // Couleurs dynamiques
             const primaryColor = isMaman ? '#E11D48' : '#059669';
             const primaryLight = isMaman ? '#FFF1F2' : '#ECFDF5';
-            const primaryDark = isMaman ? '#BE123C' : '#047857';
 
             if (!list.length) {
                 let emptyMessage = "Aucune commande";
@@ -129,22 +158,8 @@ function renderCommandes(list) {
                 
                 container.innerHTML = `<div class="text-center py-20"><i class="fa-solid fa-box-open text-5xl text-slate-300"></i><p class="text-xs font-black uppercase mt-2 text-slate-400">${emptyMessage}</p></div>`;
                 
-                // Bouton "Nouvelle commande" pour les comptes sans patient
                 if (isSansPatient && isFamily) {
-                    const existingNewBtn = document.getElementById('new-commande-btn-container');
-                    if (!existingNewBtn) {
-                        const newBtnContainer = document.createElement('div');
-                        newBtnContainer.id = 'new-commande-btn-container';
-                        newBtnContainer.className = 'mb-4 flex justify-end';
-                        newBtnContainer.innerHTML = `
-                            <button onclick="window.openOrderModal()" 
-                                    class="px-4 py-2 text-white rounded-xl text-[10px] font-black uppercase shadow-md transition-all"
-                                    style="background: ${primaryColor};">
-                                + Nouvelle commande
-                            </button>
-                        `;
-                        container.parentNode.insertBefore(newBtnContainer, container);
-                    }
+                    addNewCommandeButton(container, primaryColor);
                 }
                 
                 isRendering = false;
@@ -186,7 +201,6 @@ function renderCommandes(list) {
                 };
                 const typeLabel = typeLabels[c.type_commande] || '📦 Commande';
                 
-                // 🔥 Affichage du destinataire adapté (patient ou utilisateur)
                 let destinataireDisplay = '';
                 if (isSansPatient) {
                     destinataireDisplay = `
@@ -200,7 +214,6 @@ function renderCommandes(list) {
                     `;
                 }
                 
-                // 📸 GALERIE DES IMAGES DE LA COMMANDE
                 const imagesHtml = c.images && c.images.length > 0 ? `
                     <div class="mt-3">
                         <p class="text-[9px] font-black text-slate-400 mb-2">📸 Documents joints (${c.images.length}) :</p>
@@ -220,7 +233,6 @@ function renderCommandes(list) {
                     </div>
                 ` : '';
                 
-                // 📋 NOTES DU COORDINATEUR
                 const notesHtml = c.notes_coordinateur ? `
                     <div class="mt-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
                         <p class="text-[9px] font-black text-blue-600 mb-1">📋 Note du coordinateur :</p>
@@ -228,7 +240,6 @@ function renderCommandes(list) {
                     </div>
                 ` : '';
                 
-                // 📸 GALERIE DES PHOTOS DE LIVRAISON
                 const deliveryPhotos = c.photos_livraison && c.photos_livraison.length > 0 
                     ? c.photos_livraison 
                     : (c.photo_livraison ? [c.photo_livraison] : []);
@@ -275,7 +286,6 @@ function renderCommandes(list) {
                     `;
                 }
                 
-                // 📍 INFOS COMPLÉMENTAIRES
                 const infoHtml = `
                     <div class="mt-3 grid grid-cols-2 gap-2 text-[9px] text-slate-500 bg-slate-50 p-2 rounded-lg">
                         <div><span class="font-black">👤 Demandeur:</span> ${c.demandeur?.nom || 'Inconnu'}</div>
@@ -287,7 +297,6 @@ function renderCommandes(list) {
 
                 return `
                     <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm animate-fadeIn list-item-animate mb-4 card-hover" style="animation-delay: ${index * 0.03}s">                     
-                        <!-- En-tête -->
                         <div class="flex justify-between items-start mb-3">
                             <div class="flex-1">
                                 <div class="flex items-center gap-2 flex-wrap">
@@ -299,21 +308,13 @@ function renderCommandes(list) {
                             <span class="px-2 py-1 rounded-md text-[8px] font-black uppercase ${statusColor} whitespace-nowrap ml-2">${statusIcon} ${statusText}</span>
                         </div>
 
-                        <!-- Description -->
                         <div class="p-3 ${primaryLight} rounded-xl mb-3">
                             <p class="text-xs font-medium text-slate-700 leading-relaxed">📦 "${escapeHtml(c.liste_medocs || 'Aucune description')}"</p>
                         </div>
                         
-                        <!-- Images de la commande -->
                         ${imagesHtml}
-                        
-                        <!-- Notes du coordinateur -->
                         ${notesHtml}
-                        
-                        <!-- Infos complémentaires -->
                         ${infoHtml}
-
-                        <!-- Photos de livraison -->
                         ${deliveryPhotosHtml}
 
                         ${isAidant && isPending && (!c.aidant_id || c.aidant_id !== currentUserId) ? `
@@ -363,64 +364,29 @@ function renderCommandes(list) {
                 `;
             }).join("");
             
-            // Mise à jour unique du DOM
             container.innerHTML = html;
             
-            // 🔥 Bouton "Nouvelle commande" pour les comptes sans patient
+            // Bouton nouvelle commande
             if (isSansPatient && isFamily) {
-                let existingNewBtn = document.getElementById('new-commande-btn-container');
-                if (!existingNewBtn) {
-                    const newBtnContainer = document.createElement('div');
-                    newBtnContainer.id = 'new-commande-btn-container';
-                    newBtnContainer.className = 'mb-4 flex justify-end';
-                    newBtnContainer.innerHTML = `
-                        <button onclick="window.openOrderModal()" 
-                                class="px-4 py-2 text-white rounded-xl text-[10px] font-black uppercase shadow-md transition-all"
-                                style="background: ${primaryColor};">
-                            + Nouvelle commande
-                        </button>
-                    `;
-                    container.parentNode.insertBefore(newBtnContainer, container);
-                }
+                addNewCommandeButton(container, primaryColor);
             } else {
-                // Supprimer le bouton si existant (pour les autres types de comptes)
                 const existingNewBtn = document.getElementById('new-commande-btn-container');
-                if (existingNewBtn) {
-                    existingNewBtn.remove();
-                }
+                if (existingNewBtn) existingNewBtn.remove();
             }
             
-            // Bouton "Faire le point du jour" pour le coordinateur
+            // Bouton coordinateur
             if (isCoordinateur) {
-                let existingBtn = document.getElementById('validate-all-deliveries-btn');
-                if (!existingBtn) {
-                    const todayBtn = document.createElement('div');
-                    todayBtn.id = 'validate-all-deliveries-btn';
-                    todayBtn.className = 'mb-4 flex justify-end';
-                    todayBtn.innerHTML = `
-                        <button onclick="window.validateAllDeliveriesWithoutReload()" 
-                                class="px-4 py-2 text-white rounded-xl text-[10px] font-black uppercase shadow-md transition-all"
-                                style="background: ${primaryColor};">
-                            📋 Faire le point du jour
-                        </button>
-                    `;
-                    container.parentNode.insertBefore(todayBtn, container);
-                }
+                addCoordinatorButton(container, primaryColor);
                 loadAidantsForSelect();
             } else {
-                // Supprimer le bouton si existant (pour les autres types de comptes)
                 const existingBtn = document.getElementById('validate-all-deliveries-btn');
-                if (existingBtn) {
-                    existingBtn.remove();
-                }
+                if (existingBtn) existingBtn.remove();
             }
             
         } catch (err) {
             console.error("Erreur renderCommandes:", err);
         } finally {
             isRendering = false;
-            
-            // Traiter le rendu en attente s'il y en a un
             if (pendingRender !== null) {
                 const pending = pendingRender;
                 pendingRender = null;
@@ -430,9 +396,56 @@ function renderCommandes(list) {
     });
 }
 
-/**
- * 🚚 AIDANT - PRENDRE EN CHARGE UNE COMMANDE
- */
+function addNewCommandeButton(container, primaryColor) {
+    let existingNewBtn = document.getElementById('new-commande-btn-container');
+    if (!existingNewBtn) {
+        const newBtnContainer = document.createElement('div');
+        newBtnContainer.id = 'new-commande-btn-container';
+        newBtnContainer.className = 'mb-4 flex justify-end';
+        newBtnContainer.innerHTML = `
+            <button onclick="window.openOrderModal()" 
+                    class="px-4 py-2 text-white rounded-xl text-[10px] font-black uppercase shadow-md transition-all"
+                    style="background: ${primaryColor};">
+                + Nouvelle commande
+            </button>
+        `;
+        container.parentNode.insertBefore(newBtnContainer, container);
+    }
+}
+
+function addCoordinatorButton(container, primaryColor) {
+    let existingBtn = document.getElementById('validate-all-deliveries-btn');
+    if (!existingBtn) {
+        const todayBtn = document.createElement('div');
+        todayBtn.id = 'validate-all-deliveries-btn';
+        todayBtn.className = 'mb-4 flex justify-end';
+        todayBtn.innerHTML = `
+            <button onclick="window.validateAllDeliveriesWithoutReload()" 
+                    class="px-4 py-2 text-white rounded-xl text-[10px] font-black uppercase shadow-md transition-all"
+                    style="background: ${primaryColor};">
+                📋 Faire le point du jour
+            </button>
+        `;
+        container.parentNode.insertBefore(todayBtn, container);
+    }
+}
+
+async function loadAidantsForSelect() {
+    try {
+        const aidants = await secureFetch('/auth/profiles?role=AIDANT');
+        document.querySelectorAll('select[id^="aidant-"]').forEach(select => {
+            select.innerHTML = '<option value="">Choisir un aidant</option>' +
+                aidants.map(a => `<option value="${a.id}">${a.nom}</option>`).join('');
+        });
+    } catch (err) {
+        console.error("Erreur chargement aidants:", err);
+    }
+}
+
+// ============================================================
+// ACTIONS SUR LES COMMANDES
+// ============================================================
+
 window.takeCommand = async (commandeId) => {
     const result = await Swal.fire({
         title: "Prendre en charge",
@@ -455,18 +468,15 @@ window.takeCommand = async (commandeId) => {
         });
         
         Swal.fire("Succès", "Commande prise en charge. Vous pouvez maintenant la livrer.", "success");
-    
         window.dispatchEvent(new CustomEvent('app-data-updated', {
             detail: { endpoint: '/commandes', method: 'POST', resourceType: 'commande_updated' }
         }));
-        
-        loadCommandes(); // Recharger la liste
+        loadCommandes();
     } catch (err) {
         Swal.fire("Erreur", err.message, "error");
     }
 };
 
-// ✅ Fonction pour assigner une commande (Coordinateur)
 window.assignCommand = async (commandeId) => {
     const aidantId = document.getElementById(`aidant-${commandeId}`)?.value;
     const notes = document.getElementById(`notes-${commandeId}`)?.value;
@@ -489,51 +499,15 @@ window.assignCommand = async (commandeId) => {
         });
         
         Swal.fire("Succès", "Commande assignée à l'aidant", "success");
-        
         window.dispatchEvent(new CustomEvent('app-data-updated', {
             detail: { endpoint: '/commandes', method: 'POST', resourceType: 'commande_updated' }
         }));
-        
         loadCommandes();
     } catch (err) {
         Swal.fire("Erreur", err.message, "error");
     }
 };
 
-// ✅ Fonction pour accepter une commande (Aidant)
-window.acceptCommand = async (commandeId) => {
-    const result = await Swal.fire({
-        title: "Prendre en charge",
-        text: "Voulez-vous prendre cette commande en charge ?",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonText: "OUI, JE PRENDS",
-        confirmButtonColor: "#10B981"
-    });
-    
-    if (!result.isConfirmed) return;
-    
-    Swal.fire({ title: "Assignation...", didOpen: () => Swal.showLoading() });
-    
-    try {
-        await secureFetch("/commandes/accept", {
-            method: "POST",
-            body: JSON.stringify({ commande_id: commandeId })
-        });
-        
-        Swal.fire("Succès", "Commande prise en charge", "success");
-
-        window.dispatchEvent(new CustomEvent('app-data-updated', {
-            detail: { endpoint: '/commandes', method: 'POST', resourceType: 'commande_updated' }
-        }));
-        
-        loadCommandes();
-    } catch (err) {
-        Swal.fire("Erreur", err.message, "error");
-    }
-};
-
-// ✅ Fonction pour valider la livraison (Coordinateur)
 window.validateDelivery = async (commandeId) => {
     const result = await Swal.fire({
         title: "Valider la livraison",
@@ -555,7 +529,6 @@ window.validateDelivery = async (commandeId) => {
         });
         
         Swal.fire("Succès", "Livraison validée", "success");
-
         window.dispatchEvent(new CustomEvent('app-data-updated', {
             detail: { endpoint: '/commandes', method: 'POST', resourceType: 'commande_updated' }
         }));
@@ -564,9 +537,7 @@ window.validateDelivery = async (commandeId) => {
         Swal.fire("Erreur", err.message, "error");
     }
 };
-/**
- * ✅ COORDINATEUR - VALIDATION RAPIDE DES LIVRAISONS DU JOUR
- */
+
 window.validateAllDeliveries = async () => {
     const result = await Swal.fire({
         title: "📋 Point des livraisons du jour",
@@ -590,7 +561,6 @@ window.validateAllDeliveries = async () => {
     }
 };
 
-
 window.validateAllDeliveriesWithoutReload = async () => {
     const result = await Swal.fire({
         title: "📋 Point des livraisons du jour",
@@ -609,194 +579,45 @@ window.validateAllDeliveriesWithoutReload = async () => {
     try {
         await secureFetch("/commandes/validate-all", { method: "POST" });
         Swal.fire({ icon: "success", title: "Point effectué !", timer: 2000, showConfirmButton: false });
-        
-        // Rafraîchir uniquement les données sans recréer le bouton
         const data = await secureFetch("/commandes");
-        renderCommandes(data); // Cette fonction gère déjà le bouton sans duplication
-        
+        renderCommandes(data);
     } catch (err) {
         Swal.fire({ title: "Erreur", text: err.message, icon: "error" });
     }
 };
 
+// ============================================================
+// OUVRIR LA MODALE DE COMMANDE
+// ============================================================
 
-
-// ✅ Fonction pour ouvrir la galerie d'images
-window.openImageGallery = (commandeId, images) => {
-    Swal.fire({
-        title: '📸 Documents de la commande',
-        html: `
-            <div class="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto p-2">
-                ${images.map(img => `
-                    <div class="relative group cursor-pointer" onclick="window.open('${img}', '_blank')">
-                        <img src="${img}" class="w-full h-32 object-cover rounded-xl border border-slate-200">
-                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center rounded-xl">
-                            <i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `,
-        showConfirmButton: true,
-        confirmButtonText: "Fermer",
-        confirmButtonColor: "#10B981",
-        width: '600px',
-        customClass: { popup: 'rounded-2xl' }
-    });
-};
-
-
-async function loadAidantsForSelect() {
-    try {
-        const aidants = await secureFetch('/auth/profiles?role=AIDANT');
-        document.querySelectorAll('select[id^="aidant-"]').forEach(select => {
-            select.innerHTML = '<option value="">Choisir un aidant</option>' +
-                aidants.map(a => `<option value="${a.id}">${a.nom}</option>`).join('');
-        });
-    } catch (err) {
-        console.error("Erreur chargement aidants:", err);
-    }
-}
-
-// ✅ Ajouter commandeId comme paramètre
-export async function confirmCommand(commandeId) {
-    const prix = document.getElementById(`prix-${commandeId}`)?.value;
-    const aidantId = document.getElementById(`aidant-${commandeId}`)?.value;
-    
-    if (!prix || !aidantId) {
-        Swal.fire("Champs manquants", "Veuillez entrer le prix et sélectionner un aidant", "warning");
-        return;
-    }
-    
-    Swal.fire({ title: "Confirmation...", didOpen: () => Swal.showLoading() });
-    
-    try {
-        await secureFetch("/commandes/confirm", {
-            method: "POST",
-            body: JSON.stringify({
-                commande_id: commandeId,  
-                aidant_id: aidantId,
-                prix_total: parseInt(prix)
-            })
-        });
-        
-        Swal.fire("Succès", "Commande confirmée et aidant assigné", "success");
-        loadCommandes();
-    } catch (err) {
-        Swal.fire("Erreur", err.message, "error");
-    }
-}
-
-/**
- * 📦 CONFIRMER LA LIVRAISON (Aidant)
- */
-export async function markAsDelivered(commandeId) {
-    const { value: file } = await Swal.fire({
-        title: "Preuve de livraison",
-        text: "Prenez une photo",
-        input: "file",
-        inputAttributes: { accept: "image/*", capture: "camera" },
-        confirmButtonText: "VALIDER",
-        confirmButtonColor: "#10B981",
-        showCancelButton: true,
-    });
-
-    if (!file) return;
-
-    // Vérification taille
-    if (file.size > 10 * 1024 * 1024) {
-        Swal.fire("Image trop lourde", "Maximum 10MB", "warning");
-        return;
-    }
-
-    Swal.fire({
-        title: "Envoi...",
-        didOpen: () => Swal.showLoading(),
-        allowOutsideClick: false,
-    });
-
-    try {
-        // ✅ Compression légère seulement si nécessaire
-        let fileToSend = file;
-        if (file.size > 2 * 1024 * 1024) {
-            fileToSend = await compressImage(file, 1024, 0.7);
-        }
-        
-        const fd = new FormData();
-        fd.append("commande_id", commandeId);
-        fd.append("photo_livraison", fileToSend);
-
-        // ✅ Timeout plus long
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 45000);
-
-        const response = await fetch(`${CONFIG.API_URL}/commandes/${commandeId}/deliver`, {
-            method: "POST",
-            headers: { 
-                "Authorization": `Bearer ${localStorage.getItem("token")}`
-            },
-            body: fd,
-            signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-            const text = await response.text();
-            let errorMsg;
-            try {
-                const json = JSON.parse(text);
-                errorMsg = json.error;
-            } catch {
-                errorMsg = text.substring(0, 200);
-            }
-            throw new Error(errorMsg || `Erreur ${response.status}`);
-        }
-
-        const result = await response.json();
-        
-        Swal.fire({
-            icon: "success",
-            title: "Livré !",
-            timer: 2000,
-            showConfirmButton: false,
-        });
-
-        window.dispatchEvent(new CustomEvent('app-data-updated', {
-            detail: { endpoint: '/commandes', method: 'POST', resourceType: 'commande_updated' }
-        }));
-        
-        loadCommandes();
-
-        
-        
-    } catch (err) {
-        console.error("❌ Erreur:", err);
-        Swal.fire({
-            title: "Erreur",
-            text: err.name === "AbortError" ? "Délai dépassé" : err.message,
-            icon: "error"
-        });
-    }
-}
-
-
-/**
- * 💊 OUVRIR LA MODALE DE COMMANDE (Version Pro avec Upload)
- */
 export async function openOrderModal() { 
-    const isMaman = localStorage.getItem("user_is_maman") === "true";
-    const isFamily = localStorage.getItem("user_role") === "FAMILLE";
+    // ✅ VÉRIFICATION ABONNEMENT
     const userRole = localStorage.getItem("user_role");
+    if (userRole === "FAMILLE") {
+        const hasSubscription = await checkUserSubscription();
+        if (!hasSubscription) {
+            Swal.fire({
+                icon: "warning",
+                title: "Abonnement requis",
+                text: "Vous devez avoir un abonnement actif pour passer une commande.",
+                confirmButtonText: "Voir les offres",
+                confirmButtonColor: "#10B981"
+            }).then(() => {
+                window.switchView("subscription");
+            });
+            return;
+        }
+    }
+    
+    const isMaman = localStorage.getItem("user_is_maman") === "true";
+    const isFamily = userRole === "FAMILLE";
     const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
     const isSansPatient = typeCompte === "SANS_PATIENT";
     
     let patientId = null;
     
-    // 🔥 Pour les comptes SANS_PATIENT, pas besoin de patient_id
     if (!isSansPatient) {
         patientId = AppState.currentPatient;
-        
         if (!patientId) {
             try {
                 const patients = await secureFetch('/patients');
@@ -826,7 +647,6 @@ export async function openOrderModal() {
         }
     }
     
-    // Texte personnalisé selon le profil
     let modalTitle = "📦 Nouvelle commande";
     let modalSubtitle = "Décrivez ce que vous souhaitez commander";
     let confirmButtonText = "Envoyer la commande";
@@ -848,15 +668,12 @@ export async function openOrderModal() {
         confirmButtonText = "📤 Envoyer";
     }
     
-    // Variable pour stocker les fichiers dans le bon scope
     let selectedFiles = [];
     
-    // HTML du formulaire avec upload d'images
     const modalHtml = `
         <div class="text-left">
             <p class="text-xs text-slate-500 mb-4">${modalSubtitle}</p>
             
-            <!-- Description de la commande -->
             <div class="mb-4">
                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">
                     📝 Description de la commande
@@ -867,7 +684,6 @@ export async function openOrderModal() {
                           placeholder="${placeholder}"></textarea>
             </div>
             
-            <!-- Upload d'images -->
             <div class="mb-4">
                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">
                     📸 Photos (ordonnance, produits, etc.)
@@ -884,7 +700,6 @@ export async function openOrderModal() {
                 </div>
             </div>
             
-            <!-- Type de commande (optionnel) -->
             <div class="mb-4">
                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">
                     🏷️ Type de commande
@@ -898,7 +713,6 @@ export async function openOrderModal() {
                 </select>
             </div>
             
-            <!-- Urgence -->
             <div class="mb-2">
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" id="order-urgent" class="w-4 h-4 accent-rose-500">
@@ -908,7 +722,6 @@ export async function openOrderModal() {
         </div>
     `;
     
-    // Afficher la modale
     const result = await Swal.fire({
         title: `<span class="text-lg font-black text-slate-800">${modalTitle}</span>`,
         html: modalHtml,
@@ -924,16 +737,13 @@ export async function openOrderModal() {
             cancelButton: 'rounded-xl px-6 py-3 text-[10px] font-black uppercase tracking-wider'
         },
         didOpen: () => {
-            // Réinitialiser les fichiers
             selectedFiles = [];
             
-            // Gestion de l'upload d'images
             const uploadArea = document.getElementById('image-upload-area');
             const fileInput = document.getElementById('order-images');
             const previewList = document.getElementById('image-preview-list');
             const placeholder = document.getElementById('upload-placeholder');
             
-            // Fonction pour afficher les aperçus
             const updatePreviews = () => {
                 previewList.innerHTML = '';
                 if (selectedFiles.length === 0) {
@@ -956,7 +766,6 @@ export async function openOrderModal() {
                         previewDiv.querySelector('button').onclick = () => {
                             selectedFiles.splice(index, 1);
                             updatePreviews();
-                            // Mettre à jour le file input
                             const dt = new DataTransfer();
                             selectedFiles.forEach(f => dt.items.add(f));
                             fileInput.files = dt.files;
@@ -967,10 +776,8 @@ export async function openOrderModal() {
                 });
             };
             
-            // Clic sur la zone d'upload
             uploadArea.onclick = () => fileInput.click();
             
-            // Sélection des fichiers
             fileInput.onchange = (e) => {
                 const files = Array.from(e.target.files);
                 const validFiles = files.filter(f => f.size <= 5 * 1024 * 1024);
@@ -979,13 +786,11 @@ export async function openOrderModal() {
                 }
                 selectedFiles = [...selectedFiles, ...validFiles];
                 updatePreviews();
-                // Mettre à jour le file input
                 const dt = new DataTransfer();
                 selectedFiles.forEach(f => dt.items.add(f));
                 fileInput.files = dt.files;
             };
             
-            // Drag & drop
             uploadArea.ondragover = (e) => {
                 e.preventDefault();
                 uploadArea.classList.add('border-emerald-500', 'bg-emerald-50');
@@ -1015,13 +820,11 @@ export async function openOrderModal() {
                 return false;
             }
             
-            console.log("📸 Fichiers sélectionnés:", selectedFiles.length);
-            
             return {
                 description: description,
                 type: orderType,
                 urgent: isUrgent,
-                files: [...selectedFiles]  // Copie des fichiers
+                files: [...selectedFiles]
             };
         }
     });
@@ -1030,7 +833,6 @@ export async function openOrderModal() {
     
     const { description, type, urgent, files } = result.value;
     
-    // Envoyer la commande avec les images
     Swal.fire({
         title: "Envoi en cours...",
         didOpen: () => Swal.showLoading(),
@@ -1038,17 +840,12 @@ export async function openOrderModal() {
     });
     
     try {
-        // D'abord, uploader les images si présentes
         let uploadedImages = [];
-        
-        console.log(`📤 Upload de ${files.length} image(s)...`);
         
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const formData = new FormData();
             formData.append("image", file);
-            
-            console.log(`📸 Upload image ${i+1}/${files.length}:`, file.name, file.size);
             
             const uploadRes = await fetch(`${CONFIG.API_URL}/commandes/upload-image`, {
                 method: "POST",
@@ -1059,23 +856,16 @@ export async function openOrderModal() {
             });
             
             if (!uploadRes.ok) {
-                const errorText = await uploadRes.text();
-                console.error("❌ Erreur upload:", errorText);
                 throw new Error(`Upload échoué: ${uploadRes.status}`);
             }
             
             const uploadData = await uploadRes.json();
-            console.log(`✅ Upload réussi:`, uploadData.url);
             uploadedImages.push(uploadData.url);
         }
         
-        console.log("📸 Toutes les images uploadées:", uploadedImages);
-        
-        // 🔥 ENVOI DE LA COMMANDE - ADAPTÉ POUR SANS_PATIENT
         let commandeData;
         
         if (isSansPatient) {
-            // Compte SANS_PATIENT : pas de patient_id
             commandeData = {
                 liste_medocs: description,
                 type_commande: type,
@@ -1083,7 +873,6 @@ export async function openOrderModal() {
                 images: uploadedImages
             };
         } else {
-            // Compte AVEC_PATIENT : avec patient_id
             commandeData = {
                 patient_id: patientId,
                 liste_medocs: description,
@@ -1092,8 +881,6 @@ export async function openOrderModal() {
                 images: uploadedImages
             };
         }
-        
-        console.log("📦 Envoi commande:", commandeData);
         
         await secureFetch("/commandes/add", {
             method: "POST",
@@ -1109,7 +896,6 @@ export async function openOrderModal() {
             showConfirmButton: false
         });
 
-        // ✅ FORCER LE RAFRAÎCHISSEMENT
         window.dispatchEvent(new CustomEvent('app-data-updated', {
             detail: { endpoint: '/commandes', method: 'POST', resourceType: 'commande_created' }
         }));
@@ -1125,16 +911,16 @@ export async function openOrderModal() {
     }
 }
 
-/**
- * 📦 AIDANT - LIVRAISON AVEC MULTIPLES PHOTOS (VERSION CORRIGÉE)
- */
+// ============================================================
+// LIVRAISON PAR L'AIDANT
+// ============================================================
+
 window.deliverCommand = async (commandeId) => {
     if (!commandeId) {
         Swal.fire("Erreur", "ID de commande invalide", "error");
         return;
     }
 
-    // Vérifier d'abord le statut de la commande
     try {
         const commandes = await secureFetch("/commandes");
         const commande = commandes.find(c => c.id === commandeId);
@@ -1236,22 +1022,18 @@ window.deliverCommand = async (commandeId) => {
         const fd = new FormData();
         fd.append("notes_livraison", formData.notes || "");
         
-        // ✅ COMPRESSION DES PHOTOS
         for (let i = 0; i < formData.photos.length; i++) {
             let photo = formData.photos[i];
             
-            if (photo.size > 1024 * 1024) { // plus de 1MB
+            if (photo.size > 1024 * 1024) {
                 try {
                     photo = await compressImage(photo, 1024, 0.7);
-                    console.log(`📸 Photo livraison ${i+1} compressée`);
                 } catch (e) {
                     console.warn("Erreur compression, envoi original");
                 }
             }
             fd.append("photos", photo);
         }
-        
-        console.log(`📤 Envoi de ${formData.photos.length} photo(s) pour la commande ${commandeId}`);
         
         const response = await fetch(`${CONFIG.API_URL}/commandes/${commandeId}/deliver`, {
             method: "POST",
@@ -1261,22 +1043,16 @@ window.deliverCommand = async (commandeId) => {
             body: fd
         });
         
-        const contentType = response.headers.get("content-type");
-        
         if (!response.ok) {
             let errorMessage;
-            if (contentType && contentType.includes("application/json")) {
+            try {
                 const errorData = await response.json();
                 errorMessage = errorData.error || errorData.message;
-            } else {
-                const text = await response.text();
-                console.error("Réponse non-JSON:", text.substring(0, 500));
+            } catch {
                 errorMessage = `Erreur serveur (${response.status})`;
             }
             throw new Error(errorMessage);
         }
-        
-        const result = await response.json();
         
         Swal.fire({ 
             icon: "success", 
@@ -1290,11 +1066,7 @@ window.deliverCommand = async (commandeId) => {
             detail: { endpoint: '/commandes', method: 'POST', resourceType: 'commande_updated' }
         }));
         
-        if (typeof loadCommandes === 'function') {
-            loadCommandes();
-        } else {
-            setTimeout(() => location.reload(), 1500);
-        }
+        loadCommandes();
         
     } catch (err) {
         console.error("❌ Erreur deliverCommand:", err);
@@ -1306,4 +1078,118 @@ window.deliverCommand = async (commandeId) => {
         });
     }
 };
-window.openImageModal = openImageModal;
+
+// ============================================================
+// EXPORTS
+// ============================================================
+
+export async function confirmCommand(commandeId) {
+    const prix = document.getElementById(`prix-${commandeId}`)?.value;
+    const aidantId = document.getElementById(`aidant-${commandeId}`)?.value;
+    
+    if (!prix || !aidantId) {
+        Swal.fire("Champs manquants", "Veuillez entrer le prix et sélectionner un aidant", "warning");
+        return;
+    }
+    
+    Swal.fire({ title: "Confirmation...", didOpen: () => Swal.showLoading() });
+    
+    try {
+        await secureFetch("/commandes/confirm", {
+            method: "POST",
+            body: JSON.stringify({
+                commande_id: commandeId,  
+                aidant_id: aidantId,
+                prix_total: parseInt(prix)
+            })
+        });
+        
+        Swal.fire("Succès", "Commande confirmée et aidant assigné", "success");
+        loadCommandes();
+    } catch (err) {
+        Swal.fire("Erreur", err.message, "error");
+    }
+}
+
+export async function markAsDelivered(commandeId) {
+    const { value: file } = await Swal.fire({
+        title: "Preuve de livraison",
+        text: "Prenez une photo",
+        input: "file",
+        inputAttributes: { accept: "image/*", capture: "camera" },
+        confirmButtonText: "VALIDER",
+        confirmButtonColor: "#10B981",
+        showCancelButton: true,
+    });
+
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+        Swal.fire("Image trop lourde", "Maximum 10MB", "warning");
+        return;
+    }
+
+    Swal.fire({
+        title: "Envoi...",
+        didOpen: () => Swal.showLoading(),
+        allowOutsideClick: false,
+    });
+
+    try {
+        let fileToSend = file;
+        if (file.size > 2 * 1024 * 1024) {
+            fileToSend = await compressImage(file, 1024, 0.7);
+        }
+        
+        const fd = new FormData();
+        fd.append("commande_id", commandeId);
+        fd.append("photo_livraison", fileToSend);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+        const response = await fetch(`${CONFIG.API_URL}/commandes/${commandeId}/deliver`, {
+            method: "POST",
+            headers: { 
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
+            },
+            body: fd,
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const text = await response.text();
+            let errorMsg;
+            try {
+                const json = JSON.parse(text);
+                errorMsg = json.error;
+            } catch {
+                errorMsg = text.substring(0, 200);
+            }
+            throw new Error(errorMsg || `Erreur ${response.status}`);
+        }
+
+        Swal.fire({
+            icon: "success",
+            title: "Livré !",
+            timer: 2000,
+            showConfirmButton: false,
+        });
+
+        window.dispatchEvent(new CustomEvent('app-data-updated', {
+            detail: { endpoint: '/commandes', method: 'POST', resourceType: 'commande_updated' }
+        }));
+        
+        loadCommandes();
+        
+    } catch (err) {
+        console.error("❌ Erreur:", err);
+        Swal.fire({
+            title: "Erreur",
+            text: err.name === "AbortError" ? "Délai dépassé" : err.message,
+            icon: "error"
+        });
+    }
+}
