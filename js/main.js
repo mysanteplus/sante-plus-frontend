@@ -43,6 +43,41 @@ window.db = db;
 
 const messaging = window.messaging;
 
+
+
+// ============================================================
+// VÉRIFICATION ABONNEMENT POUR LES VUES PREMIUM
+// ============================================================
+
+let subscriptionCache = null;
+let subscriptionCacheTime = 0;
+const SUBSCRIPTION_CACHE_DURATION = 60000; // 1 minute
+
+async function checkSubscriptionForViews() {
+    const userRole = localStorage.getItem("user_role");
+    
+    // Les coordinateurs et aidants ont toujours accès
+    if (userRole === "COORDINATEUR" || userRole === "AIDANT") {
+        return true;
+    }
+    
+    // Vérifier le cache
+    const now = Date.now();
+    if (subscriptionCache && (now - subscriptionCacheTime) < SUBSCRIPTION_CACHE_DURATION) {
+        return subscriptionCache;
+    }
+    
+    try {
+        const response = await secureFetch("/billing/subscription-status");
+        subscriptionCache = response.active === true;
+        subscriptionCacheTime = now;
+        return subscriptionCache;
+    } catch (err) {
+        console.error("❌ Erreur vérification abonnement:", err);
+        return false;
+    }
+}
+
 async function initPushNotifications() {
     try {
         // ✅ Vérifier que le navigateur supporte les notifications
@@ -176,7 +211,7 @@ function updatePWAIcon(isMaman) {
 // ============================================================
 // VARIABLES GLOBALES
 // ============================================================
-          // Stocke l'invite d'installation PWA
+// Stocke l'invite d'installation PWA
 let onboardingStep = 0;              // Étape actuelle du tutoriel
 let registrationData = {};           // Données d'inscription temporaires
 let currentStep = 0;                 // Étape actuelle du formulaire d'inscription
@@ -3352,6 +3387,40 @@ async function performViewSwitch(viewName) {
     const paymentStatus = localStorage.getItem("payment_status");
     const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
     const isSansPatient = typeCompte === "SANS_PATIENT";
+
+
+
+  // ============================================================
+    // ✅ VÉRIFICATION ABONNEMENT POUR LES VUES PREMIUM
+    // ============================================================
+    
+    // Vues qui nécessitent un abonnement actif
+    const premiumViews = ["feed", "visits", "commandes", "map"];
+    
+    if (premiumViews.includes(viewName) && userRole === "FAMILLE") {
+        const hasSubscription = await checkSubscriptionForViews();
+        if (!hasSubscription) {
+            UI.error("Abonnement requis pour accéder à cette fonctionnalité");
+            
+            const result = await Swal.fire({
+                icon: "warning",
+                title: "Abonnement requis",
+                text: "Vous devez avoir un abonnement actif pour accéder à cette fonctionnalité.",
+                confirmButtonText: "Voir les offres",
+                confirmButtonColor: "#10B981",
+                showCancelButton: true,
+                cancelButtonText: "Annuler",
+                cancelButtonColor: "#94A3B8"
+            });
+            
+            if (result.isConfirmed) {
+                window.switchView("subscription");
+            } else {
+                window.switchView("home");
+            }
+            return;
+        }
+    }
     
     // ============================================================
     // 1. VÉRIFICATIONS D'ACCÈS
