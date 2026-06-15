@@ -1,25 +1,62 @@
- // Fallback si CONFIG n'est pas disponible
-const getFirebaseConfig = () => {
-  if (window.CONFIG && window.CONFIG.FIREBASE) {
-    return window.CONFIG.FIREBASE;
-  }
-  
-  // Fallback direct (à adapter avec tes vraies clés)
-  return {
-    apiKey: "AIzaSyDEHMUhAVtYXzQZuTNs3mYeq4Cag7IsUfI",
-    authDomain: "santeplus-service-9ad08.firebaseapp.com",
-    projectId: "santeplus-service-9ad08",
-    storageBucket: "santeplus-service-9ad08.firebasestorage.app",
-    messagingSenderId: "745872164641",
-    appId: "1:745872164641:web:fcbc5bcee6ae4dbb2ca060",
-    measurementId: "G-6Q72EHMPD8",
-    vapidKey: "BNeY_I69yPNM2R-kjlAWMjghL21XVvG9-EPTet200rg6S4TEJvRDsbAeWO5TqODp9h1tZS5LtlLOBb5lDoQGz6M"
-  };
-};
+// firebase.js
 
-// Initialiser Firebase
-if (!firebase.apps.length) {
-  const config = getFirebaseConfig();
-  firebase.initializeApp(config);
-  console.log("✅ Firebase initialisé");
-}
+firebase.initializeApp({
+  apiKey: "AIzaSyBzLQLLWmRI7Nr-c-Ht9DKkJejMxh-5C4g",
+  authDomain: "santeplus-service.firebaseapp.com",
+  projectId: "santeplus-service",
+  storageBucket: "santeplus-service.appspot.com",
+  messagingSenderId: "706607823043",
+  appId: "1:706607823043:web:0f1f6433cdc796d62b0a76"
+});
+
+const messaging = firebase.messaging();
+window.messaging = messaging;
+
+// Notification quand l'app est ouverte
+messaging.onMessage((payload) => {
+  console.log("🔔 FCM foreground:", payload);
+
+  const title =
+    payload.notification?.title ||
+    payload.data?.title ||
+    "Santé Plus";
+
+  const body =
+    payload.notification?.body ||
+    payload.data?.body ||
+    "Nouvelle notification";
+
+  const url =
+    payload.data?.url ||
+    payload.fcmOptions?.link ||
+    "/";
+
+  // Toast interne
+  if (window.showToast) {
+    window.showToast(body, "info", 4000);
+  }
+
+  // Notification système même quand l'app est ouverte
+  if (Notification.permission === "granted" && navigator.serviceWorker) {
+    navigator.serviceWorker.ready.then((registration) => {
+      registration.showNotification(title, {
+        body,
+        icon: "/assets/images/logo-general-icon.png",
+        badge: "/assets/images/logo-general-icon.png",
+        vibrate: [200, 100, 200],
+        requireInteraction: true,
+        tag: `sante-plus-${Date.now()}`,
+        data: { url }
+      });
+    });
+  }
+
+  window.dispatchEvent(new CustomEvent("new-notification", {
+    detail: {
+      title,
+      message: body,
+      type: payload.data?.type || "push",
+      url
+    }
+  }));
+});
