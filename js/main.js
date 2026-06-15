@@ -548,8 +548,17 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
 
             setTimeout(() => updateBrandingColors(), 100);
 
-            const defaultView = window.innerWidth < 1024 ? "home" : (userRole === "COORDINATEUR" ? "dashboard" : "patients");
-            const lastView = localStorage.getItem("last_view") || defaultView;
+             let defaultView = "home";
+             
+             if (userRole === "COORDINATEUR") {
+                 defaultView = "dashboard";
+             } else if (userRole === "FAMILLE" && localStorage.getItem("user_is_maman") === "true" && localStorage.getItem("user_type_compte") !== "SANS_PATIENT") {
+                 defaultView = "dashboard-maman";
+             } else if (userRole === "AIDANT") {
+                 defaultView = "patients";
+             }
+
+         const lastView = localStorage.getItem("last_view") || defaultView;
             
             await window.switchView(lastView);
 
@@ -1885,325 +1894,426 @@ function renderMobileHub() {
     const userRole = localStorage.getItem("user_role");
     const userName = localStorage.getItem("user_name");
     const container = document.getElementById("view-container");
+
     const isMaman = localStorage.getItem("user_is_maman") === "true";
-    const isSenior = !isMaman && userRole === "FAMILLE";
     const isAidant = userRole === "AIDANT";
     const isCoordinateur = userRole === "COORDINATEUR";
-    
-    // 🔥 Récupérer le type de compte
+    const isFamille = userRole === "FAMILLE";
+
     const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
     const isSansPatient = typeCompte === "SANS_PATIENT";
-    
+
+    if (!container) return;
+
     // ============================================================
-    // 🔥 COULEURS DYNAMIQUES SELON LE RÔLE
+    // COULEURS DYNAMIQUES SELON LE RÔLE
     // ============================================================
-    
-    let primaryColor, primaryLight, goldColor, bannerIcon, bannerDesc, tileBgColor, tileIconColor, tileTextColor;
-    
+
+    let primaryColor = "#059669";
+    let bannerIcon = "fa-home";
+    let bannerDesc = "Bienvenue dans votre espace";
+    let tileBgColor = "#059669";
+    let tileIconColor = "#FFFFFF";
+    let tileTextColor = "#FFFFFF";
+
     if (isCoordinateur) {
-        primaryColor = '#D4AF37';
-        primaryLight = '#FEF9E6';
-        goldColor = '#FFFFFF';
-        bannerIcon = 'fa-chart-pie';
+        primaryColor = "#D4AF37";
+        bannerIcon = "fa-chart-pie";
         bannerDesc = "Gestion complète de la plateforme";
-        tileBgColor = '#D4AF37';
-        tileIconColor = '#FFFFFF';
-        tileTextColor = '#0F172A';
-    } 
-    else if (isAidant) {
-        primaryColor = '#C9A84C';
-        primaryLight = '#FEF9E6';
-        goldColor = '#FFFFFF';
-        bannerIcon = 'fa-user-nurse';
+        tileBgColor = "#D4AF37";
+        tileIconColor = "#FFFFFF";
+        tileTextColor = "#0F172A";
+    } else if (isAidant) {
+        primaryColor = "#C9A84C";
+        bannerIcon = "fa-user-nurse";
         bannerDesc = "Gestion de vos interventions";
-        tileBgColor = '#C9A84C';
-        tileIconColor = '#FFFFFF';
-        tileTextColor = '#0F172A';
+        tileBgColor = "#C9A84C";
+        tileIconColor = "#FFFFFF";
+        tileTextColor = "#0F172A";
+    } else if (isFamille && isMaman) {
+        primaryColor = "#E11D48";
+        bannerIcon = "fa-baby-carriage";
+        bannerDesc = isSansPatient
+            ? "Votre espace personnel"
+            : "Soutien et bien-être pour maman et bébé";
+        tileBgColor = "#E11D48";
+        tileIconColor = "#FFFFFF";
+        tileTextColor = "#FFFFFF";
+    } else if (isFamille) {
+        primaryColor = "#059669";
+        bannerIcon = "fa-heart-pulse";
+        bannerDesc = isSansPatient
+            ? "Votre espace personnel"
+            : "Maintien à domicile et soins au quotidien";
+        tileBgColor = "#059669";
+        tileIconColor = "#FFFFFF";
+        tileTextColor = "#FFFFFF";
     }
-    else if (isMaman) {
-        primaryColor = '#E11D48';
-        primaryLight = '#FFF1F2';
-        goldColor = '#FFFFFF';
-        bannerIcon = 'fa-baby-carriage';
-        bannerDesc = isSansPatient ? "Votre espace personnel" : "Soutien et bien-être pour maman et bébé";
-        tileBgColor = '#E11D48';
-        tileIconColor = '#FFFFFF';
-        tileTextColor = '#FFFFFF';
-    }
-    else if (isSenior) {
-        primaryColor = '#059669';
-        primaryLight = '#ECFDF5';
-        goldColor = '#FFFFFF';
-        bannerIcon = 'fa-crown';
-        bannerDesc = isSansPatient ? "Votre espace personnel" : "Maintien à domicile et soins au quotidien";
-        tileBgColor = '#059669';
-        tileIconColor = '#FFFFFF';
-        tileTextColor = '#FFFFFF';
-    }
-    else {
-        primaryColor = '#059669';
-        primaryLight = '#ECFDF5';
-        goldColor = '#FFFFFF';
-        bannerIcon = 'fa-chart-pie';
-        bannerDesc = "Gestion complète de la plateforme";
-        tileBgColor = '#059669';
-        tileIconColor = '#FFFFFF';
-        tileTextColor = '#FFFFFF';
-    }
-    
+
     // ============================================================
-    // 🔥 MENU ITEMS ADAPTÉS SELON LE RÔLE ET LE TYPE DE COMPTE
+    // MENU ITEMS SELON RÔLE + TYPE DE COMPTE
     // ============================================================
-    
+
     let menuItems = [];
-    
+
     if (isCoordinateur) {
         menuItems = [
-            { id: 'dashboard', label: 'Dashboard', desc: 'Statistiques', icon: 'fa-chart-pie', roles: ['COORDINATEUR'] },
-            { id: 'patients', label: 'Patients', desc: 'Dossiers', icon: 'fa-folder-open', roles: ['COORDINATEUR'] },
-            { id: 'aidants', label: 'Aidants', desc: 'Équipe', icon: 'fa-user-nurse', roles: ['COORDINATEUR'] },
-            { id: 'planning', label: 'Planning', desc: 'Agenda', icon: 'fa-calendar-days', roles: ['COORDINATEUR'] },
-            { id: 'map', label: 'Radar', desc: 'Localisation', icon: 'fa-location-dot', roles: ['COORDINATEUR'] },
-            { id: 'billing', label: 'Factures', desc: 'Paiements', icon: 'fa-file-invoice-dollar', roles: ['COORDINATEUR'] },
-            { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['COORDINATEUR'] }
+            { id: "dashboard", label: "Tableau de bord", desc: "Statistiques", icon: "fa-chart-pie" },
+            { id: "patients", label: "Patients", desc: "Dossiers", icon: "fa-folder-open" },
+            { id: "aidants", label: "Aidants", desc: "Équipe", icon: "fa-user-nurse" },
+            { id: "planning", label: "Planning", desc: "Agenda", icon: "fa-calendar-days" },
+            { id: "map", label: "Radar", desc: "Localisation", icon: "fa-location-dot" },
+            { id: "commandes", label: "Commandes", desc: "Suivi", icon: "fa-box" },
+            { id: "billing", label: "Factures", desc: "Paiements", icon: "fa-file-invoice-dollar" },
+            { id: "users", label: "Utilisateurs", desc: "Comptes", icon: "fa-users-gear" },
+            { id: "profile", label: "Profil", desc: "Mon compte", icon: "fa-user-circle" }
         ];
     }
+
     else if (isAidant) {
         menuItems = [
-            { id: 'patients', label: 'Patients', desc: 'Mes dossiers', icon: 'fa-folder-open', roles: ['AIDANT'] },
-            { id: 'planning', label: 'Planning', desc: 'Agenda', icon: 'fa-calendar-days', roles: ['AIDANT'] },
-            { id: 'visits', label: 'Visites', desc: 'Historique', icon: 'fa-calendar-check', roles: ['AIDANT'] },
-            { id: 'commandes', label: 'Livraisons', desc: 'Commandes', icon: 'fa-box', roles: ['AIDANT'] },
-            { id: 'map', label: 'Radar', desc: 'Localisation', icon: 'fa-location-dot', roles: ['AIDANT'] },
-            { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['AIDANT'] }
+            { id: "patients", label: "Patients", desc: "Mes dossiers", icon: "fa-folder-open" },
+            { id: "planning", label: "Planning", desc: "Mes missions", icon: "fa-calendar-days" },
+            { id: "visits", label: "Visites", desc: "Historique", icon: "fa-calendar-check" },
+            { id: "commandes", label: "Livraisons", desc: "Commandes", icon: "fa-box" },
+            { id: "map", label: "Radar", desc: "Localisation", icon: "fa-location-dot" },
+            { id: "profile", label: "Profil", desc: "Mon compte", icon: "fa-user-circle" }
         ];
     }
-    else if (isMaman) {
+
+    else if (isFamille && isMaman) {
         if (isSansPatient) {
             menuItems = [
-                { id: 'home', label: 'Accueil', desc: 'Tableau de bord', icon: 'fa-home', roles: ['FAMILLE'] },
-                { id: 'commandes', label: 'Mes commandes', desc: 'Produits', icon: 'fa-box', roles: ['FAMILLE'] },
-                { id: 'education', label: 'Éducation', desc: 'Conseils', icon: 'fa-graduation-cap', roles: ['FAMILLE'] },
-                { id: 'billing', label: 'Factures', desc: 'Paiements', icon: 'fa-file-invoice-dollar', roles: ['FAMILLE'] },
-                { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['FAMILLE'] }
+                { id: "home", label: "Accueil", desc: "Vue générale", icon: "fa-home" },
+                { id: "commandes", label: "Mes commandes", desc: "Produits", icon: "fa-box" },
+                { id: "education", label: "Éducation", desc: "Conseils", icon: "fa-graduation-cap" },
+                { id: "subscription", label: "Abonnement", desc: "Pack confort", icon: "fa-crown" },
+                { id: "profile", label: "Profil", desc: "Mon compte", icon: "fa-user-circle" }
             ];
         } else {
             menuItems = [
-                { id: 'dashboard-maman', label: 'Accueil', desc: 'Dashboard maman', icon: 'fa-home', roles: ['FAMILLE'] },
-                { id: 'feed', label: 'Journal', desc: 'Messages', icon: 'fa-newspaper', roles: ['FAMILLE'] },
-                { id: 'visits', label: 'Visites', desc: 'Historique', icon: 'fa-calendar-check', roles: ['FAMILLE'] },
-                { id: 'commandes', label: 'Commandes', desc: 'Bébé', icon: 'fa-box', roles: ['FAMILLE'] },
-                { id: 'education', label: 'Éducation', desc: 'Conseils', icon: 'fa-graduation-cap', roles: ['FAMILLE'] },
-                { id: 'billing', label: 'Factures', desc: 'Paiements', icon: 'fa-file-invoice-dollar', roles: ['FAMILLE'] },
-                { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['FAMILLE'] }
-            ];
-        }
-    }
-    else if (isSenior) {
-        if (isSansPatient) {
-            menuItems = [
-                { id: 'home', label: 'Accueil', desc: 'Tableau de bord', icon: 'fa-home', roles: ['FAMILLE'] },
-                { id: 'commandes', label: 'Mes commandes', desc: 'Produits', icon: 'fa-box', roles: ['FAMILLE'] },
-                { id: 'billing', label: 'Factures', desc: 'Paiements', icon: 'fa-file-invoice-dollar', roles: ['FAMILLE'] },
-                { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['FAMILLE'] }
-            ];
-        } else {
-            menuItems = [
-                { id: 'dashboard', label: 'Dashboard', desc: 'Statistiques', icon: 'fa-chart-line', roles: ['FAMILLE'] },
-                { id: 'feed', label: 'Journal', desc: 'Soins', icon: 'fa-newspaper', roles: ['FAMILLE'] },
-                { id: 'visits', label: 'Visites', desc: 'Historique', icon: 'fa-calendar-check', roles: ['FAMILLE'] },
-                { id: 'commandes', label: 'Commandes', desc: 'Médicaments', icon: 'fa-box', roles: ['FAMILLE'] },
-                { id: 'billing', label: 'Factures', desc: 'Paiements', icon: 'fa-file-invoice-dollar', roles: ['FAMILLE'] },
-                { id: 'subscription', label: 'Abonnement', desc: 'Formules', icon: 'fa-ticket', roles: ['FAMILLE'] },
-                { id: 'profile', label: 'Profil', desc: 'Mon compte', icon: 'fa-user-circle', roles: ['FAMILLE'] }
+                { id: "dashboard-maman", label: "Tableau maman", desc: "Suivi bébé", icon: "fa-chart-line" },
+                { id: "feed", label: "Journal de soins", desc: "Photos & nouvelles", icon: "fa-newspaper" },
+                { id: "visits", label: "Visites", desc: "Suivi", icon: "fa-calendar-check" },
+                { id: "commandes", label: "Commandes", desc: "Produits bébé", icon: "fa-box" },
+                { id: "education", label: "Éducation", desc: "Conseils", icon: "fa-graduation-cap" },
+                { id: "billing", label: "Factures", desc: "Paiements", icon: "fa-file-invoice-dollar" },
+                { id: "subscription", label: "Abonnement", desc: "Formules", icon: "fa-crown" },
+                { id: "profile", label: "Profil", desc: "Mon compte", icon: "fa-user-circle" }
             ];
         }
     }
 
-    // Filtrer selon le rôle (déjà fait dans la construction, mais sécurité)
-    const filteredMenu = menuItems;
+    else if (isFamille) {
+        if (isSansPatient) {
+            menuItems = [
+                { id: "home", label: "Accueil", desc: "Vue générale", icon: "fa-home" },
+                { id: "commandes", label: "Mes commandes", desc: "Produits", icon: "fa-box" },
+                { id: "subscription", label: "Abonnement", desc: "Pack confort", icon: "fa-crown" },
+                { id: "profile", label: "Profil", desc: "Mon compte", icon: "fa-user-circle" }
+            ];
+        } else {
+            menuItems = [
+                { id: "home", label: "Accueil", desc: "Vue générale", icon: "fa-home" },
+                { id: "feed", label: "Journal de soins", desc: "Suivi du proche", icon: "fa-newspaper" },
+                { id: "visits", label: "Visites", desc: "Interventions", icon: "fa-calendar-check" },
+                { id: "commandes", label: "Commandes", desc: "Médicaments", icon: "fa-box" },
+                { id: "billing", label: "Factures", desc: "Paiements", icon: "fa-file-invoice-dollar" },
+                { id: "subscription", label: "Abonnement", desc: "Formules", icon: "fa-crown" },
+                { id: "profile", label: "Profil", desc: "Mon compte", icon: "fa-user-circle" }
+            ];
+        }
+    }
+
+    // Sécurité : si aucun rôle reconnu
+    if (!menuItems.length) {
+        menuItems = [
+            { id: "home", label: "Accueil", desc: "Vue générale", icon: "fa-home" },
+            { id: "profile", label: "Profil", desc: "Mon compte", icon: "fa-user-circle" }
+        ];
+    }
 
     // ============================================================
-    // 🔥 GÉNÉRATION DU HTML
+    // HTML
     // ============================================================
-    
+
     container.innerHTML = `
         <div class="animate-fadeIn" style="background: #F8FAFC; padding-bottom: 20px;">
+            
             <!-- Bannière de bienvenue -->
             <div class="relative rounded-2xl overflow-hidden mb-5" style="height: 160px;">
                 <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getBannerImage(userRole)}');"></div>
+                <div class="absolute inset-0 bg-black/25"></div>
+
                 <div class="relative z-10 h-full flex justify-between items-center p-5">
                     <div>
                         <div class="flex items-center gap-2 mb-2">
                             <div class="bg-black/30 w-8 h-8 rounded-full flex items-center justify-center">
                                 <i class="fa-solid ${bannerIcon} text-white text-sm"></i>
                             </div>
-                            <span class="text-[9px] font-bold uppercase tracking-wider text-white/80">BIENVENUE</span>
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-white/80">Bienvenue</span>
                         </div>
-                        <h2 class="text-2xl font-black text-white drop-shadow-md">${userName?.split(' ')[0] || 'Utilisateur'}</h2>
-                        <p class="text-sm text-white drop-shadow-sm mt-1">${bannerDesc}</p>
+
+                        <h2 class="text-2xl font-black text-white drop-shadow-md">
+                            ${(userName || "Utilisateur").split(" ")[0]}
+                        </h2>
+
+                        <p class="text-sm text-white drop-shadow-sm mt-1">
+                            ${bannerDesc}
+                        </p>
                     </div>
-                    <div class="bg-black/30 w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-sm relative">
+
+                    <button onclick="window.switchView('notifications')" 
+                            class="bg-black/30 w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-sm relative active:scale-95 transition-all">
                         <i class="fa-regular fa-bell text-white text-xl"></i>
-                        <span id="mobile-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[8px] text-white flex items-center justify-center hidden">0</span>
-                    </div>
+                        <span id="mobile-notif-badge" 
+                              class="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-rose-500 rounded-full text-[8px] text-white items-center justify-center hidden">
+                            0
+                        </span>
+                    </button>
                 </div>
             </div>
-            
+
             <!-- Prochaine intervention -->
             <div class="relative rounded-xl overflow-hidden mb-5" style="height: 90px;">
                 <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${getNextVisitImage(userRole)}');"></div>
                 <div class="absolute inset-0 bg-black/30"></div>
+
                 <div class="relative z-10 h-full flex justify-between items-center px-4">
                     <div>
                         <p class="text-[9px] font-bold uppercase tracking-wider text-white/80">
-                            ${isMaman ? 'PROCHAINE VISITE' : (isAidant ? 'PROCHAINE MISSION' : 'PROCHAINE INTERVENTION')}
+                            ${isMaman ? "Prochaine visite" : isAidant ? "Prochaine mission" : "Prochaine intervention"}
                         </p>
+
                         <p class="text-sm font-bold text-white mt-1">
-                            ${isSansPatient ? 'Aucune visite prévue' : (isMaman ? 'Aujourd\'hui, 10h30' : (isAidant ? 'Patient: DIALLO Fatoumata' : 'À venir'))}
+                            ${isSansPatient ? "Aucune visite prévue" : isAidant ? "Mission à consulter" : "À venir"}
                         </p>
                     </div>
+
                     <div class="bg-black/30 w-8 h-8 rounded-full flex items-center justify-center">
                         <i class="fa-solid fa-calendar-check text-white text-sm"></i>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Titre menu -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h4 style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: ${primaryColor};">MENU PRINCIPAL</h4>
-                <span style="font-size: 9px; color: #94A3B8;">${filteredMenu.length} services</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h4 style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:${primaryColor};">
+                    Menu principal
+                </h4>
+                <span style="font-size:9px; color:#94A3B8;">
+                    ${menuItems.length} services
+                </span>
             </div>
-            
-            <!-- Grille des tuiles -->
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;" id="menu-grid">
-                ${filteredMenu.map((item, index) => `
-                    <div data-menu="${item.id}" onclick="window.switchView('${item.id}')" 
-                         style="background: ${tileBgColor}; border-radius: 20px; padding: 16px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: cardAppear 0.3s ease-out ${index * 0.03}s forwards; opacity: 0; position: relative;"
+
+            <!-- Grille menu -->
+            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;" id="menu-grid">
+                ${menuItems.map((item, index) => `
+                    <div data-menu="${item.id}" 
+                         onclick="window.switchView('${item.id}')"
+                         style="
+                            background:${tileBgColor};
+                            border-radius:20px;
+                            padding:16px;
+                            cursor:pointer;
+                            transition:all 0.2s ease;
+                            box-shadow:0 4px 12px rgba(0,0,0,0.1);
+                            animation:cardAppear 0.3s ease-out ${index * 0.03}s forwards;
+                            opacity:0;
+                            position:relative;
+                         "
                          ontouchstart="this.style.transform='scale(0.97)'"
                          ontouchend="this.style.transform='scale(1)'"
                          onmousedown="this.style.transform='scale(0.97)'"
                          onmouseup="this.style.transform='scale(1)'">
-                        <div style="background: rgba(255,255,255,0.15); width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-                            <i class="fa-solid ${item.icon}" style="color: ${tileIconColor}; font-size: 22px;"></i>
+
+                        <div style="
+                            background:rgba(255,255,255,0.15);
+                            width:48px;
+                            height:48px;
+                            border-radius:16px;
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            margin-bottom:12px;
+                        ">
+                            <i class="fa-solid ${item.icon}" style="color:${tileIconColor}; font-size:22px;"></i>
                         </div>
+
                         <div>
-                            <p style="font-weight: 700; color: ${tileTextColor}; font-size: 14px; margin-bottom: 2px;">${item.label}</p>
-                            <p style="font-size: 10px; color: ${isCoordinateur || isAidant ? 'rgba(15, 23, 42, 0.7)' : 'rgba(255,255,255,0.7)'};">${item.desc}</p>
+                            <p style="font-weight:700; color:${tileTextColor}; font-size:14px; margin-bottom:2px;">
+                                ${item.label}
+                            </p>
+                            <p style="font-size:10px; color:${isCoordinateur || isAidant ? "rgba(15,23,42,0.7)" : "rgba(255,255,255,0.75)"};">
+                                ${item.desc}
+                            </p>
                         </div>
-                        <span class="menu-badge" style="position: absolute; top: -6px; right: -6px; background: #EF4444; color: white; font-size: 10px; font-weight: 800; min-width: 22px; height: 22px; border-radius: 22px; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(239,68,68,0.4); border: 2px solid white;"></span>
+
+                        <span class="menu-badge" 
+                              style="
+                                position:absolute;
+                                top:-6px;
+                                right:-6px;
+                                background:#EF4444;
+                                color:white;
+                                font-size:10px;
+                                font-weight:800;
+                                min-width:22px;
+                                height:22px;
+                                border-radius:22px;
+                                display:none;
+                                align-items:center;
+                                justify-content:center;
+                                box-shadow:0 2px 8px rgba(239,68,68,0.4);
+                                border:2px solid white;
+                              ">
+                        </span>
                     </div>
-                `).join('')}
+                `).join("")}
             </div>
         </div>
     `;
-    
-    // Initialiser les badges
+
     initHomeBadges();
-    
-    // Fonctions internes
+
+    // ============================================================
+    // BADGES
+    // ============================================================
+
     function initHomeBadges() {
         refreshBadges();
-        
-        let intervalId = setInterval(() => {
-            if (AppState.currentView === 'home' && document.visibilityState === 'visible') {
+
+        const intervalId = setInterval(() => {
+            if (AppState.currentView === "home" && document.visibilityState === "visible") {
                 refreshBadges();
             }
         }, 60000);
-        
-        document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === "visible") refreshBadges();
+
+        const onVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                refreshBadges();
+            }
+        };
+
+        document.addEventListener("visibilitychange", onVisibilityChange);
+
+        window.addEventListener("beforeunload", () => {
+            clearInterval(intervalId);
+            document.removeEventListener("visibilitychange", onVisibilityChange);
         });
-        
-        window.addEventListener('beforeunload', () => clearInterval(intervalId));
     }
-    
+
     function updateBadgeUI(menuId, count) {
         const tile = document.querySelector(`[data-menu="${menuId}"]`);
         if (!tile) return;
-        const badge = tile.querySelector('.menu-badge');
+
+        const badge = tile.querySelector(".menu-badge");
         if (!badge) return;
+
         if (count > 0) {
-            badge.textContent = count > 99 ? '99+' : count;
-            badge.style.display = 'flex';
-            badge.style.animation = 'badgePop 0.3s cubic-bezier(0.34, 1.2, 0.64, 1)';
+            badge.textContent = count > 99 ? "99+" : count;
+            badge.style.display = "flex";
+            badge.style.animation = "badgePop 0.3s cubic-bezier(0.34, 1.2, 0.64, 1)";
         } else {
-            badge.style.display = 'none';
+            badge.style.display = "none";
         }
     }
-    
+
     async function refreshBadges() {
         try {
             let messagesCount = 0;
             let commandesCount = 0;
             let visitesCount = 0;
             let notificationsCount = 0;
-            
+
             const currentUserId = localStorage.getItem("user_id");
-            
-            if (AppState.currentPatient && !isSansPatient) {
-                const lastRead = localStorage.getItem(`last_read_${AppState.currentPatient}`);
-                let messages = await secureFetch(`/messages?patient_id=${AppState.currentPatient}`);
-                if (!Array.isArray(messages)) messages = messages?.data || [];
-                const currentUserName = localStorage.getItem("user_name");
-                const otherMessages = messages.filter(m => m.sender_name !== currentUserName);
-                
-                if (lastRead) {
-                    messagesCount = otherMessages.filter(m => new Date(m.created_at) > new Date(lastRead)).length;
-                } else if (otherMessages.length > 0) {
-                    messagesCount = otherMessages.length;
+
+            // Messages / Journal
+            if (isFamille && AppState.currentPatient && !isSansPatient) {
+                try {
+                    const lastRead = localStorage.getItem(`last_read_${AppState.currentPatient}`);
+                    let messages = await secureFetch(`/messages?patient_id=${AppState.currentPatient}`, { noCache: true });
+                    if (!Array.isArray(messages)) messages = messages?.data || [];
+
+                    const currentUserName = localStorage.getItem("user_name");
+                    const otherMessages = messages.filter(m => m.sender_name !== currentUserName);
+
+                    if (lastRead) {
+                        messagesCount = otherMessages.filter(m => new Date(m.created_at) > new Date(lastRead)).length;
+                    } else {
+                        messagesCount = otherMessages.length;
+                    }
+                } catch (err) {
+                    console.warn("Badge messages ignoré:", err.message);
                 }
             }
-            
+
+            // Commandes
             try {
                 let commandes;
-                if (isSansPatient) {
+
+                if (isSansPatient && isFamille) {
                     commandes = await secureFetch("/commandes/mes-commandes", { noCache: true });
                 } else {
                     commandes = await secureFetch("/commandes", { noCache: true });
                 }
-                
-                if (userRole === "COORDINATEUR") {
+
+                if (!Array.isArray(commandes)) commandes = commandes?.data || [];
+
+                if (isCoordinateur) {
                     commandesCount = commandes.filter(c => c.statut === "Livrée").length;
-                } else if (userRole === "AIDANT") {
+                } else if (isAidant) {
                     commandesCount = commandes.filter(c => c.statut === "En attente" && !c.aidant_id).length;
-                } else if (userRole === "FAMILLE") {
-                    if (isSansPatient) {
-                        commandesCount = commandes.filter(c => c.statut === "En attente" || c.statut === "En cours de livraison").length;
-                    } else {
-                        commandesCount = commandes.filter(c => c.statut === "En attente" || c.statut === "En cours de livraison").length;
-                    }
+                } else if (isFamille) {
+                    commandesCount = commandes.filter(c =>
+                        c.statut === "En attente" ||
+                        c.statut === "En cours de livraison"
+                    ).length;
                 }
-            } catch (err) {}
-            
-            if (userRole === "COORDINATEUR") {
-                try {
-                    const visites = await secureFetch("/visites", { noCache: true });
-                    visitesCount = visites.filter(v => v.statut === "En attente").length;
-                } catch (err) {}
+            } catch (err) {
+                console.warn("Badge commandes ignoré:", err.message);
             }
-            
+
+            // Visites à valider coordinateur
+            if (isCoordinateur) {
+                try {
+                    let visites = await secureFetch("/visites", { noCache: true });
+                    if (!Array.isArray(visites)) visites = visites?.data || [];
+                    visitesCount = visites.filter(v => v.statut === "En attente").length;
+                } catch (err) {
+                    console.warn("Badge visites ignoré:", err.message);
+                }
+            }
+
+            // Notifications
             try {
-                const notifications = await secureFetch("/notifications", { noCache: true });
-                notificationsCount = notifications.filter(n => !n.read && n.user_id === currentUserId).length;
-                
-                const headerBadge = document.getElementById('notification-badge');
+                let notifications = await secureFetch("/notifications", { noCache: true });
+                if (!Array.isArray(notifications)) notifications = notifications?.data || [];
+
+                notificationsCount = notifications.filter(n =>
+                    !n.read &&
+                    (!n.user_id || n.user_id === currentUserId)
+                ).length;
+
+                const headerBadge = document.getElementById("notification-badge");
                 if (headerBadge) {
-                    headerBadge.style.display = notificationsCount > 0 ? 'flex' : 'none';
-                    headerBadge.textContent = notificationsCount > 9 ? '9+' : notificationsCount;
+                    headerBadge.style.display = notificationsCount > 0 ? "flex" : "none";
+                    headerBadge.textContent = notificationsCount > 9 ? "9+" : notificationsCount;
                 }
-                
-                const mobileBadge = document.getElementById('mobile-notif-badge');
+
+                const mobileBadge = document.getElementById("mobile-notif-badge");
                 if (mobileBadge) {
-                    mobileBadge.style.display = notificationsCount > 0 ? 'flex' : 'none';
-                    mobileBadge.textContent = notificationsCount > 9 ? '9+' : notificationsCount;
+                    mobileBadge.style.display = notificationsCount > 0 ? "flex" : "none";
+                    mobileBadge.textContent = notificationsCount > 9 ? "9+" : notificationsCount;
                 }
-            } catch (err) {}
-            
-            updateBadgeUI('feed', messagesCount);
-            updateBadgeUI('commandes', commandesCount);
-            updateBadgeUI('visits', visitesCount);
-            
+            } catch (err) {
+                console.warn("Badge notifications ignoré:", err.message);
+            }
+
+            updateBadgeUI("feed", messagesCount);
+            updateBadgeUI("commandes", commandesCount);
+            updateBadgeUI("visits", visitesCount);
+
         } catch (err) {
             console.error("❌ Erreur refreshBadges:", err);
         }
@@ -3199,110 +3309,133 @@ window.selectPackConfort = (packId, price, durationMonths) => {
 
 function getNavLinks(role, mode) {
     const isMaman = localStorage.getItem("user_is_maman") === "true";
+    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+
     const isFamily = role === "FAMILLE";
     const isAidant = role === "AIDANT";
     const isCoordinateur = role === "COORDINATEUR";
-    
-    // 🔥 NOUVEAU : Récupérer le type de compte
-    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
     const isSansPatient = typeCompte === "SANS_PATIENT";
-    
-    // ============================================================
-    // DÉFINITION DES ONGLETS SELON LE RÔLE ET LE TYPE DE COMPTE
-    // ============================================================
+
     let tabs = [];
-    
+
+    // ============================================================
+    // COORDINATEUR
+    // ============================================================
     if (isCoordinateur) {
-        // 👔 COORDINATEUR (inchangé)
         tabs = [
-            { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard' },
-            { id: 'patients', icon: 'fa-hospital-user', label: 'Patients' },
-            { id: 'aidants', icon: 'fa-user-nurse', label: 'Aidants' },
-            { id: 'planning', icon: 'fa-calendar-days', label: 'Planning' },
-            { id: 'rh-dashboard', icon: 'fa-users', label: 'RH' },
-            { id: 'map', icon: 'fa-location-dot', label: 'Radar' },
-            { id: 'commandes', icon: 'fa-box', label: 'Commandes' },
-            { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
-            { id: 'profile', icon: 'fa-user-circle', label: 'Profil' },
-            { id: 'users', icon: 'fa-users', label: 'Utilisateurs' }
+            { id: "dashboard", icon: "fa-chart-pie", label: "Dashboard" },
+            { id: "patients", icon: "fa-hospital-user", label: "Patients" },
+            { id: "aidants", icon: "fa-user-nurse", label: "Aidants" },
+            { id: "planning", icon: "fa-calendar-days", label: "Planning" },
+            { id: "rh-dashboard", icon: "fa-users", label: "RH" },
+            { id: "map", icon: "fa-location-dot", label: "Radar" },
+            { id: "commandes", icon: "fa-box", label: "Commandes" },
+            { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+            { id: "users", icon: "fa-users-gear", label: "Utilisateurs" },
+            { id: "profile", icon: "fa-user-circle", label: "Profil" }
         ];
-    } 
-    else if (isAidant) {
-        // 🩺 AIDANT (inchangé)
-        tabs = [
-            { id: 'patients', icon: 'fa-folder-open', label: 'Mes patients' },
-            { id: 'planning', icon: 'fa-calendar-days', label: 'Planning' },
-            { id: 'visits', icon: 'fa-calendar-check', label: 'Visites' },
-            { id: 'commandes', icon: 'fa-box', label: 'Livraisons' },
-            { id: 'map', icon: 'fa-location-dot', label: 'Radar' },
-            { id: 'profile', icon: 'fa-user-circle', label: 'Profil' }
-        ];
-    } 
-    else if (isFamily && isMaman) {
-        // 🌸 MAMAN & BÉBÉ - Dashboard unique
-        if (isSansPatient) {
-            tabs = [
-                { id: 'home', icon: 'fa-home', label: 'Accueil' },
-                { id: 'commandes', icon: 'fa-box', label: 'Mes commandes' },
-                { id: 'education', icon: 'fa-graduation-cap', label: 'Éducation' },
-                { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
-                { id: 'profile', icon: 'fa-user-circle', label: 'Profil' }
-            ];
-        } else {
-            tabs = [
-                { id: 'home', icon: 'fa-home', label: 'Accueil' },
-                { id: 'feed', icon: 'fa-newspaper', label: 'Journal bébé' },
-                { id: 'visits', icon: 'fa-calendar-check', label: 'Visites' },
-                { id: 'commandes', icon: 'fa-box', label: 'Commandes bébé' },
-                { id: 'education', icon: 'fa-graduation-cap', label: 'Éducation' },
-                { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
-                { id: 'profile', icon: 'fa-user-circle', label: 'Profil' }
-            ];
-        }
     }
-    else if (isFamily && !isMaman) {
-        // 👴 SENIOR
+
+    // ============================================================
+    // AIDANT
+    // ============================================================
+    else if (isAidant) {
+        tabs = [
+            { id: "patients", icon: "fa-folder-open", label: "Patients" },
+            { id: "planning", icon: "fa-calendar-days", label: "Planning" },
+            { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+            { id: "commandes", icon: "fa-box", label: "Livraisons" },
+            { id: "map", icon: "fa-location-dot", label: "Radar" },
+            { id: "profile", icon: "fa-user-circle", label: "Profil" }
+        ];
+    }
+
+    // ============================================================
+    // FAMILLE MAMAN & BÉBÉ
+    // ============================================================
+    else if (isFamily && isMaman) {
         if (isSansPatient) {
             tabs = [
-                { id: 'home', icon: 'fa-home', label: 'Accueil' },
-                { id: 'commandes', icon: 'fa-box', label: 'Mes commandes' },
-                { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
-                { id: 'profile', icon: 'fa-user-circle', label: 'Profil' }
+                { id: "home", icon: "fa-home", label: "Accueil" },
+                { id: "commandes", icon: "fa-box", label: "Commandes" },
+                { id: "education", icon: "fa-graduation-cap", label: "Éducation" },
+                { id: "subscription", icon: "fa-crown", label: "Abonnement" },
+                { id: "profile", icon: "fa-user-circle", label: "Profil" }
             ];
         } else {
             tabs = [
-                { id: 'dashboard', icon: 'fa-chart-line', label: 'Tableau de bord' },
-                { id: 'feed', icon: 'fa-newspaper', label: 'Journal de soins' },
-                { id: 'visits', icon: 'fa-calendar-check', label: 'Visites' },
-                { id: 'commandes', icon: 'fa-box', label: 'Commandes' },
-                { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
-                { id: 'subscription', icon: 'fa-ticket', label: 'Abonnement' },
-                { id: 'profile', icon: 'fa-user-circle', label: 'Profil' }
+                { id: "dashboard-maman", icon: "fa-chart-line", label: "Tableau maman" },
+                { id: "feed", icon: "fa-newspaper", label: "Journal bébé" },
+                { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+                { id: "commandes", icon: "fa-box", label: "Commandes" },
+                { id: "education", icon: "fa-graduation-cap", label: "Éducation" },
+                { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+                { id: "subscription", icon: "fa-crown", label: "Abonnement" },
+                { id: "profile", icon: "fa-user-circle", label: "Profil" }
             ];
         }
     }
 
     // ============================================================
-    // GÉNÉRATION DU HTML
+    // FAMILLE SENIOR
     // ============================================================
-    if (mode === 'mobile') {
+    else if (isFamily && !isMaman) {
+        if (isSansPatient) {
+            tabs = [
+                { id: "home", icon: "fa-home", label: "Accueil" },
+                { id: "commandes", icon: "fa-box", label: "Commandes" },
+                { id: "subscription", icon: "fa-crown", label: "Abonnement" },
+                { id: "profile", icon: "fa-user-circle", label: "Profil" }
+            ];
+        } else {
+            tabs = [
+                { id: "home", icon: "fa-home", label: "Accueil" },
+                { id: "feed", icon: "fa-newspaper", label: "Journal de soins" },
+                { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+                { id: "commandes", icon: "fa-box", label: "Commandes" },
+                { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+                { id: "subscription", icon: "fa-crown", label: "Abonnement" },
+                { id: "profile", icon: "fa-user-circle", label: "Profil" }
+            ];
+        }
+    }
+
+    // ============================================================
+    // FALLBACK SÉCURITÉ
+    // ============================================================
+    else {
+        tabs = [
+            { id: "home", icon: "fa-home", label: "Accueil" },
+            { id: "profile", icon: "fa-user-circle", label: "Profil" }
+        ];
+    }
+
+    // ============================================================
+    // GÉNÉRATION MOBILE
+    // ============================================================
+    if (mode === "mobile") {
         return tabs.map(tab => `
-            <button onclick="window.switchView('${tab.id}')" data-view="${tab.id}" class="nav-btn flex flex-col items-center gap-1 flex-1 text-slate-400 transition-all">
+            <button onclick="window.switchView('${tab.id}')" 
+                    data-view="${tab.id}" 
+                    class="nav-btn flex flex-col items-center gap-1 flex-1 text-slate-400 transition-all">
                 <i class="fa-solid ${tab.icon} text-lg"></i>
                 <span class="text-[8px] font-black uppercase tracking-tighter">${tab.label}</span>
             </button>
-        `).join('');
-    } else {
-        return tabs.map(tab => `
-            <button onclick="window.switchView('${tab.id}')" data-view="${tab.id}" 
-                    class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all text-sm">
-                <i class="fa-solid ${tab.icon} text-base w-5"></i>
-                <span>${tab.label}</span>
-            </button>
-        `).join('');
+        `).join("");
     }
-}
 
+    // ============================================================
+    // GÉNÉRATION DESKTOP / SIDEBAR
+    // ============================================================
+    return tabs.map(tab => `
+        <button onclick="window.switchView('${tab.id}')" 
+                data-view="${tab.id}" 
+                class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all text-sm">
+            <i class="fa-solid ${tab.icon} text-base w-5"></i>
+            <span>${tab.label}</span>
+        </button>
+    `).join("");
+}
 // ============================================================
 // TRANSITION ENTRE LES VUES (SWITCHVIEW)
 // ============================================================
@@ -3371,26 +3504,64 @@ window.switchView = async function(viewName) {
 // CHARGEMENT D'UNE VUE SPÉCIFIQUE (VERSION CORRIGÉE)
 // ============================================================
 
-// ✅ DÉFINITION DES VUES PAR RÔLE
 const ROLE_VIEWS = {
-    'COORDINATEUR': [
-        'dashboard', 'patients', 'aidants', 'planning', 'rh-dashboard', 
-        'map', 'commandes', 'billing', 'profile', 'users', 'home', 'notifications'
+    COORDINATEUR: [
+        "home",
+        "dashboard",
+        "patients",
+        "aidants",
+        "planning",
+        "rh-dashboard",
+        "map",
+        "commandes",
+        "billing",
+        "profile",
+        "users",
+        "notifications"
     ],
-    'AIDANT': [
-        'patients', 'planning', 'visits', 'commandes', 'map', 'profile', 'home', 'notifications'
+
+    AIDANT: [
+        "home",
+        "patients",
+        "planning",
+        "visits",
+        "commandes",
+        "map",
+        "profile",
+        "notifications",
+        "start-visit",
+        "end-visit"
     ],
-    'FAMILLE': [
-        'home', 'dashboard', 'feed', 'visits', 'commandes', 'billing', 
-        'subscription', 'profile', 'education', 'notifications'
+
+    FAMILLE: [
+        "home",
+        "dashboard-maman",
+        "feed",
+        "visits",
+        "commandes",
+        "billing",
+        "subscription",
+        "profile",
+        "education",
+        "notifications",
+        "maman-planning"
     ]
 };
+
 
 // ✅ VUES PUBLIQUES (accessibles à tous les connectés)
 const PUBLIC_VIEWS = ['home', 'profile', 'notifications'];
 
 // ✅ VUES RÉSERVÉES (avec vérification supplémentaire)
-const ADMIN_ONLY_VIEWS = ['dashboard', 'aidants', 'rh-dashboard', 'admin', 'users'];
+
+const ADMIN_ONLY_VIEWS = [
+    "dashboard",
+    "aidants",
+    "rh-dashboard",
+    "admin",
+    "users"
+];
+
 const AIDANT_ONLY_VIEWS = ['planning', 'start-visit', 'end-visit'];
 
 async function performViewSwitch(viewName) {
@@ -3645,18 +3816,16 @@ async function performViewSwitch(viewName) {
     // ============================================================
     try {
         switch (viewName) {
-            case "dashboard":
-                if (userRole === "FAMILLE" && !isMaman) {
-                    const module = await import('./modules/dashboard.js');
-                    if (module.loadSeniorDashboard) await module.loadSeniorDashboard();
-                } else {
+                case "dashboard":
+                    if (userRole !== "COORDINATEUR") {
+                        UI.error("Accès non autorisé");
+                        window.switchView("home");
+                        return;
+                    }
+                
                     container.innerHTML = document.getElementById("template-dashboard").innerHTML;
                     await Dashboard.loadAdminDashboard();
-                }
-                break;
-            case "map":
-                await MapModule.initLiveMap();
-                break;
+                    break;
             case "patients":
                 await Patients.loadPatients();
                 refreshMicroInteractions();
@@ -3748,9 +3917,15 @@ async function performViewSwitch(viewName) {
             case "notifications":
                 await Notifications.renderNotificationsPage();
                 break;
-            case "dashboard-maman":
-                await Maman.loadMamanDashboard();
-                break;
+           case "dashboard-maman":
+              if (userRole !== "FAMILLE") {
+                  UI.error("Accès non autorisé");
+                  window.switchView("home");
+                  return;
+              }
+          
+              await Maman.loadMamanDashboard();
+              break;
             case "maman-planning":
                 if (typeof loadMamanPlanning === 'function') {
                     await loadMamanPlanning();
