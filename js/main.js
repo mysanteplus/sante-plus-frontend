@@ -3373,15 +3373,40 @@ window.switchView = async function(viewName) {
 };
 
 
+
+
 // ============================================================
-// CHARGEMENT D'UNE VUE SPÉCIFIQUE
+// CHARGEMENT D'UNE VUE SPÉCIFIQUE (VERSION CORRIGÉE)
 // ============================================================
+
+// ✅ DÉFINITION DES VUES PAR RÔLE
+const ROLE_VIEWS = {
+    'COORDINATEUR': [
+        'dashboard', 'patients', 'aidants', 'planning', 'rh-dashboard', 
+        'map', 'commandes', 'billing', 'profile', 'users', 'home', 'notifications'
+    ],
+    'AIDANT': [
+        'patients', 'planning', 'visits', 'commandes', 'map', 'profile', 'home', 'notifications'
+    ],
+    'FAMILLE': [
+        'home', 'dashboard', 'feed', 'visits', 'commandes', 'billing', 
+        'subscription', 'profile', 'education', 'notifications'
+    ]
+};
+
+// ✅ VUES PUBLIQUES (accessibles à tous les connectés)
+const PUBLIC_VIEWS = ['home', 'profile', 'notifications'];
+
+// ✅ VUES RÉSERVÉES (avec vérification supplémentaire)
+const ADMIN_ONLY_VIEWS = ['dashboard', 'aidants', 'rh-dashboard', 'admin', 'users'];
+const AIDANT_ONLY_VIEWS = ['planning', 'start-visit', 'end-visit'];
+
 async function performViewSwitch(viewName) {
     const container = document.getElementById("view-container");
     const titleElement = document.getElementById("view-title");
     if (!container) return;
 
-    // ✅ Déclarer TOUTES les variables au début
+    // ✅ DÉCLARATIONS
     const userRole = localStorage.getItem("user_role");
     const isMaman = localStorage.getItem("user_is_maman") === "true";
     const isFamily = userRole === "FAMILLE";
@@ -3389,13 +3414,45 @@ async function performViewSwitch(viewName) {
     const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
     const isSansPatient = typeCompte === "SANS_PATIENT";
 
-
-
-  // ============================================================
-    // ✅ VÉRIFICATION ABONNEMENT POUR LES VUES PREMIUM
+    // ============================================================
+    // 1. VÉRIFICATION DES DROITS D'ACCÈS PAR RÔLE
     // ============================================================
     
-    // Vues qui nécessitent un abonnement actif
+    const allowedViews = ROLE_VIEWS[userRole] || [];
+    const isAllowed = allowedViews.includes(viewName) || PUBLIC_VIEWS.includes(viewName);
+    
+    if (!isAllowed) {
+        console.log(`🚫 Accès refusé: ${userRole} tente d'accéder à ${viewName}`);
+        UI.error("Accès non autorisé");
+        
+        // Rediriger vers la vue par défaut selon le rôle
+        let defaultView = 'home';
+        if (userRole === 'COORDINATEUR') defaultView = 'dashboard';
+        else if (userRole === 'AIDANT') defaultView = 'patients';
+        else if (userRole === 'FAMILLE') defaultView = 'home';
+        
+        window.switchView(defaultView);
+        return;
+    }
+    
+    // ✅ Vérification supplémentaire pour les vues admin
+    if (ADMIN_ONLY_VIEWS.includes(viewName) && userRole !== "COORDINATEUR") {
+        UI.error("Accès non autorisé - Droits administrateur requis");
+        window.switchView("home");
+        return;
+    }
+    
+    // ✅ Vérification pour les vues aidant
+    if (AIDANT_ONLY_VIEWS.includes(viewName) && userRole !== "AIDANT" && userRole !== "COORDINATEUR") {
+        UI.error("Accès non autorisé");
+        window.switchView("home");
+        return;
+    }
+
+    // ============================================================
+    // 2. VÉRIFICATION ABONNEMENT POUR LES VUES PREMIUM
+    // ============================================================
+    
     const premiumViews = ["feed", "visits", "commandes", "map"];
     
     if (premiumViews.includes(viewName) && userRole === "FAMILLE") {
@@ -3422,28 +3479,11 @@ async function performViewSwitch(viewName) {
             return;
         }
     }
-    
-    // ============================================================
-    // 1. VÉRIFICATIONS D'ACCÈS
-    // ============================================================
-    
-    // Vues réservées au coordinateur
-    const adminOnlyViews = ["dashboard", "aidants", "rh-dashboard", "admin"];
-    if (adminOnlyViews.includes(viewName) && userRole !== "COORDINATEUR") {
-        UI.error("Accès non autorisé");
-        window.switchView("home");
-        return;
-    }
-    
-    // Vues réservées aux aidants et coordinateurs
-    const aidantRestrictedViews = ["planning", "start-visit", "end-visit"];
-    if (aidantRestrictedViews.includes(viewName) && userRole !== "AIDANT" && userRole !== "COORDINATEUR") {
-        UI.error("Accès non autorisé");
-        window.switchView("home");
-        return;
-    }
 
-    // Sécurité paiement : accès restreint si impayé (pour famille uniquement)
+    // ============================================================
+    // 3. SÉCURITÉ PAIEMENT (accès restreint si impayé)
+    // ============================================================
+    
     const paymentRestrictedViews = ["feed", "visits", "commandes"];
     if (userRole === "FAMILLE" && paymentStatus === "En retard" && paymentRestrictedViews.includes(viewName)) {
         UI.vibrate("error");
@@ -3459,8 +3499,9 @@ async function performViewSwitch(viewName) {
     }
 
     // ============================================================
-    // 2. MISE À JOUR DES ONGLETS ACTIFS
+    // 4. MISE À JOUR DES ONGLETS ACTIFS
     // ============================================================
+    
     document.querySelectorAll(".nav-btn, .sidebar-link").forEach((btn) => {
         const isActive = btn.dataset.view === viewName;
         if (btn.classList.contains('sidebar-link')) {
@@ -3474,8 +3515,9 @@ async function performViewSwitch(viewName) {
     });
 
     // ============================================================
-    // 3. TITRES DYNAMIQUES
+    // 5. TITRES DYNAMIQUES
     // ============================================================
+    
     let patientsTitle = "Gestion des Dossiers";
     let feedTitle = "Journal de Soins Live";
     let commandesTitle = "Commandes";
@@ -3516,7 +3558,8 @@ async function performViewSwitch(viewName) {
         "end-visit": "Clôturer la visite",
         "start-visit": "Démarrer la visite",
         "subscription": "Nos Formules",
-        "profile": "Mon Profil"
+        "profile": "Mon Profil",
+        "notifications": "Notifications"
     };
     
     if (titleElement) titleElement.innerText = viewTitles[viewName] || "Santé Plus";
@@ -3524,8 +3567,9 @@ async function performViewSwitch(viewName) {
     AppState.currentView = viewName;
 
     // ============================================================
-    // 4. TEMPLATES DE BASE
+    // 6. TEMPLATES DE BASE
     // ============================================================
+    
     const templates = {
         dashboard: '<div class="animate-fadeIn"><div id="dashboard-content" class="space-y-6"></div></div>',
         map: '<div class="animate-fadeIn h-full" id="map-container"><div id="map" class="h-full w-full rounded-2xl"></div></div>',
@@ -3583,7 +3627,8 @@ async function performViewSwitch(viewName) {
         "link-family": '<div class="animate-fadeIn" id="link-family-content"></div>',
         "add-aidant": '<div class="animate-fadeIn" id="add-aidant-content"></div>',
         "end-visit": '<div class="animate-fadeIn" id="end-visit-content"></div>',
-        "start-visit": '<div class="animate-fadeIn" id="start-visit-content"></div>'
+        "start-visit": '<div class="animate-fadeIn" id="start-visit-content"></div>',
+        users: '<div class="animate-fadeIn" id="users-content"></div>'
     };
 
     // Afficher le template immédiatement
@@ -3604,7 +3649,7 @@ async function performViewSwitch(viewName) {
     }, 10);
 
     // ============================================================
-    // 5. CHARGEMENT DES DONNÉES PAR VUE
+    // 7. CHARGEMENT DES DONNÉES PAR VUE
     // ============================================================
     try {
         switch (viewName) {
@@ -3644,7 +3689,6 @@ async function performViewSwitch(viewName) {
                 await window.loadFeed();
                 break;
             case "billing":
-                // Utiliser le template HTML existant
                 const billingTemplate = document.getElementById("template-billing");
                 if (billingTemplate) {
                     container.innerHTML = billingTemplate.innerHTML;
@@ -3687,21 +3731,19 @@ async function performViewSwitch(viewName) {
                 }
                 await Visites.renderStartVisitView(AppState.currentPatient);
                 break;
-             case "home":
-                 // ✅ Utiliser la variable userRole déjà déclarée au début de la fonction
-                 // Ne pas redéclarer const userRole !
-                 const homeTypeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
-                 const homeIsSansPatient = homeTypeCompte === "SANS_PATIENT";
-                 const homeIsMaman = localStorage.getItem("user_is_maman") === "true";
-                 
-                 if (homeIsSansPatient && userRole === "FAMILLE") {
-                     await renderSansPatientDashboard();
-                 } else if (homeIsMaman && userRole === "FAMILLE") {
-                     await Maman.loadMamanDashboard();
-                 } else {
-                     renderMobileHub();
-                 }
-                 break;
+            case "home":
+                const homeTypeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+                const homeIsSansPatient = homeTypeCompte === "SANS_PATIENT";
+                const homeIsMaman = localStorage.getItem("user_is_maman") === "true";
+                
+                if (homeIsSansPatient && userRole === "FAMILLE") {
+                    await renderSansPatientDashboard();
+                } else if (homeIsMaman && userRole === "FAMILLE") {
+                    await Maman.loadMamanDashboard();
+                } else {
+                    renderMobileHub();
+                }
+                break;
             case "subscription":
                 await Subscription.renderSubscriptionPage();
                 break;
@@ -3733,8 +3775,8 @@ async function performViewSwitch(viewName) {
                 }
                 await loadEducationPage();
                 break;
-          case "users":
-            const { renderUsersPage } = await import('./modules/users.js');
+            case "users":
+                const { renderUsersPage } = await import('./modules/users.js');
                 await renderUsersPage();
                 break;
         }
@@ -3760,6 +3802,8 @@ async function performViewSwitch(viewName) {
         container.style.opacity = "1";
     }
 }
+
+
 // ============================================================
 // MENU PROFIL (COMPTE UTILISATEUR)
 // ============================================================
