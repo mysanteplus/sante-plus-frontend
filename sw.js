@@ -1,31 +1,32 @@
 // ============================================================
-// SERVICE WORKER - SANTÉ PLUS SERVICES (OFFLINE-FIRST)
+// SERVICE WORKER - SANTÉ PLUS SERVICES (OFFLINE-FIRST + PUSH)
 // ============================================================
 
-const CACHE_NAME = 'sps-v11';
-const STATIC_CACHE = 'sps-static-v11';
-const IMAGE_CACHE = 'sps-images-v11';
-const API_CACHE = 'sps-api-v11';
+const CACHE_NAME = "sps-v12";
+const STATIC_CACHE = "sps-static-v12";
+const IMAGE_CACHE = "sps-images-v12";
+const API_CACHE = "sps-api-v12";
 
 // Fichiers statiques à mettre en cache immédiatement
 const STATIC_URLS = [
-  './',
-  './index.html',
-  './style.css',
-  './js/main.js',
-  './manifest.json',
-  './offline.html',
-  '/assets/images/logo-general-icon.png',
-  '/assets/images/logo-general-text.png',
-  '/assets/images/logo-maman-icon.png',
-  '/assets/images/logo-maman-text.png'
+  "/",
+  "/index.html",
+  "/style.css",
+  "/js/main.js",
+  "/manifest.json",
+  "/offline.html",
+  "/assets/images/logo-general-icon.png",
+  "/assets/images/logo-general-text.png",
+  "/assets/images/logo-maman-icon.png",
+  "/assets/images/logo-maman-text.png"
 ];
 
 // ============================================================
-// 🔥 FIREBASE - Version unique 10.7.0
+// FIREBASE MESSAGING - Version unique 10.7.0
 // ============================================================
-importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
+
+importScripts("https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js");
 
 firebase.initializeApp({
   apiKey: "AIzaSyDEHMUhAVtYXzQZuTNs3mYeq4Cag7IsUfI",
@@ -37,126 +38,44 @@ firebase.initializeApp({
   measurementId: "G-6Q72EHMPD8"
 });
 
-
-// Créer un canal de notification avec priorité MAXIMALE
-self.addEventListener('install', () => {
-  if (self.registration && self.registration.showNotification) {
-    console.log('✅ Notifications supportées');
-  }
-});
-
 const messaging = firebase.messaging();
 
 // ============================================================
-// 🎯 CRÉER UN CANAL DE NOTIFICATION (POUR POPUP)
+// INSTALLATION DU SERVICE WORKER
 // ============================================================
-self.addEventListener('install', (event) => {
-  console.log('🔧 SW installation...');
-  
-  // Pour Android, créer un canal de notification avec priorité haute
-  if (self.registration && self.registration.showNotification) {
-    console.log('✅ Notifications supportées');
-  }
-  
+
+self.addEventListener("install", (event) => {
+  console.log("🔧 SW installation...");
+
   event.waitUntil(
     Promise.all([
-      caches.open(STATIC_CACHE).then(cache => cache.addAll(STATIC_URLS)),
+      caches.open(STATIC_CACHE).then((cache) => {
+        return cache.addAll(STATIC_URLS).catch((err) => {
+          console.warn("⚠️ Certains fichiers statiques n'ont pas pu être mis en cache:", err.message);
+        });
+      }),
       self.skipWaiting()
     ])
   );
 });
 
 // ============================================================
-// 🔥 FCM Background (notifications en arrière-plan) - VERSION POPUP
+// ACTIVATION - NETTOYAGE DES ANCIENS CACHES
 // ============================================================
-messaging.onBackgroundMessage((payload) => {
-  console.log("🔥 FCM Background:", payload);
 
-  const title = payload.notification?.title || "Santé Plus";
-  
-  // ✅ OPTIONS OPTIMISÉES POUR POPUP HEADS-UP DISPLAY
-  const options = {
-    body: payload.notification?.body || "Nouvelle notification",
-    icon: "/assets/images/logo-general-icon.png",
-    badge: "/assets/images/logo-general-icon.png",
-    vibrate: [200, 100, 200],
-    sound: "/sounds/notification1.mp3",
-    silent: false,
-    requireInteraction: true,        // Reste à l'écran jusqu'à interaction
-    tag: "sante-plus-notif",
-    renotify: true,                  // Sonne même si notification similaire existe
-    data: { 
-      url: payload.data?.url || "/",
-      timestamp: Date.now()
-    },
-    // ⭐ POUR POPUP HEADS-UP DISPLAY (Android)
-    actions: [
-      {
-        action: 'open',
-        title: 'Ouvrir',
-        icon: '/assets/images/logo-general-icon.png'
-      },
-      {
-        action: 'close',
-        title: 'Fermer',
-        icon: '/assets/images/logo-general-icon.png'
-      }
-    ]
-  };
+self.addEventListener("activate", (event) => {
+  console.log("✨ SW activation...");
 
-  self.registration.showNotification(title, options);
-});
-
-// ============================================================
-// ✅ GESTION DES ACTIONS DE NOTIFICATION
-// ============================================================
-self.addEventListener("notificationclick", function (event) {
-  console.log("🔔 Notification click:", event.action);
-  
-  event.notification.close();
-  
-  let url = "/";
-  
-  if (event.action === 'open') {
-    url = event.notification.data?.url || "/";
-  } else if (event.action === 'close') {
-    // Ne rien ouvrir
-    return;
-  } else {
-    url = event.notification.data?.url || "/";
-  }
-  
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(windowClients => {
-        // Vérifier si une fenêtre est déjà ouverte
-        for (let client of windowClients) {
-          if (client.url.includes(url) && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        // Sinon ouvrir une nouvelle fenêtre
-        if (clients.openWindow) {
-          return clients.openWindow(url);
-        }
-      })
-  );
-});
-
-// ============================================================
-// ACTIVATION - Nettoyage
-// ============================================================
-self.addEventListener('activate', (event) => {
-  console.log('✨ SW activation...');
   event.waitUntil(
     Promise.all([
-      caches.keys().then(cacheNames => {
+      caches.keys().then((cacheNames) => {
         return Promise.all(
-          cacheNames.map(cache => {
+          cacheNames.map((cache) => {
             if (![STATIC_CACHE, IMAGE_CACHE, API_CACHE, CACHE_NAME].includes(cache)) {
-              console.log(`🗑️ Suppression: ${cache}`);
+              console.log(`🗑️ Suppression ancien cache: ${cache}`);
               return caches.delete(cache);
             }
+            return null;
           })
         );
       }),
@@ -166,96 +85,295 @@ self.addEventListener('activate', (event) => {
 });
 
 // ============================================================
-// STRATÉGIE DE CACHE: OFFLINE-FIRST
+// FCM BACKGROUND - NOTIFICATIONS QUAND APP FERMÉE / ARRIÈRE-PLAN
 // ============================================================
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  
-  if (event.request.method !== 'GET') {
-    event.respondWith(fetch(event.request));
+
+messaging.onBackgroundMessage((payload) => {
+  console.log("🔥 FCM Background:", payload);
+
+  const title =
+    payload.notification?.title ||
+    payload.data?.title ||
+    "Santé Plus";
+
+  const body =
+    payload.notification?.body ||
+    payload.data?.body ||
+    "Nouvelle notification";
+
+  const url =
+    payload.data?.url ||
+    payload.fcmOptions?.link ||
+    "/";
+
+  const type =
+    payload.data?.type ||
+    "push";
+
+  const options = {
+    body,
+    icon: "/assets/images/logo-general-icon.png",
+    badge: "/assets/images/logo-general-icon.png",
+    vibrate: [200, 100, 200],
+    silent: false,
+    requireInteraction: true,
+    renotify: true,
+    tag: `sante-plus-${type}-${Date.now()}`,
+    data: {
+      url,
+      type,
+      title,
+      body,
+      timestamp: Date.now()
+    },
+    actions: [
+      {
+        action: "open",
+        title: "Ouvrir"
+      }
+    ]
+  };
+
+  return self.registration.showNotification(title, options);
+});
+
+// ============================================================
+// CLIC SUR NOTIFICATION
+// ============================================================
+
+self.addEventListener("notificationclick", (event) => {
+  console.log("🔔 Notification click:", event.action);
+
+  event.notification.close();
+
+  if (event.action === "close") {
     return;
   }
-  
-  // Requêtes API
-  if (url.pathname.includes('/api/')) {
-    event.respondWith(
-      fetch(event.request, {
-        credentials: 'include',
-        headers: {
-          'Authorization': event.request.headers.get('Authorization') || '',
-          'Cache-Control': 'no-cache'
-        }
-      })
-      .then(response => {
-        if (response && response.status === 200) {
-          const responseToCache = response.clone();
-          caches.open(API_CACHE).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return response;
-      })
-      .catch(async () => {
-        const cachedResponse = await caches.match(event.request);
-        if (cachedResponse) return cachedResponse;
-        return new Response(JSON.stringify({
-          offline: true,
-          message: "Mode hors-ligne",
-          timestamp: Date.now()
-        }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      })
-    );
-    return;
-  }
-  
-  // Images
-  if (event.request.destination === 'image') {
-    event.respondWith(
-      caches.match(event.request).then(cached => {
-        if (cached) return cached;
-        return fetch(event.request).then(network => {
-          if (network && network.status === 200) {
-            caches.open(IMAGE_CACHE).then(cache => cache.put(event.request, network.clone()));
+
+  const rawUrl = event.notification.data?.url || "/";
+  const finalUrl = new URL(rawUrl, self.location.origin).href;
+
+  event.waitUntil(
+    clients.matchAll({
+      type: "window",
+      includeUncontrolled: true
+    }).then((windowClients) => {
+      for (const client of windowClients) {
+        if ("focus" in client) {
+          client.focus();
+
+          if ("navigate" in client) {
+            return client.navigate(finalUrl);
           }
-          return network;
-        });
-      }).catch(() => caches.match('/assets/images/logo-general-icon.png'))
-    );
-    return;
-  }
-  
-  // Assets statiques
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(networkResponse => {
-        if (networkResponse && networkResponse.status === 200) {
-          caches.open(STATIC_CACHE).then(cache => cache.put(event.request, networkResponse.clone()));
+
+          return;
         }
-        return networkResponse;
-      }).catch(() => {
-        if (url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname === './') {
-          return caches.match('./offline.html');
-        }
-        return new Response('Page non disponible hors-ligne', { status: 503 });
-      });
+      }
+
+      if (clients.openWindow) {
+        return clients.openWindow(finalUrl);
+      }
     })
   );
 });
 
 // ============================================================
-// SYNC BACKGROUND (pour les requêtes en attente)
+// FERMETURE NOTIFICATION
 // ============================================================
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-queued-requests') {
-    event.waitUntil(
-      clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({ type: 'SYNC_REQUIRED' });
+
+self.addEventListener("notificationclose", (event) => {
+  console.log("🔕 Notification fermée:", event.notification?.data || {});
+});
+
+// ============================================================
+// STRATÉGIE DE CACHE: OFFLINE-FIRST
+// ============================================================
+
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+  const url = new URL(request.url);
+
+  // Ne gérer que les requêtes GET
+  if (request.method !== "GET") {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // Ignorer les extensions Chrome / requêtes non HTTP
+  if (!url.protocol.startsWith("http")) {
+    return;
+  }
+
+  // ============================================================
+  // REQUÊTES API
+  // ============================================================
+
+  if (url.pathname.includes("/api/")) {
+    event.respondWith(
+      fetch(request, {
+        credentials: "include",
+        headers: {
+          Authorization: request.headers.get("Authorization") || "",
+          "Cache-Control": "no-cache"
+        }
+      })
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+
+            caches.open(API_CACHE).then((cache) => {
+              cache.put(request, responseToCache).catch((err) => {
+                console.warn("⚠️ Cache API impossible:", err.message);
+              });
+            });
+          }
+
+          return response;
+        })
+        .catch(async () => {
+          const cachedResponse = await caches.match(request);
+
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+
+          return new Response(
+            JSON.stringify({
+              offline: true,
+              message: "Mode hors-ligne",
+              timestamp: Date.now()
+            }),
+            {
+              status: 200,
+              headers: {
+                "Content-Type": "application/json"
+              }
+            }
+          );
+        })
+    );
+
+    return;
+  }
+
+  // ============================================================
+  // IMAGES
+  // ============================================================
+
+  if (request.destination === "image") {
+    event.respondWith(
+      caches.match(request)
+        .then((cached) => {
+          if (cached) {
+            return cached;
+          }
+
+          return fetch(request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200) {
+                caches.open(IMAGE_CACHE).then((cache) => {
+                  cache.put(request, networkResponse.clone()).catch((err) => {
+                    console.warn("⚠️ Cache image impossible:", err.message);
+                  });
+                });
+              }
+
+              return networkResponse;
+            });
+        })
+        .catch(() => {
+          return caches.match("/assets/images/logo-general-icon.png");
+        })
+    );
+
+    return;
+  }
+
+  // ============================================================
+  // FICHIERS STATIQUES / PAGES
+  // ============================================================
+
+  event.respondWith(
+    caches.match(request)
+      .then((cached) => {
+        if (cached) {
+          return cached;
+        }
+
+        return fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const responseToCache = networkResponse.clone();
+
+              caches.open(STATIC_CACHE).then((cache) => {
+                cache.put(request, responseToCache).catch((err) => {
+                  console.warn("⚠️ Cache statique impossible:", err.message);
+                });
+              });
+            }
+
+            return networkResponse;
+          });
+      })
+      .catch(async () => {
+        if (
+          url.pathname.endsWith(".html") ||
+          url.pathname === "/" ||
+          request.mode === "navigate"
+        ) {
+          const offlinePage = await caches.match("/offline.html");
+
+          if (offlinePage) {
+            return offlinePage;
+          }
+        }
+
+        return new Response("Page non disponible hors-ligne", {
+          status: 503,
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8"
+          }
         });
+      })
+  );
+});
+
+// ============================================================
+// BACKGROUND SYNC
+// ============================================================
+
+self.addEventListener("sync", (event) => {
+  console.log("🔁 Background sync:", event.tag);
+
+  if (event.tag === "sync-queued-requests") {
+    event.waitUntil(
+      clients.matchAll().then((clientList) => {
+        clientList.forEach((client) => {
+          client.postMessage({
+            type: "SYNC_REQUIRED",
+            timestamp: Date.now()
+          });
+        });
+      })
+    );
+  }
+});
+
+// ============================================================
+// MESSAGES DEPUIS L'APP PRINCIPALE
+// ============================================================
+
+self.addEventListener("message", (event) => {
+  console.log("📩 Message reçu dans SW:", event.data);
+
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+
+  if (event.data?.type === "CLEAR_CACHE") {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(cacheNames.map((cache) => caches.delete(cache)));
       })
     );
   }
