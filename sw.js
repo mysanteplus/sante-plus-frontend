@@ -28,11 +28,13 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: "AIzaSyBzLQLLWmRI7Nr-c-Ht9DKkJejMxh-5C4g",
-  authDomain: "santeplus-service.firebaseapp.com",
-  projectId: "santeplus-service",
-  messagingSenderId: "706607823043",
-  appId: "1:706607823043:web:0f1f6433cdc796d62b0a76"
+  apiKey: "AIzaSyDEHMUhAVtYXzQZuTNs3mYeq4Cag7IsUfI",
+  authDomain: "santeplus-service-9ad08.firebaseapp.com",
+  projectId: "santeplus-service-9ad08",
+  storageBucket: "santeplus-service-9ad08.firebasestorage.app",
+  messagingSenderId: "745872164641",
+  appId: "1:745872164641:web:fcbc5bcee6ae4dbb2ca060",
+  measurementId: "G-6Q72EHMPD8"
 });
 
 
