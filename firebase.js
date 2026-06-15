@@ -1,18 +1,19 @@
 // firebase.js
 
 firebase.initializeApp({
-  apiKey: "AIzaSyBzLQLLWmRI7Nr-c-Ht9DKkJejMxh-5C4g",
-  authDomain: "santeplus-service.firebaseapp.com",
-  projectId: "santeplus-service",
-  storageBucket: "santeplus-service.appspot.com",
-  messagingSenderId: "706607823043",
-  appId: "1:706607823043:web:0f1f6433cdc796d62b0a76"
+  apiKey: "AIzaSyDEHMUhAVtYXzQZuTNs3mYeq4Cag7IsUfI",
+  authDomain: "santeplus-service-9ad08.firebaseapp.com",
+  projectId: "santeplus-service-9ad08",
+  storageBucket: "santeplus-service-9ad08.firebasestorage.app",
+  messagingSenderId: "745872164641",
+  appId: "1:745872164641:web:fcbc5bcee6ae4dbb2ca060",
+  measurementId: "G-6Q72EHMPD8"
 });
 
 const messaging = firebase.messaging();
 window.messaging = messaging;
 
-// Notification quand l'app est ouverte
+// Notifications reçues quand l'app est ouverte
 messaging.onMessage((payload) => {
   console.log("🔔 FCM foreground:", payload);
 
@@ -28,15 +29,12 @@ messaging.onMessage((payload) => {
 
   const url =
     payload.data?.url ||
-    payload.fcmOptions?.link ||
     "/";
 
-  // Toast interne
   if (window.showToast) {
     window.showToast(body, "info", 4000);
   }
 
-  // Notification système même quand l'app est ouverte
   if (Notification.permission === "granted" && navigator.serviceWorker) {
     navigator.serviceWorker.ready.then((registration) => {
       registration.showNotification(title, {
@@ -45,6 +43,7 @@ messaging.onMessage((payload) => {
         badge: "/assets/images/logo-general-icon.png",
         vibrate: [200, 100, 200],
         requireInteraction: true,
+        renotify: true,
         tag: `sante-plus-${Date.now()}`,
         data: { url }
       });
