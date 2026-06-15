@@ -18,9 +18,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .admin-card {
+            transition: all 0.2s ease;
+        }
+        .admin-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen flex items-center justify-center p-4">
-    <div class="max-w-md w-full">
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
         <!-- Logo -->
         <div class="text-center mb-8">
             <div class="w-24 h-24 bg-white rounded-2xl shadow-xl flex items-center justify-center mx-auto mb-4">
@@ -30,14 +39,16 @@
             <p class="text-slate-400 text-sm mt-1">Gestion des administrateurs</p>
         </div>
 
-        <!-- Carte de création -->
-        <div class="bg-white rounded-2xl shadow-2xl p-6">
-            <div class="text-center mb-6">
-                <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fa-solid fa-user-shield text-emerald-600 text-2xl"></i>
+        <!-- Formulaire de création -->
+        <div class="bg-white rounded-2xl shadow-2xl p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                    <i class="fa-solid fa-user-shield text-emerald-600"></i>
                 </div>
-                <h2 class="text-xl font-black text-slate-800">Créer un administrateur</h2>
-                <p class="text-xs text-slate-400 mt-1">Remplissez les informations ci-dessous</p>
+                <div>
+                    <h2 class="text-xl font-black text-slate-800">Créer un administrateur</h2>
+                    <p class="text-xs text-slate-400">Remplissez les informations ci-dessous</p>
+                </div>
             </div>
 
             <form id="admin-form" class="space-y-4">
@@ -78,27 +89,100 @@
             </form>
         </div>
 
-        <!-- Liste des administrateurs existants -->
-        <div id="admins-list-container" class="mt-6 bg-white rounded-2xl shadow-2xl p-6 hidden">
-            <div class="flex items-center gap-2 mb-4">
-                <i class="fa-solid fa-users text-emerald-600"></i>
-                <h3 class="font-black text-slate-800 text-sm">Administrateurs existants</h3>
-                <span id="admins-count" class="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full">0</span>
+        <!-- Liste des administrateurs -->
+        <div id="admins-list-container" class="bg-white rounded-2xl shadow-2xl p-6 hidden">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-users text-emerald-600 text-xl"></i>
+                    <h3 class="font-black text-slate-800 text-lg">Administrateurs</h3>
+                    <span id="admins-count" class="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full">0</span>
+                </div>
+                <button id="refresh-admins" class="text-slate-400 hover:text-slate-600 transition">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
             </div>
-            <div id="admins-list" class="space-y-2 max-h-64 overflow-y-auto">
+            <div id="admins-list" class="space-y-3">
                 <!-- La liste sera chargée ici -->
             </div>
         </div>
         
         <div class="text-center mt-6">
-            <p class="text-[10px] text-slate-500">Page de gestion des administrateurs</p>
+            <p class="text-[10px] text-slate-500">Gestion complète des administrateurs</p>
+        </div>
+    </div>
+
+    <!-- Modal de confirmation pour suppression -->
+    <div id="delete-modal" class="fixed inset-0 bg-black/50 z-[100] hidden items-center justify-center">
+        <div class="bg-white rounded-2xl max-w-md w-full mx-4 p-6">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-trash-can text-red-500 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-800 mb-2">Confirmer la suppression</h3>
+                <p class="text-slate-500 text-sm mb-6">Êtes-vous sûr de vouloir supprimer cet administrateur ? Cette action est irréversible.</p>
+                <div class="flex gap-3">
+                    <button id="cancel-delete" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-600">Annuler</button>
+                    <button id="confirm-delete" class="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold">Supprimer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de modification -->
+    <div id="edit-modal" class="fixed inset-0 bg-black/50 z-[100] hidden items-center justify-center">
+        <div class="bg-white rounded-2xl max-w-md w-full mx-4 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-black text-slate-800">✏️ Modifier l'administrateur</h3>
+                <button id="close-edit" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="edit-form" class="space-y-4">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 block mb-1">Prénom</label>
+                    <input type="text" id="edit-prenom" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 block mb-1">Nom</label>
+                    <input type="text" id="edit-nom" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 block mb-1">Email</label>
+                    <input type="email" id="edit-email" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 block mb-1">Téléphone</label>
+                    <input type="tel" id="edit-telephone" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" id="cancel-edit" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-600">Annuler</button>
+                    <button type="submit" class="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-bold">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de détails -->
+    <div id="details-modal" class="fixed inset-0 bg-black/50 z-[100] hidden items-center justify-center">
+        <div class="bg-white rounded-2xl max-w-md w-full mx-4 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-black text-slate-800">👁️ Détails de l'administrateur</h3>
+                <button id="close-details" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="details-content" class="space-y-3">
+                <!-- Contenu dynamique -->
+            </div>
         </div>
     </div>
 
     <script>
         const API_URL = 'https://sante-plus-backend-main.onrender.com/api';
+        let currentDeleteAdminId = null;
         
-        // Charger la liste des administrateurs existants
+        // Charger la liste des administrateurs
         async function loadAdminsList() {
             try {
                 const response = await fetch(`${API_URL}/admin-users/admins`);
@@ -113,14 +197,51 @@
                     countSpan.textContent = admins.length;
                     
                     listDiv.innerHTML = admins.map(admin => `
-                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                            <div class="flex-1 min-w-0">
-                                <p class="font-bold text-slate-800 text-sm truncate">${admin.prenom || ''} ${admin.nom || ''}</p>
-                                <p class="text-[10px] text-slate-400 truncate">${admin.email}</p>
+                        <div class="admin-card bg-slate-50 rounded-xl p-4 border border-slate-100">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                                            <i class="fa-solid fa-user-shield text-emerald-600"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-black text-slate-800">${admin.prenom || ''} ${admin.nom || ''}</p>
+                                            <p class="text-[10px] text-slate-400">${admin.email}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-1 rounded-full text-[8px] font-black ${admin.statut_validation === 'ACTIF' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}">
+                                        ${admin.statut_validation === 'ACTIF' ? '✓ ACTIF' : '⛔ INACTIF'}
+                                    </span>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                <span class="text-[8px] text-emerald-600 font-bold">Admin</span>
+                            <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-200">
+                                <div class="flex gap-2">
+                                    <button onclick="viewAdminDetails('${admin.id}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black hover:bg-blue-100 transition">
+                                        <i class="fa-solid fa-eye"></i> Détails
+                                    </button>
+                                    <button onclick="editAdmin('${admin.id}', '${admin.prenom || ''}', '${admin.nom || ''}', '${admin.email}', '${admin.telephone || ''}')" 
+                                            class="px-3 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black hover:bg-amber-100 transition">
+                                        <i class="fa-solid fa-pen"></i> Modifier
+                                    </button>
+                                    <button onclick="toggleAdminStatus('${admin.id}', '${admin.statut_validation}')" 
+                                            class="px-3 py-1.5 ${admin.statut_validation === 'ACTIF' ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600'} rounded-lg text-[9px] font-black hover:bg-orange-100 transition">
+                                        <i class="fa-solid ${admin.statut_validation === 'ACTIF' ? 'fa-ban' : 'fa-check-circle'}"></i> 
+                                        ${admin.statut_validation === 'ACTIF' ? 'Désactiver' : 'Activer'}
+                                    </button>
+                                    <button onclick="resetAdminPassword('${admin.id}', '${admin.prenom || ''} ${admin.nom || ''}')" 
+                                            class="px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-[9px] font-black hover:bg-purple-100 transition">
+                                        <i class="fa-solid fa-key"></i> Reset MDP
+                                    </button>
+                                    <button onclick="confirmDeleteAdmin('${admin.id}', '${admin.prenom || ''} ${admin.nom || ''}')" 
+                                            class="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-[9px] font-black hover:bg-red-100 transition">
+                                        <i class="fa-solid fa-trash"></i> Supprimer
+                                    </button>
+                                </div>
+                                <span class="text-[8px] text-slate-400">
+                                    <i class="fa-regular fa-calendar"></i> ${formatDate(admin.created_at)}
+                                </span>
                             </div>
                         </div>
                     `).join('');
@@ -132,10 +253,227 @@
             }
         }
         
-        // Charger la liste au chargement de la page
-        loadAdminsList();
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Date inconnue';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('fr-FR');
+        }
         
-        // Gestion du formulaire
+        // Voir détails
+        window.viewAdminDetails = async (adminId) => {
+            try {
+                const response = await fetch(`${API_URL}/admin-users/admin/${adminId}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const admin = await response.json();
+                
+                const modal = document.getElementById('details-modal');
+                const content = document.getElementById('details-content');
+                
+                content.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                            <span class="text-[10px] font-black text-slate-400">Nom complet</span>
+                            <span class="text-sm font-bold text-slate-800">${admin.prenom || ''} ${admin.nom || ''}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                            <span class="text-[10px] font-black text-slate-400">Email</span>
+                            <span class="text-sm text-slate-700">${admin.email}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                            <span class="text-[10px] font-black text-slate-400">Téléphone</span>
+                            <span class="text-sm text-slate-700">${admin.telephone || 'Non renseigné'}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                            <span class="text-[10px] font-black text-slate-400">Statut</span>
+                            <span class="px-2 py-1 rounded-full text-[9px] font-black ${admin.statut_validation === 'ACTIF' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}">
+                                ${admin.statut_validation === 'ACTIF' ? 'ACTIF' : 'INACTIF'}
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                            <span class="text-[10px] font-black text-slate-400">Date de création</span>
+                            <span class="text-sm text-slate-700">${new Date(admin.created_at).toLocaleString('fr-FR')}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                            <span class="text-[10px] font-black text-slate-400">Rôle</span>
+                            <span class="text-sm font-bold text-emerald-600">Coordinateur</span>
+                        </div>
+                    </div>
+                `;
+                
+                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Erreur', text: err.message });
+            }
+        };
+        
+        // Modifier admin
+        window.editAdmin = (id, prenom, nom, email, telephone) => {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-prenom').value = prenom;
+            document.getElementById('edit-nom').value = nom;
+            document.getElementById('edit-email').value = email;
+            document.getElementById('edit-telephone').value = telephone;
+            
+            const modal = document.getElementById('edit-modal');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+        };
+        
+        // Activer/Désactiver admin
+        window.toggleAdminStatus = async (id, currentStatus) => {
+            const newStatus = currentStatus === 'ACTIF' ? 'INACTIF' : 'ACTIF';
+            const action = newStatus === 'ACTIF' ? 'activer' : 'désactiver';
+            
+            const confirm = await Swal.fire({
+                title: `${action === 'activer' ? 'Activer' : 'Désactiver'} l'administrateur ?`,
+                text: `Êtes-vous sûr de vouloir ${action} cet administrateur ?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: `OUI, ${action.toUpperCase()}`,
+                confirmButtonColor: action === 'activer' ? '#10B981' : '#F59E0B'
+            });
+            
+            if (!confirm.isConfirmed) return;
+            
+            Swal.fire({ title: 'Mise à jour...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+            
+            try {
+                const response = await fetch(`${API_URL}/admin-users/admin/${id}/toggle-status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ statut_validation: newStatus })
+                });
+                
+                if (!response.ok) throw new Error('Erreur');
+                
+                Swal.fire({ icon: 'success', title: 'Succès', text: `Administrateur ${action}é avec succès`, timer: 1500, showConfirmButton: false });
+                loadAdminsList();
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Erreur', text: err.message });
+            }
+        };
+        
+        // Réinitialiser mot de passe
+        window.resetAdminPassword = async (id, name) => {
+            const confirm = await Swal.fire({
+                title: 'Réinitialiser le mot de passe',
+                text: `Un nouveau mot de passe sera envoyé par email à ${name}. Continuer ?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'OUI, ENVOYER',
+                confirmButtonColor: '#8B5CF6'
+            });
+            
+            if (!confirm.isConfirmed) return;
+            
+            Swal.fire({ title: 'Envoi...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+            
+            try {
+                const response = await fetch(`${API_URL}/admin-users/admin/${id}/reset-password`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                
+                if (!response.ok) throw new Error('Erreur');
+                
+                Swal.fire({ icon: 'success', title: 'Email envoyé', text: 'Un nouveau mot de passe a été envoyé par email', timer: 2000, showConfirmButton: false });
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Erreur', text: err.message });
+            }
+        };
+        
+        // Confirmer suppression
+        window.confirmDeleteAdmin = (id, name) => {
+            currentDeleteAdminId = id;
+            const modal = document.getElementById('delete-modal');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+            
+            document.getElementById('confirm-delete').onclick = async () => {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+                
+                Swal.fire({ title: 'Suppression...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+                
+                try {
+                    const response = await fetch(`${API_URL}/admin-users/admin/${currentDeleteAdminId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    
+                    if (!response.ok) throw new Error('Erreur');
+                    
+                    Swal.fire({ icon: 'success', title: 'Supprimé', text: 'Administrateur supprimé avec succès', timer: 1500, showConfirmButton: false });
+                    loadAdminsList();
+                } catch (err) {
+                    Swal.fire({ icon: 'error', title: 'Erreur', text: err.message });
+                }
+            };
+        };
+        
+        // Fermer les modales
+        document.getElementById('cancel-delete')?.addEventListener('click', () => {
+            document.getElementById('delete-modal').classList.add('hidden');
+            document.getElementById('delete-modal').style.display = 'none';
+        });
+        
+        document.getElementById('close-details')?.addEventListener('click', () => {
+            document.getElementById('details-modal').classList.add('hidden');
+            document.getElementById('details-modal').style.display = 'none';
+        });
+        
+        document.getElementById('close-edit')?.addEventListener('click', () => {
+            document.getElementById('edit-modal').classList.add('hidden');
+            document.getElementById('edit-modal').style.display = 'none';
+        });
+        
+        document.getElementById('cancel-edit')?.addEventListener('click', () => {
+            document.getElementById('edit-modal').classList.add('hidden');
+            document.getElementById('edit-modal').style.display = 'none';
+        });
+        
+        document.getElementById('refresh-admins')?.addEventListener('click', () => loadAdminsList());
+        
+        // Formulaire d'édition
+        document.getElementById('edit-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                prenom: document.getElementById('edit-prenom').value,
+                nom: document.getElementById('edit-nom').value,
+                email: document.getElementById('edit-email').value,
+                telephone: document.getElementById('edit-telephone').value
+            };
+            
+            Swal.fire({ title: 'Mise à jour...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+            
+            try {
+                const response = await fetch(`${API_URL}/admin-users/admin/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Erreur');
+                
+                Swal.fire({ icon: 'success', title: 'Modifié', text: 'Administrateur modifié avec succès', timer: 1500, showConfirmButton: false });
+                document.getElementById('edit-modal').classList.add('hidden');
+                loadAdminsList();
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Erreur', text: err.message });
+            }
+        });
+        
+        // Formulaire de création
         document.getElementById('admin-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -180,9 +518,7 @@
                         confirmButtonText: 'OK',
                         confirmButtonColor: '#10B981'
                     }).then(() => {
-                        // Réinitialiser le formulaire
                         document.getElementById('admin-form').reset();
-                        // Recharger la liste des admins
                         loadAdminsList();
                     });
                 } else {
@@ -193,6 +529,9 @@
                 Swal.fire({ icon: 'error', title: 'Erreur', text: err.message });
             }
         });
+        
+        // Charger la liste au chargement
+        loadAdminsList();
     </script>
 </body>
 </html>
