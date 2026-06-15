@@ -118,6 +118,26 @@ window.openImageModal = (imageUrl, title = "📸 Image") => {
  * 🎨 AFFICHER LES COMMANDES
  */
 function renderCommandes(list) {
+
+        const role = localStorage.getItem("user_role");
+    const isAidant = role === "AIDANT";
+    const currentUserId = localStorage.getItem("user_id");
+    
+    console.log("========== DEBUG RENDER COMMANDES ==========");
+    console.log("isAidant:", isAidant);
+    console.log("currentUserId:", currentUserId);
+    console.log("Nombre de commandes:", list.length);
+    
+    list.forEach(c => {
+        console.log(`Commande ${c.id}:`, {
+            statut: c.statut,
+            aidant_id: c.aidant_id,
+            estEnAttente: c.statut === "En attente",
+            showTakeButton: isAidant && c.statut === "En attente" && (!c.aidant_id || c.aidant_id !== currentUserId)
+        });
+    });
+    console.log("============================================");
+    
     if (isRendering) {
         console.log("⏳ Render déjà en cours, mise en attente...");
         pendingRender = list;
