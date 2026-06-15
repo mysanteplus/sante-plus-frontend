@@ -78,72 +78,71 @@ async function checkSubscriptionForViews() {
     }
 }
 
+
+
+
 async function initPushNotifications() {
-    try {
-        // ✅ Vérifier que le navigateur supporte les notifications
-        if (!("Notification" in window)) {
-            console.log("⚠️ Ce navigateur ne supporte pas les notifications");
-            return;
-        }
-        
-        // ✅ Vérifier que Firebase Messaging est disponible
-        if (!window.messaging || typeof window.messaging.getToken !== 'function') {
-            console.warn("⚠️ Firebase Messaging non disponible ou non initialisé");
-            return;
-        }
-        
-        const permission = await Notification.requestPermission();
-
-        if (permission !== "granted") {
-            console.log("❌ Permission refusée");
-            return;
-        }
-
-        // ✅ Vérifier que le service worker est enregistré
-        let registration;
-        try {
-            registration = await navigator.serviceWorker.ready;
-            if (!registration) {
-                registration = await navigator.serviceWorker.register('/sw.js');
-            }
-        } catch (swErr) {
-            console.warn("⚠️ Service Worker non disponible:", swErr.message);
-            return;
-        }
-        
-        // ✅ Obtenir le token FCM
-        const token = await window.messaging.getToken({
-            vapidKey: "BNeY_I69yPNM2R-kjlAWMjghL21XVvG9-EPTet200rg6S4TEJvRDsbAeWO5TqODp9h1tZS5LtlLOBb5lDoQGz6M",
-            serviceWorkerRegistration: registration
-        });
-
-        if (!token) {
-            console.log("⚠️ Aucun token FCM reçu");
-            return;
-        }
-
-        console.log("🔥 PUSH TOKEN:", token.substring(0, 20) + "...");
-        console.log("📱 Appareil enregistré pour les notifications push");
-
-        // ✅ Envoyer le token au backend
-        const userId = localStorage.getItem("user_id");
-        if (userId && token) {
-            await secureFetch('/save-push-token', {
-                method: 'POST',
-                body: JSON.stringify({
-                    token,
-                    user_id: userId
-                })
-            });
-            console.log("✅ Token push sauvegardé");
-        }
-
-    } catch (err) {
-        // ⚠️ Ne pas bloquer l'application en cas d'erreur push
-        console.error("❌ Erreur initPushNotifications:", err.message);
+  try {
+    if (!("Notification" in window)) {
+      console.log("⚠️ Notifications non supportées");
+      return;
     }
-}
 
+    if (!("serviceWorker" in navigator)) {
+      console.log("⚠️ Service Worker non supporté");
+      return;
+    }
+
+    if (!window.messaging || typeof window.messaging.getToken !== "function") {
+      console.warn("⚠️ Firebase Messaging non disponible");
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+
+    if (permission !== "granted") {
+      console.log("❌ Permission notification refusée:", permission);
+      return;
+    }
+
+    const registration = await navigator.serviceWorker.register("/sw.js");
+    await navigator.serviceWorker.ready;
+
+    console.log("✅ Service Worker prêt pour FCM");
+
+    const token = await window.messaging.getToken({
+      vapidKey: "BNeY_I69yPNM2R-kjlAWMjghL21XVvG9-EPTet200rg6S4TEJvRDsbAeWO5TqODp9h1tZS5LtlLOBb5lDoQGz6M",
+      serviceWorkerRegistration: registration
+    });
+
+    if (!token) {
+      console.log("⚠️ Aucun token FCM reçu");
+      return;
+    }
+
+    console.log("🔥 PUSH TOKEN:", token.substring(0, 30) + "...");
+
+    const userId = localStorage.getItem("user_id");
+
+    if (!userId) {
+      console.warn("⚠️ user_id absent dans localStorage, token non sauvegardé");
+      return;
+    }
+
+    await secureFetch("/save-push-token", {
+      method: "POST",
+      body: JSON.stringify({
+        token,
+        user_id: userId
+      })
+    });
+
+    console.log("✅ Token push sauvegardé");
+
+  } catch (err) {
+    console.error("❌ Erreur initPushNotifications:", err.code || "", err.message);
+  }
+}
 
 console.log("🔍 [main.js] Imports vérifiés:");
 console.log("🔍 Visites module:", Visites);
