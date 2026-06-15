@@ -2,10 +2,10 @@
 // SERVICE WORKER - SANTÉ PLUS SERVICES (OFFLINE-FIRST)
 // ============================================================
 
-const CACHE_NAME = 'sps-v9';
-const STATIC_CACHE = 'sps-static-v9';
-const IMAGE_CACHE = 'sps-images-v9';
-const API_CACHE = 'sps-api-v9';
+const CACHE_NAME = 'sps-v10';
+const STATIC_CACHE = 'sps-static-v10';
+const IMAGE_CACHE = 'sps-images-v10';
+const API_CACHE = 'sps-api-v10';
 
 // Fichiers statiques à mettre en cache immédiatement
 const STATIC_URLS = [
@@ -14,7 +14,7 @@ const STATIC_URLS = [
   './style.css',
   './js/main.js',
   './manifest.json',
-  'offline.html',
+  './offline.html',
   '/assets/images/logo-general-icon.png',
   '/assets/images/logo-general-text.png',
   '/assets/images/logo-maman-icon.png',
@@ -22,13 +22,13 @@ const STATIC_URLS = [
 ];
 
 // ============================================================
-// 🔥 FIREBASE
+// 🔥 FIREBASE - Version unique 10.7.0
 // ============================================================
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: "AIzaSyBzLQLLWmRI7Nr-c-Ht9DKkJejMxh-5C4g",
+  apiKey: "AIzaSyBzLQLLWmRI7Nr-c-Ht9DKkJejMxh-5C4g",  // ← apiKey (camelCase)
   authDomain: "santeplus-service.firebaseapp.com",
   projectId: "santeplus-service",
   messagingSenderId: "706607823043",
@@ -37,10 +37,11 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// 🔥 FCM Background (notifications en arrière-plan)
+// 🔥 FCM Background (notifications en arrière-plan) - CORRIGÉ
 messaging.onBackgroundMessage((payload) => {
   console.log("🔥 FCM Background:", payload);
 
+  // ✅ Les variables sont maintenant à l'intérieur de la fonction
   const title = payload.notification?.title || "Santé Plus";
   const options = {
     body: payload.notification?.body || "Nouvelle notification",
@@ -101,13 +102,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   
-  // 1. IGNORER LES REQUÊTES NON-GET
   if (event.request.method !== 'GET') {
     event.respondWith(fetch(event.request));
     return;
   }
   
-  // 2. REQUÊTES API (Network first, fallback cache)
+  // Requêtes API
   if (url.pathname.includes('/api/')) {
     event.respondWith(
       fetch(event.request, {
@@ -128,15 +128,10 @@ self.addEventListener('fetch', (event) => {
       })
       .catch(async () => {
         const cachedResponse = await caches.match(event.request);
-        if (cachedResponse) {
-          console.log(`📦 [SW] API Cache hit: ${url.pathname}`);
-          return cachedResponse;
-        }
-        
-        // Retourner une réponse offline structurée
+        if (cachedResponse) return cachedResponse;
         return new Response(JSON.stringify({
           offline: true,
-          message: "Mode hors-ligne - Données en cache",
+          message: "Mode hors-ligne",
           timestamp: Date.now()
         }), {
           status: 200,
@@ -147,45 +142,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // 3. IMAGES (Cache first avec fallback)
+  // Images
   if (event.request.destination === 'image') {
     event.respondWith(
       caches.match(event.request).then(cached => {
         if (cached) return cached;
         return fetch(event.request).then(network => {
           if (network && network.status === 200) {
-            const responseToCache = network.clone();
-            caches.open(IMAGE_CACHE).then(cache => {
-              cache.put(event.request, responseToCache);
-            });
+            caches.open(IMAGE_CACHE).then(cache => cache.put(event.request, network.clone()));
           }
           return network;
         });
-      }).catch(() => {
-        return caches.match('/assets/images/logo-general-icon.png');
-      })
+      }).catch(() => caches.match('/assets/images/logo-general-icon.png'))
     );
     return;
   }
   
-  // 4. ASSETS STATIQUES (Cache first)
+  // Assets statiques
   event.respondWith(
     caches.match(event.request).then(cached => {
-      if (cached) {
-        console.log(`📦 [SW] Static Cache hit: ${url.pathname}`);
-        return cached;
-      }
-      
+      if (cached) return cached;
       return fetch(event.request).then(networkResponse => {
         if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(STATIC_CACHE).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
+          caches.open(STATIC_CACHE).then(cache => cache.put(event.request, networkResponse.clone()));
         }
         return networkResponse;
       }).catch(() => {
-        // Fallback pour les pages HTML
         if (url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname === './') {
           return caches.match('./offline.html');
         }
@@ -217,7 +199,7 @@ self.addEventListener("notificationclick", function (event) {
 });
 
 // ============================================================
-// SYNC BACKGROUND (pour les requêtes en attente)
+// SYNC BACKGROUND
 // ============================================================
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-queued-requests') {
