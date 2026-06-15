@@ -3260,3 +3260,48 @@ body.maman-mode::before {
 .message.received {
     justify-content: flex-start;
 }
+/* ============================================
+   CORRECTION GLOBALE - HOVER & ACTIF
+   ============================================ */
+
+/* Suppression de tous les backgrounds au hover et actif */
+.sidebar-link:hover,
+.sidebar-link.active,
+.nav-btn:hover,
+.nav-btn.active {
+    background: transparent !important;
+    box-shadow: none !important;
+    filter: none !important;
+}
+
+/* Seulement la couleur change au hover */
+.sidebar-link:hover {
+    color: white !important;
+}
+
+/* Pour l'élément actif : couleur + bordure gauche */
+.sidebar-link.active {
+    color: var(--role-primary) !important;
+    border-left: 3px solid var(--role-primary) !important;
+    border-radius: 0 !important;
+    margin-left: 1rem !important;
+    font-weight: 700 !important;
+}
+
+/* Version mobile */
+.nav-btn.active {
+    color: var(--role-primary) !important;
+    border-bottom: 2px solid var(--role-primary) !important;
+    border-radius: 0 !important;
+}
+
+/* Thèmes spécifiques */
+body.aidant-mode .sidebar-link.active { color: #C9A84C !important; border-left-color: #C9A84C !important; }
+body.coordinateur-mode .sidebar-link.active { color: #D4AF37 !important; border-left-color: #D4AF37 !important; }
+body.maman-mode .sidebar-link.active { color: #E11D48 !important; border-left-color: #E11D48 !important; }
+body.senior-mode .sidebar-link.active { color: #059669 !important; border-left-color: #059669 !important; }
+
+body.aidant-mode .nav-btn.active { color: #C9A84C !important; }
+body.coordinateur-mode .nav-btn.active { color: #D4AF37 !important; }
+body.maman-mode .nav-btn.active { color: #E11D48 !important; }
+body.senior-mode .nav-btn.active { color: #059669 !important; }
