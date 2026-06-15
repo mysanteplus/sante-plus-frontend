@@ -3,21 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Open Graph / Social Media Meta Tags -->
-    <meta property="og:title" content="Santé Plus Services - Configuration" />
-    <meta property="og:description" content="Création du compte administrateur Santé Plus Services." />
+    <meta property="og:title" content="Santé Plus Services - Administration" />
+    <meta property="og:description" content="Gestion des administrateurs Santé Plus Services." />
     <meta property="og:image" content="https://app.mysanteplus.com/assets/images/logo-general-text.png" />
     <meta property="og:url" content="https://app.mysanteplus.com/admin-setup.html" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Santé Plus Services" />
     <meta property="og:locale" content="fr_FR" />
-
-    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Santé Plus Services - Configuration" />
-    <meta name="twitter:description" content="Création du compte administrateur." />
+    <meta name="twitter:title" content="Santé Plus Services - Administration" />
+    <meta name="twitter:description" content="Gestion des comptes administrateurs." />
     <meta name="twitter:image" content="https://app.mysanteplus.com/assets/images/logo-general-text.png" />
-    <title>Installation - Santé Plus</title>
+    <title>Administration - Santé Plus</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -30,7 +27,7 @@
                 <img src="/assets/images/logo-general-icon.png" class="w-16 h-16 object-contain" alt="Logo">
             </div>
             <h1 class="text-2xl font-black text-white">Santé Plus Services</h1>
-            <p class="text-slate-400 text-sm mt-1">Configuration initiale</p>
+            <p class="text-slate-400 text-sm mt-1">Gestion des administrateurs</p>
         </div>
 
         <!-- Carte de création -->
@@ -39,8 +36,8 @@
                 <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
                     <i class="fa-solid fa-user-shield text-emerald-600 text-2xl"></i>
                 </div>
-                <h2 class="text-xl font-black text-slate-800">Créer l'administrateur principal</h2>
-                <p class="text-xs text-slate-400 mt-1">Ces informations vous serviront à vous connecter</p>
+                <h2 class="text-xl font-black text-slate-800">Créer un administrateur</h2>
+                <p class="text-xs text-slate-400 mt-1">Remplissez les informations ci-dessous</p>
             </div>
 
             <form id="admin-form" class="space-y-4">
@@ -76,44 +73,67 @@
                 </div>
                 
                 <button type="submit" class="w-full py-4 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-wider shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-check-circle"></i> Créer l'administrateur
+                    <i class="fa-solid fa-user-plus"></i> Créer l'administrateur
                 </button>
             </form>
         </div>
+
+        <!-- Liste des administrateurs existants -->
+        <div id="admins-list-container" class="mt-6 bg-white rounded-2xl shadow-2xl p-6 hidden">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="fa-solid fa-users text-emerald-600"></i>
+                <h3 class="font-black text-slate-800 text-sm">Administrateurs existants</h3>
+                <span id="admins-count" class="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full">0</span>
+            </div>
+            <div id="admins-list" class="space-y-2 max-h-64 overflow-y-auto">
+                <!-- La liste sera chargée ici -->
+            </div>
+        </div>
         
         <div class="text-center mt-6">
-            <p class="text-[10px] text-slate-500">Cette page n'est accessible que si aucun administrateur n'existe.</p>
+            <p class="text-[10px] text-slate-500">Page de gestion des administrateurs</p>
         </div>
     </div>
 
     <script>
-        // URL de l'API - à modifier si besoin
         const API_URL = 'https://sante-plus-backend-main.onrender.com/api';
         
-        // Vérifier si des admins existent déjà
-        async function checkAdminExists() {
+        // Charger la liste des administrateurs existants
+        async function loadAdminsList() {
             try {
-                const response = await fetch(`${API_URL}/admin-users/has-admin`);
-                const data = await response.json();
+                const response = await fetch(`${API_URL}/admin-users/admins`);
+                const admins = await response.json();
                 
-                if (data.hasAdmin) {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Administrateur déjà existant',
-                        text: 'Un administrateur a déjà été créé. Redirection vers la page de connexion...',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        window.location.href = '/';
-                    });
+                const container = document.getElementById('admins-list-container');
+                const listDiv = document.getElementById('admins-list');
+                const countSpan = document.getElementById('admins-count');
+                
+                if (admins && admins.length > 0) {
+                    container.classList.remove('hidden');
+                    countSpan.textContent = admins.length;
+                    
+                    listDiv.innerHTML = admins.map(admin => `
+                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-slate-800 text-sm truncate">${admin.prenom || ''} ${admin.nom || ''}</p>
+                                <p class="text-[10px] text-slate-400 truncate">${admin.email}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <span class="text-[8px] text-emerald-600 font-bold">Admin</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.classList.add('hidden');
                 }
             } catch (err) {
-                console.error("Erreur vérification admin:", err);
+                console.error("Erreur chargement admins:", err);
             }
         }
         
-        // Exécuter la vérification
-        checkAdminExists();
+        // Charger la liste au chargement de la page
+        loadAdminsList();
         
         // Gestion du formulaire
         document.getElementById('admin-form').addEventListener('submit', async (e) => {
@@ -157,10 +177,13 @@
                         icon: 'success',
                         title: 'Administrateur créé !',
                         html: `Compte créé avec succès.<br><br><strong>Email:</strong> ${email}<br><strong>Mot de passe:</strong> ${password}`,
-                        confirmButtonText: 'Se connecter',
+                        confirmButtonText: 'OK',
                         confirmButtonColor: '#10B981'
                     }).then(() => {
-                        window.location.href = '/';
+                        // Réinitialiser le formulaire
+                        document.getElementById('admin-form').reset();
+                        // Recharger la liste des admins
+                        loadAdminsList();
                     });
                 } else {
                     throw new Error(data.error);
