@@ -353,7 +353,7 @@ export async function submitEndVisit() {
         fd.append("humeur", humeur);
         fd.append("activites_faites", activites);
         fd.append("gps_end", gpsEnd);
-        fd.append("photo_visite", compressedPhoto);
+        fd.append("photo_visite", fileToUpload);
 
         const response = await fetch(`${CONFIG.API_URL}/visites/end`, {
             method: "POST",
