@@ -3229,6 +3229,7 @@ function getNavLinks(role, mode) {
             { id: 'planning', icon: 'fa-calendar-days', label: 'Planning' },
             { id: 'rh-dashboard', icon: 'fa-users', label: 'RH' },
             { id: 'map', icon: 'fa-location-dot', label: 'Radar' },
+            { id: 'commandes', icon: 'fa-box', label: 'Commandes' },
             { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures' },
             { id: 'profile', icon: 'fa-user-circle', label: 'Profil' },
             { id: 'users', icon: 'fa-users', label: 'Utilisateurs' }
