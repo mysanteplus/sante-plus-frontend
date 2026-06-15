@@ -2,10 +2,10 @@
 // SERVICE WORKER - SANTÉ PLUS SERVICES (OFFLINE-FIRST)
 // ============================================================
 
-const CACHE_NAME = 'sps-v10';
-const STATIC_CACHE = 'sps-static-v10';
-const IMAGE_CACHE = 'sps-images-v10';
-const API_CACHE = 'sps-api-v10';
+const CACHE_NAME = 'sps-v11';
+const STATIC_CACHE = 'sps-static-v11';
+const IMAGE_CACHE = 'sps-images-v11';
+const API_CACHE = 'sps-api-v11';
 
 // Fichiers statiques à mettre en cache immédiatement
 const STATIC_URLS = [
@@ -28,7 +28,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: "AIzaSyBzLQLLWmRI7Nr-c-Ht9DKkJejMxh-5C4g",  // ← apiKey (camelCase)
+  apiKey: "AIzaSyBzLQLLWmRI7Nr-c-Ht9DKkJejMxh-5C4g",
   authDomain: "santeplus-service.firebaseapp.com",
   projectId: "santeplus-service",
   messagingSenderId: "706607823043",
@@ -37,12 +37,34 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// 🔥 FCM Background (notifications en arrière-plan) - CORRIGÉ
+// ============================================================
+// 🎯 CRÉER UN CANAL DE NOTIFICATION (POUR POPUP)
+// ============================================================
+self.addEventListener('install', (event) => {
+  console.log('🔧 SW installation...');
+  
+  // Pour Android, créer un canal de notification avec priorité haute
+  if (self.registration && self.registration.showNotification) {
+    console.log('✅ Notifications supportées');
+  }
+  
+  event.waitUntil(
+    Promise.all([
+      caches.open(STATIC_CACHE).then(cache => cache.addAll(STATIC_URLS)),
+      self.skipWaiting()
+    ])
+  );
+});
+
+// ============================================================
+// 🔥 FCM Background (notifications en arrière-plan) - VERSION POPUP
+// ============================================================
 messaging.onBackgroundMessage((payload) => {
   console.log("🔥 FCM Background:", payload);
 
-  // ✅ Les variables sont maintenant à l'intérieur de la fonction
   const title = payload.notification?.title || "Santé Plus";
+  
+  // ✅ OPTIONS OPTIMISÉES POUR POPUP HEADS-UP DISPLAY
   const options = {
     body: payload.notification?.body || "Nouvelle notification",
     icon: "/assets/images/logo-general-icon.png",
@@ -50,27 +72,64 @@ messaging.onBackgroundMessage((payload) => {
     vibrate: [200, 100, 200],
     sound: "/sounds/notification1.mp3",
     silent: false,
-    requireInteraction: true,
+    requireInteraction: true,        // Reste à l'écran jusqu'à interaction
     tag: "sante-plus-notif",
+    renotify: true,                  // Sonne même si notification similaire existe
     data: { 
       url: payload.data?.url || "/",
       timestamp: Date.now()
-    }
+    },
+    // ⭐ POUR POPUP HEADS-UP DISPLAY (Android)
+    actions: [
+      {
+        action: 'open',
+        title: 'Ouvrir',
+        icon: '/assets/images/logo-general-icon.png'
+      },
+      {
+        action: 'close',
+        title: 'Fermer',
+        icon: '/assets/images/logo-general-icon.png'
+      }
+    ]
   };
 
   self.registration.showNotification(title, options);
 });
 
 // ============================================================
-// INSTALLATION
+// ✅ GESTION DES ACTIONS DE NOTIFICATION
 // ============================================================
-self.addEventListener('install', (event) => {
-  console.log('🔧 SW installation...');
+self.addEventListener("notificationclick", function (event) {
+  console.log("🔔 Notification click:", event.action);
+  
+  event.notification.close();
+  
+  let url = "/";
+  
+  if (event.action === 'open') {
+    url = event.notification.data?.url || "/";
+  } else if (event.action === 'close') {
+    // Ne rien ouvrir
+    return;
+  } else {
+    url = event.notification.data?.url || "/";
+  }
+  
   event.waitUntil(
-    Promise.all([
-      caches.open(STATIC_CACHE).then(cache => cache.addAll(STATIC_URLS)),
-      self.skipWaiting()
-    ])
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(windowClients => {
+        // Vérifier si une fenêtre est déjà ouverte
+        for (let client of windowClients) {
+          if (client.url.includes(url) && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // Sinon ouvrir une nouvelle fenêtre
+        if (clients.openWindow) {
+          return clients.openWindow(url);
+        }
+      })
   );
 });
 
@@ -178,28 +237,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 // ============================================================
-// NOTIFICATION CLICK
-// ============================================================
-self.addEventListener("notificationclick", function (event) {
-  event.notification.close();
-  const url = event.notification.data?.url || "/";
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(windowClients => {
-        for (let client of windowClients) {
-          if (client.url.includes(url) && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        if (clients.openWindow) {
-          return clients.openWindow(url);
-        }
-      })
-  );
-});
-
-// ============================================================
-// SYNC BACKGROUND
+// SYNC BACKGROUND (pour les requêtes en attente)
 // ============================================================
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-queued-requests') {
