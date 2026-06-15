@@ -35,6 +35,14 @@ firebase.initializeApp({
   appId: "1:706607823043:web:0f1f6433cdc796d62b0a76"
 });
 
+
+// Créer un canal de notification avec priorité MAXIMALE
+self.addEventListener('install', () => {
+  if (self.registration && self.registration.showNotification) {
+    console.log('✅ Notifications supportées');
+  }
+});
+
 const messaging = firebase.messaging();
 
 // ============================================================
