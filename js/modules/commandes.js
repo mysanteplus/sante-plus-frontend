@@ -487,11 +487,16 @@ window.takeCommand = async (commandeId) => {
             body: JSON.stringify({ commandeId: commandeId })
         });
         
-        Swal.fire("Succès", "Commande prise en charge. Vous pouvez maintenant la livrer.", "success");
+        Swal.fire("Succès", "Commande prise en charge", "success");
+        
+        // ✅ FORCER LE REACHARGEMENT IMMÉDIAT
+        await loadCommandes();
+        
+        // ✅ AUSSI REACHARGER LES AUTRES VUES
         window.dispatchEvent(new CustomEvent('app-data-updated', {
             detail: { endpoint: '/commandes', method: 'POST', resourceType: 'commande_updated' }
         }));
-        loadCommandes();
+        
     } catch (err) {
         Swal.fire("Erreur", err.message, "error");
     }
