@@ -391,14 +391,7 @@ async function initApp() {
     initPushNotifications();
     applyUserTheme();
 
-if ("Notification" in window) {
-    Notification.requestPermission().then(permission => {
-        console.log("🔔 Permission notification:", permission);
-    });
-}
-
-
-// ✅ AJOUTE ICI - Écouter les changements de visites en temps réel
+// Écouter les changements de visites en temps réel
 if (window.Realtime && window.Realtime.subscribeToVisites) {
     window.Realtime.subscribeToVisites((visiteData) => {
         console.log("📢 [MAIN] Changement visite reçu:", visiteData);
