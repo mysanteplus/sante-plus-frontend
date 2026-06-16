@@ -49,27 +49,7 @@ export async function loadCommandes() {
     const listContainer = document.getElementById("commandes-list");
     if (!listContainer) return;
 
-    // ✅ VÉRIFICATION ABONNEMENT
     const userRole = localStorage.getItem("user_role");
-    if (userRole === "FAMILLE") {
-        const hasSubscription = await checkUserSubscription();
-        if (!hasSubscription) {
-            listContainer.innerHTML = `
-                <div class="text-center py-20">
-                    <div class="w-16 h-16 mx-auto bg-amber-100 rounded-full flex items-center justify-center mb-4">
-                        <i class="fa-solid fa-lock text-amber-500 text-2xl"></i>
-                    </div>
-                    <p class="text-sm font-bold text-slate-700">Abonnement requis</p>
-                    <p class="text-xs text-slate-400 mt-2">Vous devez avoir un abonnement actif pour voir vos commandes.</p>
-                    <button onclick="window.switchView('subscription')" 
-                            class="mt-4 px-6 py-2 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase">
-                        Voir les offres
-                    </button>
-                </div>
-            `;
-            return;
-        }
-    }
 
     isLoading = true;
     
