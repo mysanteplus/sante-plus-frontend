@@ -987,67 +987,70 @@ window.selectServiceType = (type) => {
 // ÉTAPE 0 : CHOIX DU TYPE DE COMPTE (AVEC ou SANS PATIENT)
 // ============================================================
 function getTypeCompteChoiceHTML() {
-    const isMamanFlow = registrationData.categorie === 'MAMAN_BEBE';
-    const themeColor = isMamanFlow ? 'pink' : 'emerald';
-    const themeBgClass = isMamanFlow ? 'bg-pink-50' : 'bg-emerald-50';
-    const themeBorderClass = isMamanFlow ? 'border-pink-200' : 'border-emerald-200';
-    const themeTextClass = isMamanFlow ? 'text-pink-600' : 'text-emerald-600';
-    
+    const isMamanFlow = registrationData.categorie === "MAMAN_BEBE";
+
     return `
-        <div class="text-center mb-8">
-            <div class="w-16 h-16 mx-auto bg-${themeColor}-100 rounded-full flex items-center justify-center mb-4">
-                <i class="fa-solid fa-users text-2xl text-${themeColor}-500"></i>
-            </div>
-            <h3 class="text-xl font-black text-slate-800">Comment souhaitez-vous utiliser Santé Plus ?</h3>
-            <p class="text-xs text-slate-400 mt-2">Choisissez le type de compte qui vous correspond</p>
+        <div class="auth-form-heading text-center">
+            <h3>Comment souhaitez-vous utiliser Santé Plus ?</h3>
+            <p>
+                Choisissez le type de compte. Vous pourrez compléter les informations étape par étape.
+            </p>
         </div>
-        
-        <div class="space-y-4">
-            <!-- Option AVEC PATIENT -->
-            <div onclick="window.selectTypeCompte('AVEC_PATIENT')" 
-                 class="service-card p-5 bg-white rounded-2xl border-2 border-slate-200 cursor-pointer transition-all hover:border-${themeColor}-400 hover:shadow-lg active:scale-98">
-                <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-xl ${themeBgClass} flex items-center justify-center text-3xl">
-                        👨‍👩‍👧
-                    </div>
-                    <div class="flex-1">
-                        <h4 class="font-black text-slate-800 text-base">Avec un patient</h4>
-                        <p class="text-[10px] ${themeTextClass} font-bold uppercase tracking-wider">Suivi médical complet</p>
-                        <p class="text-xs text-slate-500 mt-1">Je crée un compte pour un proche (parent, grand-parent, enfant) et bénéficie des visites à domicile.</p>
-                        <div class="flex flex-wrap gap-2 mt-2">
-                            <span class="text-[9px] text-slate-400">✓ Visites à domicile</span>
-                            <span class="text-[9px] text-slate-400">✓ Suivi médical</span>
-                            <span class="text-[9px] text-slate-400">✓ Commandes</span>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-slate-300"></i>
+
+        <div class="auth-choice-grid">
+            <div onclick="window.selectTypeCompte('AVEC_PATIENT')" class="auth-choice-card">
+                <div class="auth-choice-icon">
+                    <i class="fa-solid fa-user-doctor"></i>
+                </div>
+
+                <div class="auth-choice-content">
+                    <h4>Avec un patient</h4>
+                    <div class="tag">Suivi médical complet</div>
+                    <p>
+                        Pour suivre un proche, organiser les visites, consulter les rapports et gérer les demandes.
+                    </p>
+                </div>
+
+                <div class="auth-choice-arrow">
+                    <i class="fa-solid fa-chevron-right"></i>
                 </div>
             </div>
-            
-            <!-- Option SANS PATIENT -->
-            <div onclick="window.selectTypeCompte('SANS_PATIENT')" 
-                 class="service-card p-5 bg-white rounded-2xl border-2 border-slate-200 cursor-pointer transition-all hover:border-${themeColor}-400 hover:shadow-lg active:scale-98">
-                <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-xl ${themeBgClass} flex items-center justify-center text-3xl">
-                        👤
-                    </div>
-                    <div class="flex-1">
-                        <h4 class="font-black text-slate-800 text-base">Sans patient</h4>
-                        <p class="text-[10px] ${themeTextClass} font-bold uppercase tracking-wider">Compte personnel</p>
-                        <p class="text-xs text-slate-500 mt-1">Je crée un compte pour moi-même. Je pourrai ajouter un patient plus tard si nécessaire.</p>
-                        <div class="flex flex-wrap gap-2 mt-2">
-                            <span class="text-[9px] text-slate-400">✓ Commandes personnelles</span>
-                            <span class="text-[9px] text-slate-400">✓ Pack Confort 24/7</span>
-                            <span class="text-[9px] text-slate-400">✓ Ajout patient possible</span>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-slate-300"></i>
+
+            <div onclick="window.selectTypeCompte('SANS_PATIENT')" class="auth-choice-card">
+                <div class="auth-choice-icon">
+                    <i class="fa-solid fa-user"></i>
                 </div>
+
+                <div class="auth-choice-content">
+                    <h4>Sans patient</h4>
+                    <div class="tag">Compte personnel</div>
+                    <p>
+                        Pour utiliser les commandes personnelles, le Pack Confort et ajouter un patient plus tard.
+                    </p>
+                </div>
+
+                <div class="auth-choice-arrow">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-trust-row">
+            <div class="auth-trust-pill">
+                <i class="fa-solid fa-file-medical"></i>
+                <span>Dossier clair</span>
+            </div>
+            <div class="auth-trust-pill">
+                <i class="fa-solid fa-user-shield"></i>
+                <span>Accès sécurisé</span>
+            </div>
+            <div class="auth-trust-pill">
+                <i class="fa-solid fa-headset"></i>
+                <span>Support humain</span>
             </div>
         </div>
     `;
 }
-
 
 
 // ============================================================
@@ -1089,336 +1092,705 @@ function getStepHTML() {
         // ============================================
         // ÉTAPE 0 : CHOIX DU TYPE DE COMPTE (AVEC ou SANS PATIENT)
         // ============================================
-        case 0: return `
-            <div class="text-center mb-8">
-                <div class="w-16 h-16 mx-auto bg-${themeColor}-100 rounded-full flex items-center justify-center mb-4">
-                    <i class="fa-solid fa-users text-2xl text-${themeColor}-500"></i>
-                </div>
-                <h3 class="text-xl font-black text-slate-800">Comment souhaitez-vous utiliser Santé Plus ?</h3>
-                <p class="text-xs text-slate-400 mt-2">Choisissez le type de compte qui vous correspond</p>
-            </div>
-            
-            <div class="space-y-4">
-                <!-- Option AVEC PATIENT -->
-                <div onclick="window.selectTypeCompte('AVEC_PATIENT')" 
-                     class="service-card p-5 bg-white rounded-2xl border-2 border-slate-200 cursor-pointer transition-all hover:border-${themeColor}-400 hover:shadow-lg active:scale-98">
-                    <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 rounded-xl ${themeBgClass} flex items-center justify-center text-3xl">
-                            👨‍👩‍👧
-                        </div>
-                        <div class="flex-1">
-                            <h4 class="font-black text-slate-800 text-base">Avec un patient</h4>
-                            <p class="text-[10px] ${themeTextClass} font-bold uppercase tracking-wider">Suivi médical complet</p>
-                            <p class="text-xs text-slate-500 mt-1">Je crée un compte pour un proche (parent, grand-parent, enfant) et bénéficie des visites à domicile.</p>
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                <span class="text-[9px] text-slate-400">✓ Visites à domicile</span>
-                                <span class="text-[9px] text-slate-400">✓ Suivi médical</span>
-                                <span class="text-[9px] text-slate-400">✓ Commandes</span>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-chevron-right text-slate-300"></i>
-                    </div>
-                </div>
-                
-                <!-- Option SANS PATIENT -->
-                <div onclick="window.selectTypeCompte('SANS_PATIENT')" 
-                     class="service-card p-5 bg-white rounded-2xl border-2 border-slate-200 cursor-pointer transition-all hover:border-${themeColor}-400 hover:shadow-lg active:scale-98">
-                    <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 rounded-xl ${themeBgClass} flex items-center justify-center text-3xl">
-                            👤
-                        </div>
-                        <div class="flex-1">
-                            <h4 class="font-black text-slate-800 text-base">Sans patient</h4>
-                            <p class="text-[10px] ${themeTextClass} font-bold uppercase tracking-wider">Compte personnel</p>
-                            <p class="text-xs text-slate-500 mt-1">Je crée un compte pour moi-même. Je pourrai ajouter un patient plus tard si nécessaire.</p>
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                <span class="text-[9px] text-slate-400">✓ Commandes personnelles</span>
-                                <span class="text-[9px] text-slate-400">✓ Pack Confort 24/7</span>
-                                <span class="text-[9px] text-slate-400">✓ Ajout patient possible</span>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-chevron-right text-slate-300"></i>
-                    </div>
-                </div>
-            </div>
-        `;
+       case 0:
+           return getTypeCompteChoiceHTML();
         
         // ============================================
         // ÉTAPE 1 : QUI PAYE ? (identique pour les deux types)
         // ============================================
-        case 1: return `
-            <div class="text-center mb-8">
-                <h3 class="text-xl font-black text-slate-800">Qui fait la demande ?</h3>
-                <p class="text-xs text-slate-400 mt-1">Les informations du responsable</p>
-            </div>
-            <div class="space-y-4">
-                <div class="relative">
-                    <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input id="f-nom" class="app-input !pl-12 !py-3" placeholder="Votre nom complet" value="${registrationData.nom_famille || ''}">
-                </div>
-                <div class="relative">
-                    <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input id="f-email" type="email" class="app-input !pl-12 !py-3" placeholder="Votre email" value="${registrationData.email || ''}">
-                </div>
-                <div class="relative">
-                    <i class="fa-solid fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input id="f-tel" class="app-input !pl-12 !py-3" placeholder="Votre téléphone" value="${registrationData.tel_famille || ''}">
-                </div>
-                <div class="relative">
-                    <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input id="f-pass" type="password" class="app-input !pl-12 !py-3" placeholder="Choisissez un mot de passe">
-                </div>
-            </div>
-        `;
+       case 1: return `
+           <div class="auth-form-heading">
+               <h3>Qui fait la demande ?</h3>
+               <p>
+                   Ces informations permettent au coordinateur de vous identifier et de vous recontacter rapidement.
+               </p>
+           </div>
+       
+           <div class="auth-step-note">
+               <i class="fa-solid fa-shield-heart"></i>
+               <p>
+                   Votre compte sera utilisé pour suivre les demandes, les visites, les commandes et les échanges avec Santé Plus.
+               </p>
+           </div>
+       
+           <div class="auth-form-grid">
+               <div>
+                   <label class="auth-mini-label">Nom complet</label>
+                   <div class="auth-field">
+                       <i class="fa-solid fa-user"></i>
+                       <input 
+                           id="f-nom" 
+                           class="auth-input" 
+                           placeholder="Ex : Marie Ahouansou"
+                           value="${registrationData.nom_famille || ''}"
+                       >
+                   </div>
+               </div>
+       
+               <div>
+                   <label class="auth-mini-label">Adresse email</label>
+                   <div class="auth-field">
+                       <i class="fa-solid fa-envelope"></i>
+                       <input 
+                           id="f-email" 
+                           type="email" 
+                           autocomplete="email"
+                           class="auth-input" 
+                           placeholder="exemple@email.com"
+                           value="${registrationData.email || ''}"
+                       >
+                   </div>
+               </div>
+       
+               <div>
+                   <label class="auth-mini-label">Téléphone</label>
+                   <div class="auth-field">
+                       <i class="fa-solid fa-phone"></i>
+                       <input 
+                           id="f-tel" 
+                           class="auth-input" 
+                           placeholder="Ex : +229 01 XX XX XX XX"
+                           value="${registrationData.tel_famille || ''}"
+                       >
+                   </div>
+               </div>
+       
+               <div>
+                   <label class="auth-mini-label">Mot de passe</label>
+                   <div class="auth-field">
+                       <i class="fa-solid fa-lock"></i>
+                       <input 
+                           id="f-pass" 
+                           type="password" 
+                           autocomplete="new-password"
+                           class="auth-input" 
+                           placeholder="Créer un mot de passe"
+                       >
+                   </div>
+               </div>
+           </div>
+       
+           <div class="auth-step-footer">
+               <button onclick="window.renderAuthView('register', 0)" class="auth-back-btn">
+                   <i class="fa-solid fa-arrow-left"></i>
+               </button>
+       
+               <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                   Continuer <i class="fa-solid fa-arrow-right"></i>
+               </button>
+           </div>
+       `;
         
         // ============================================
         // ÉTAPE 2 : PATIENT (UNIQUEMENT si AVEC_PATIENT)
         // ============================================
-        case 2: 
-            if (isSansPatient) {
-                // Pour SANS_PATIENT, passer directement à l'étape suivante
-                setTimeout(() => window.nextAuthStep(), 100);
-                return `<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div>`;
-            }
-            return `
-                <div class="text-center mb-8">
-                    <h3 class="text-xl font-black text-slate-800">Pour qui ?</h3>
-                    <p class="text-xs text-slate-400 mt-1">Les informations de la personne à accompagner</p>
-                </div>
-                <div class="space-y-4">
-                    <div class="relative">
-                        <i class="fa-solid fa-user-circle absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input id="p-nom" class="app-input !pl-12 !py-3" placeholder="Son nom complet" value="${registrationData.nom_patient || ''}">
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="relative">
-                            <i class="fa-solid fa-cake-candles absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <input id="p-age" type="number" class="app-input !pl-12 !py-3" placeholder="Âge">
-                        </div>
-                        <div class="relative">
-                            <i class="fa-solid fa-venus-mars absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <select id="p-sex" class="app-input !pl-12 !py-3">
-                                <option value="">Sexe</option>
-                                <option value="Homme">Homme</option>
-                                <option value="Femme">Femme</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="relative">
-                        <i class="fa-solid fa-location-dot absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input id="p-addr" class="app-input !pl-12 !py-3" placeholder="Son adresse (quartier, rue)" value="${registrationData.adresse_patient || ''}">
-                    </div>
-                    <div class="relative">
-                        <i class="fa-solid fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input id="p-tel" class="app-input !pl-12 !py-3" placeholder="Son téléphone (optionnel)">
-                    </div>
-                    <div class="relative">
-                        <i class="fa-solid fa-address-card absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input id="p-urgence" class="app-input !pl-12 !py-3" placeholder="Contact d'urgence (voisin, famille)">
-                    </div>
-                </div>
-            `;
+       case 2: 
+          if (isSansPatient) {
+              setTimeout(() => window.nextAuthStep(), 100);
+              return `
+                  <div class="text-center py-10">
+                      <i class="fa-solid fa-spinner fa-spin text-emerald-500 text-xl"></i>
+                      <p class="text-xs text-slate-400 mt-3">Préparation de votre espace personnel...</p>
+                  </div>
+              `;
+          }
+      
+          return `
+              <div class="auth-form-heading">
+                  <h3>Qui souhaitez-vous accompagner ?</h3>
+                  <p>
+                      Ces informations permettent de créer le dossier de la personne suivie et d’organiser les visites à domicile.
+                  </p>
+              </div>
+      
+              <div class="auth-step-note">
+                  <i class="fa-solid fa-house-medical"></i>
+                  <p>
+                      Indiquez les informations les plus utiles. Vous pourrez compléter ou corriger le dossier plus tard avec le coordinateur.
+                  </p>
+              </div>
+      
+              <div class="auth-form-grid">
+                  <div>
+                      <label class="auth-mini-label">Nom complet du patient</label>
+                      <div class="auth-field">
+                          <i class="fa-solid fa-user-circle"></i>
+                          <input 
+                              id="p-nom" 
+                              class="auth-input" 
+                              placeholder="Ex : Jean Hounkpatin"
+                              value="${registrationData.nom_patient || ''}"
+                          >
+                      </div>
+                  </div>
+      
+                  <div class="auth-form-grid two">
+                      <div>
+                          <label class="auth-mini-label">Âge</label>
+                          <div class="auth-field">
+                              <i class="fa-solid fa-cake-candles"></i>
+                              <input 
+                                  id="p-age" 
+                                  type="number" 
+                                  class="auth-input" 
+                                  placeholder="Âge"
+                                  value="${registrationData.age_patient || ''}"
+                              >
+                          </div>
+                      </div>
+      
+                      <div>
+                          <label class="auth-mini-label">Sexe</label>
+                          <div class="auth-field">
+                              <i class="fa-solid fa-venus-mars"></i>
+                              <select id="p-sex" class="auth-select">
+                                  <option value="">Sexe</option>
+                                  <option value="Homme" ${registrationData.sexe_patient === "Homme" ? "selected" : ""}>Homme</option>
+                                  <option value="Femme" ${registrationData.sexe_patient === "Femme" ? "selected" : ""}>Femme</option>
+                              </select>
+                          </div>
+                      </div>
+                  </div>
+      
+                  <div>
+                      <label class="auth-mini-label">Adresse ou quartier</label>
+                      <div class="auth-field">
+                          <i class="fa-solid fa-location-dot"></i>
+                          <input 
+                              id="p-addr" 
+                              class="auth-input" 
+                              placeholder="Ex : Calavi, Fidjrossè, Akpakpa..."
+                              value="${registrationData.adresse_patient || ''}"
+                          >
+                      </div>
+                  </div>
+      
+                  <div>
+                      <label class="auth-mini-label">Téléphone du patient</label>
+                      <div class="auth-field">
+                          <i class="fa-solid fa-phone"></i>
+                          <input 
+                              id="p-tel" 
+                              class="auth-input" 
+                              placeholder="Optionnel"
+                              value="${registrationData.tel_patient || ''}"
+                          >
+                      </div>
+                  </div>
+      
+                  <div>
+                      <label class="auth-mini-label">Contact d’urgence</label>
+                      <div class="auth-field">
+                          <i class="fa-solid fa-address-card"></i>
+                          <input 
+                              id="p-urgence" 
+                              class="auth-input" 
+                              placeholder="Nom ou téléphone d’un proche / voisin"
+                              value="${registrationData.contact_urgence || ''}"
+                          >
+                      </div>
+                  </div>
+              </div>
+      
+              <div class="auth-step-footer">
+                  <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                      <i class="fa-solid fa-arrow-left"></i>
+                  </button>
+      
+                  <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                      Continuer <i class="fa-solid fa-arrow-right"></i>
+                  </button>
+              </div>
+          `;
         
         // ============================================
         // ÉTAPE 3 : SANTÉ (UNIQUEMENT si AVEC_PATIENT)
         // ============================================
-        case 3:
-            if (isSansPatient) {
-                setTimeout(() => window.nextAuthStep(), 100);
-                return `<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div>`;
-            }
-            
-            if (isMamanFlow) {
-                return `
-                    <div class="text-center mb-8">
-                        <h3 class="text-xl font-black text-slate-800">Suivi Maman & Bébé</h3>
-                        <p class="text-xs text-slate-400 mt-1">Quelques informations pour mieux vous accompagner</p>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="relative">
-                            <i class="fa-solid fa-hospital-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <select id="accouchement" class="app-input !pl-12 !py-3">
-                                <option value="">Type d'accouchement</option>
-                                <option value="voie_basse">Voie basse</option>
-                                <option value="cesarienne">Césarienne</option>
-                            </select>
-                        </div>
-                        <div class="relative">
-                            <i class="fa-solid fa-hand-holding-heart absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                            <select id="allaitement" class="app-input !pl-12 !py-3">
-                                <option value="">Allaitement</option>
-                                <option value="maternel">Maternel</option>
-                                <option value="mixte">Mixte</option>
-                                <option value="artificiel">Artificiel</option>
-                            </select>
-                        </div>
-                        <div>
-                            <textarea id="p-notes" class="app-input !py-3" rows="3" placeholder="Informations complémentaires (poids du bébé, sommeil, soucis particuliers...)"></textarea>
-                        </div>
-                    </div>
-                `;
-            } else {
-                return `
-                    <div class="text-center mb-8">
-                        <h3 class="text-xl font-black text-slate-800">Informations de santé</h3>
-                        <p class="text-xs text-slate-400 mt-1">Pour un accompagnement adapté</p>
-                    </div>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="text-[10px] font-black text-slate-400 ml-1 mb-2 block">Pathologies existantes</label>
-                            <div class="flex flex-wrap gap-2">
-                                <label class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-full text-xs"><input type="checkbox" class="med-hist" value="Diabète"> Diabète</label>
-                                <label class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-full text-xs"><input type="checkbox" class="med-hist" value="Hypertension"> Hypertension</label>
-                                <label class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-full text-xs"><input type="checkbox" class="med-hist" value="Arthrose"> Arthrose</label>
-                                <label class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-full text-xs"><input type="checkbox" class="med-hist" value="Alzheimer"> Alzheimer</label>
-                            </div>
-                        </div>
-                        <div>
-                            <textarea id="p-traitements" class="app-input !py-3" rows="2" placeholder="Traitements en cours (médicaments, posologies)"></textarea>
-                        </div>
-                        <div>
-                            <textarea id="p-allergies" class="app-input !py-3" rows="2" placeholder="Allergies connues"></textarea>
-                        </div>
-                        <div>
-                            <textarea id="p-notes" class="app-input !py-3" rows="2" placeholder="Autres informations (mobilité, habitudes, précautions)"></textarea>
-                        </div>
-                    </div>
-                `;
-            }
-        
+       case 3:
+             if (isSansPatient) {
+                 setTimeout(() => window.nextAuthStep(), 100);
+                 return `
+                     <div class="text-center py-10">
+                         <i class="fa-solid fa-spinner fa-spin text-emerald-500 text-xl"></i>
+                         <p class="text-xs text-slate-400 mt-3">Préparation du Pack Confort...</p>
+                     </div>
+                 `;
+             }
+         
+             if (isMamanFlow) {
+                 return `
+                     <div class="auth-form-heading">
+                         <h3>Quelques informations utiles.</h3>
+                         <p>
+                             Elles permettent d’adapter l’accompagnement à votre situation après la naissance ou pendant le suivi bébé.
+                         </p>
+                     </div>
+         
+                     <div class="auth-step-note">
+                         <i class="fa-solid fa-heart-pulse"></i>
+                         <p>
+                             Ces informations ne remplacent pas un avis médical. Elles aident simplement l’équipe à mieux organiser l’accompagnement.
+                         </p>
+                     </div>
+         
+                     <div class="auth-form-grid">
+                         <div>
+                             <label class="auth-mini-label">Type d’accouchement</label>
+                             <div class="auth-field">
+                                 <i class="fa-solid fa-hospital-user"></i>
+                                 <select id="accouchement" class="auth-select">
+                                     <option value="">Choisir une option</option>
+                                     <option value="voie_basse" ${registrationData.type_accouchement === "voie_basse" ? "selected" : ""}>Voie basse</option>
+                                     <option value="cesarienne" ${registrationData.type_accouchement === "cesarienne" ? "selected" : ""}>Césarienne</option>
+                                     <option value="non_precise" ${registrationData.type_accouchement === "non_precise" ? "selected" : ""}>Je préfère préciser plus tard</option>
+                                 </select>
+                             </div>
+                         </div>
+         
+                         <div>
+                             <label class="auth-mini-label">Allaitement</label>
+                             <div class="auth-field">
+                                 <i class="fa-solid fa-hand-holding-heart"></i>
+                                 <select id="allaitement" class="auth-select">
+                                     <option value="">Choisir une option</option>
+                                     <option value="maternel" ${registrationData.allaitement === "maternel" ? "selected" : ""}>Allaitement maternel</option>
+                                     <option value="mixte" ${registrationData.allaitement === "mixte" ? "selected" : ""}>Allaitement mixte</option>
+                                     <option value="artificiel" ${registrationData.allaitement === "artificiel" ? "selected" : ""}>Lait artificiel</option>
+                                     <option value="non_precise" ${registrationData.allaitement === "non_precise" ? "selected" : ""}>Je préciserai plus tard</option>
+                                 </select>
+                             </div>
+                         </div>
+         
+                         <div>
+                             <label class="auth-mini-label">Notes importantes</label>
+                             <textarea 
+                                 id="p-notes" 
+                                 class="auth-textarea" 
+                                 placeholder="Sommeil, fatigue, inquiétudes, besoins particuliers, habitudes du bébé..."
+                             >${registrationData.notes_medicales || ""}</textarea>
+                         </div>
+                     </div>
+         
+                     <div class="auth-step-footer">
+                         <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                             <i class="fa-solid fa-arrow-left"></i>
+                         </button>
+         
+                         <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                             Continuer <i class="fa-solid fa-arrow-right"></i>
+                         </button>
+                     </div>
+                 `;
+             }
+         
+             return `
+                 <div class="auth-form-heading">
+                     <h3>Informations de santé.</h3>
+                     <p>
+                         Ces éléments aident l’équipe à préparer un accompagnement plus sûr, plus clair et plus adapté.
+                     </p>
+                 </div>
+         
+                 <div class="auth-step-note">
+                     <i class="fa-solid fa-triangle-exclamation"></i>
+                     <p>
+                         Santé Plus organise un accompagnement humain et logistique. Ces informations servent au suivi, pas à poser un diagnostic.
+                     </p>
+                 </div>
+         
+                 <div class="auth-form-grid">
+                     <div>
+                         <label class="auth-mini-label">Pathologies connues</label>
+                         <div class="auth-chip-grid">
+                             <label class="auth-chip">
+                                 <input type="checkbox" class="med-hist" value="Diabète" ${registrationData.pathologies?.includes("Diabète") ? "checked" : ""}>
+                                 Diabète
+                             </label>
+         
+                             <label class="auth-chip">
+                                 <input type="checkbox" class="med-hist" value="Hypertension" ${registrationData.pathologies?.includes("Hypertension") ? "checked" : ""}>
+                                 Hypertension
+                             </label>
+         
+                             <label class="auth-chip">
+                                 <input type="checkbox" class="med-hist" value="Arthrose" ${registrationData.pathologies?.includes("Arthrose") ? "checked" : ""}>
+                                 Arthrose
+                             </label>
+         
+                             <label class="auth-chip">
+                                 <input type="checkbox" class="med-hist" value="Alzheimer" ${registrationData.pathologies?.includes("Alzheimer") ? "checked" : ""}>
+                                 Alzheimer
+                             </label>
+         
+                             <label class="auth-chip">
+                                 <input type="checkbox" class="med-hist" value="Aucune connue" ${registrationData.pathologies?.includes("Aucune connue") ? "checked" : ""}>
+                                 Aucune connue
+                             </label>
+                         </div>
+                     </div>
+         
+                     <div>
+                         <label class="auth-mini-label">Traitements en cours</label>
+                         <textarea 
+                             id="p-traitements" 
+                             class="auth-textarea" 
+                             placeholder="Médicaments, fréquence, posologie si connue..."
+                         >${registrationData.traitements || ""}</textarea>
+                     </div>
+         
+                     <div>
+                         <label class="auth-mini-label">Allergies connues</label>
+                         <textarea 
+                             id="p-allergies" 
+                             class="auth-textarea" 
+                             placeholder="Médicaments, aliments, produits, ou écrire : aucune connue"
+                         >${registrationData.allergies || ""}</textarea>
+                     </div>
+         
+                     <div>
+                         <label class="auth-mini-label">Autres précautions</label>
+                         <textarea 
+                             id="p-notes" 
+                             class="auth-textarea" 
+                             placeholder="Mobilité, habitudes, risques de chute, besoin d’aide particulier..."
+                         >${registrationData.notes_medicales || ""}</textarea>
+                     </div>
+                 </div>
+         
+                 <div class="auth-step-footer">
+                     <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                         <i class="fa-solid fa-arrow-left"></i>
+                     </button>
+         
+                     <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                         Continuer <i class="fa-solid fa-arrow-right"></i>
+                     </button>
+                 </div>
+             `;
         // ============================================
         // ÉTAPE 4 : FORFAIT (adapté selon le type de compte)
         // ============================================
-        case 4:
-            if (isSansPatient) {
-                // Pack Confort pour comptes SANS_PATIENT
-                const confortPacks = [
-                    { id: 'CONFORT_247_MENSUEL', name: 'Pack Confort Mensuel', desc: 'Accès complet', price: '25.000', duration: 1, features: ['Commandes illimitées', 'Support prioritaire', 'Accès contenu éducatif'] },
-                    { id: 'CONFORT_247_TRIMESTRIEL', name: 'Pack Confort 3 mois', desc: 'Économie 5%', price: '71.250', originalPrice: '75.000', duration: 3, features: ['Commandes illimitées', 'Support prioritaire', 'Accès contenu éducatif', 'Économie 5%'] },
-                    { id: 'CONFORT_247_ANNUEL', name: 'Pack Confort 1 an', desc: 'Économie 15%', price: '255.000', originalPrice: '300.000', duration: 12, features: ['Commandes illimitées', 'Support prioritaire', 'Accès contenu éducatif', 'Économie 15%'] }
-                ];
-                
-                return `
-                    <div class="text-center mb-8">
-                        <h3 class="text-xl font-black text-slate-800">Pack Confort 24/7</h3>
-                        <p class="text-xs text-slate-400 mt-1">Commandes illimitées et support prioritaire</p>
-                    </div>
-                    <div id="pack-selector" class="space-y-3 max-h-96 overflow-y-auto">
-                        ${confortPacks.map(pack => `
-                            <div onclick="window.selectPackConfort('${pack.id}', '${pack.price}', ${pack.duration})" 
-                                 class="pack-card p-4 bg-white rounded-xl border-2 cursor-pointer transition-all ${registrationData.type_pack === pack.id ? `border-${themeColor}-500 ${themeBgClass}` : 'border-slate-100'}"
-                                 data-pack-id="${pack.id}">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 rounded-xl ${registrationData.type_pack === pack.id ? themeBgClass : 'bg-slate-50'} flex items-center justify-center">
-                                        <i class="fa-solid fa-crown ${registrationData.type_pack === pack.id ? themeTextClass : 'text-slate-400'} text-xl"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="flex justify-between items-center">
-                                            <p class="font-black text-slate-800">${pack.name}</p>
-                                            <div class="text-right">
-                                                ${pack.originalPrice ? `<span class="text-[10px] text-slate-400 line-through mr-2">${pack.originalPrice} F</span>` : ''}
-                                                <p class="text-base font-black ${themeTextClass}">${pack.price} F</p>
-                                            </div>
-                                        </div>
-                                        <p class="text-[10px] text-slate-400">${pack.desc}</p>
-                                        <div class="flex flex-wrap gap-1 mt-1">
-                                            ${pack.features.map(f => `<span class="text-[8px] text-slate-400">✓ ${f}</span>`).join('')}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="mt-4 p-3 bg-blue-50 rounded-xl">
-                        <p class="text-[9px] text-blue-600 font-medium">✨ Ce pack vous permet de :</p>
-                        <ul class="text-[9px] text-slate-500 mt-1 space-y-0.5">
-                            <li>• Passer des commandes de produits (couches, lait, médicaments, etc.)</li>
-                            <li>• Bénéficier d'un support prioritaire 24/7</li>
-                            <li>• Accéder à tous les contenus éducatifs</li>
-                            <li>• Ajouter un patient plus tard si nécessaire</li>
-                        </ul>
-                    </div>
-                    <div class="mt-6">
-                        <button onclick="window.nextAuthStep()" 
-                                id="pack-continue-btn"
-                                class="w-full py-4 rounded-xl font-black uppercase tracking-wider text-[10px] shadow-lg transition-all active:scale-95 ${registrationData.type_pack ? 'bg-emerald-500' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}"
-                                ${!registrationData.type_pack ? 'disabled' : ''}>
-                            Continuer
-                        </button>
-                    </div>
-                `;
-            } else {
-                   const packs = isMamanFlow ? [
-                       { id: 'ESSENTIEL_MAMAN', name: 'Essentiel', desc: '2 semaines', price: '65.000', features: ['Suivi post-partum', '2 semaines'] },
-                       { id: 'CONFORT_MAMAN', name: 'Confort', desc: '3 semaines', price: '100.000', features: ['Accompagnement standard', '3 semaines'] },
-                       { id: 'SERENITE_MAMAN', name: 'Sérénité', desc: '4 semaines', price: '140.000', features: ['Suivi rapproché', '4 semaines'] },
-                       { id: 'PRIVILEGE_MAMAN', name: 'Privilège', desc: '5 semaines', price: '200.000', features: ['Coaching complet', '5 semaines'] }
-                   ] : [
-                       { id: 'ESSENTIEL_SENIOR', name: 'Essentiel', desc: '4 visites/mois', price: '45.000', features: ['4 visites/mois', 'Suivi léger'] },
-                       { id: 'ACCOMPAGNEMENT_SENIOR', name: 'Accompagnement', desc: '8 visites/mois', price: '80.000', features: ['8 visites/mois', 'Convalescence'] },
-                       { id: 'SERENITE_SENIOR', name: 'Sérénité', desc: '12 visites/mois', price: '100.000', features: ['12 visites/mois', 'Suivi régulier'] },
-                       { id: 'PRIVILEGE_SENIOR', name: 'Privilège', desc: 'Illimité', price: '200.000', features: ['Visites illimitées', 'Coordination totale'] }
-                   ];
-                
-                return `
-                    <div class="text-center mb-8">
-                        <h3 class="text-xl font-black text-slate-800">Choisissez votre formule</h3>
-                        <p class="text-xs text-slate-400 mt-1">Tarifs mensuels en CFA</p>
-                    </div>
-                    <div id="pack-selector" class="space-y-3 max-h-96 overflow-y-auto">
-                        ${packs.map(pack => `
-                            <div onclick="window.selectPack('${pack.id}', '${pack.price}')" 
-                                 class="pack-card p-4 bg-white rounded-xl border-2 cursor-pointer transition-all ${registrationData.type_pack === pack.id ? `border-${themeColor}-500 ${themeBgClass}` : 'border-slate-100'}"
-                                 data-pack-id="${pack.id}">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 rounded-xl ${registrationData.type_pack === pack.id ? themeBgClass : 'bg-slate-50'} flex items-center justify-center">
-                                        <i class="fa-solid ${pack.id.includes('CONFORT') || pack.id.includes('REGULIER') ? 'fa-chart-line' : pack.id.includes('SERENITE') || pack.id.includes('COMPLET') ? 'fa-crown' : 'fa-seedling'} ${registrationData.type_pack === pack.id ? themeTextClass : 'text-slate-400'} text-xl"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="flex justify-between items-center">
-                                            <p class="font-black text-slate-800">${pack.name}</p>
-                                            <p class="text-base font-black ${themeTextClass}">${pack.price} F</p>
-                                        </div>
-                                        <p class="text-[10px] text-slate-400">${pack.desc}</p>
-                                        <div class="flex flex-wrap gap-1 mt-1">
-                                            ${pack.features.map(f => `<span class="text-[8px] text-slate-400">✓ ${f}</span>`).join('')}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="mt-6">
-                        <button onclick="window.nextAuthStep()" 
-                                id="pack-continue-btn"
-                                class="w-full py-4 rounded-xl font-black uppercase tracking-wider text-[10px] shadow-lg transition-all active:scale-95 ${registrationData.type_pack ? (isMamanFlow ? 'bg-pink-500' : 'bg-emerald-500') : 'bg-slate-200 text-slate-400 cursor-not-allowed'}"
-                                ${!registrationData.type_pack ? 'disabled' : ''}>
-                            Continuer
-                        </button>
-                    </div>
-                `;
-            }
-        
+       case 4:
+           if (isSansPatient) {
+               const confortPacks = [
+                   {
+                       id: "CONFORT_247_MENSUEL",
+                       name: "Pack Confort Mensuel",
+                       desc: "Pour commencer simplement",
+                       price: "25.000",
+                       duration: 1,
+                       period: "1 mois",
+                       badge: "",
+                       icon: "fa-headset",
+                       features: ["Commandes personnelles", "Support prioritaire", "Historique de commandes"]
+                   },
+                   {
+                       id: "CONFORT_247_TRIMESTRIEL",
+                       name: "Pack Confort 3 mois",
+                       desc: "Plus pratique et plus économique",
+                       price: "71.250",
+                       originalPrice: "75.000",
+                       duration: 3,
+                       period: "3 mois",
+                       badge: "Économie 5%",
+                       icon: "fa-shield-heart",
+                       features: ["Commandes personnelles", "Support prioritaire", "Suivi plus confortable"]
+                   },
+                   {
+                       id: "CONFORT_247_ANNUEL",
+                       name: "Pack Confort 1 an",
+                       desc: "Le plus avantageux sur la durée",
+                       price: "255.000",
+                       originalPrice: "300.000",
+                       duration: 12,
+                       period: "12 mois",
+                       badge: "Meilleure valeur",
+                       icon: "fa-crown",
+                       features: ["Commandes personnelles", "Support prioritaire", "Économie 15%"]
+                   }
+               ];
+       
+               return `
+                   <div class="auth-form-heading">
+                       <h3>Activez votre Pack Confort.</h3>
+                       <p>
+                           Un accès simple pour gérer vos commandes personnelles, vos demandes et votre suivi sans dossier patient.
+                       </p>
+                   </div>
+       
+                   <div class="auth-step-note">
+                       <i class="fa-solid fa-circle-info"></i>
+                       <p>
+                           Le Pack Confort est lié à votre compte personnel. Vous pourrez ajouter un patient plus tard si nécessaire.
+                       </p>
+                   </div>
+       
+                   <div id="pack-selector" class="auth-pack-list">
+                       ${confortPacks.map(pack => `
+                           <div 
+                               onclick="window.selectPackConfort('${pack.id}', '${pack.price}', ${pack.duration})"
+                               class="auth-pack-card pack-card ${registrationData.type_pack === pack.id ? "selected" : ""}"
+                               data-pack-id="${pack.id}"
+                           >
+                               ${pack.badge ? `
+                                   <div class="auth-pack-badge">
+                                       <i class="fa-solid fa-star"></i> ${pack.badge}
+                                   </div>
+                               ` : ""}
+       
+                               <div class="auth-pack-top">
+                                   <div class="auth-pack-icon">
+                                       <i class="fa-solid ${pack.icon}"></i>
+                                   </div>
+       
+                                   <div class="auth-pack-info">
+                                       <h4>${pack.name}</h4>
+                                       <p>${pack.desc}</p>
+                                   </div>
+       
+                                   <div class="auth-pack-price">
+                                       ${pack.originalPrice ? `<span class="old">${pack.originalPrice} F</span>` : ""}
+                                       <span class="price">${pack.price} F</span>
+                                       <span class="period">${pack.period}</span>
+                                   </div>
+                               </div>
+       
+                               <div class="auth-pack-features">
+                                   ${pack.features.map(f => `
+                                       <span class="auth-pack-feature">✓ ${f}</span>
+                                   `).join("")}
+                               </div>
+                           </div>
+                       `).join("")}
+                   </div>
+       
+                   <div class="auth-pack-note">
+                       <i class="fa-solid fa-lock"></i>
+                       <p>
+                           Le paiement sera lancé après validation. Votre accès sera activé automatiquement après confirmation du paiement.
+                       </p>
+                   </div>
+       
+                   <div class="auth-step-footer">
+                       <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                           <i class="fa-solid fa-arrow-left"></i>
+                       </button>
+       
+                       <button 
+                           onclick="window.nextAuthStep()" 
+                           id="pack-continue-btn"
+                           class="auth-primary-btn"
+                           ${!registrationData.type_pack ? "disabled" : ""}
+                           style="${!registrationData.type_pack ? "opacity:.45; pointer-events:none;" : ""}"
+                       >
+                           Continuer <i class="fa-solid fa-arrow-right"></i>
+                       </button>
+                   </div>
+               `;
+           }
+       
+           const packs = isMamanFlow ? [
+               {
+                   id: "ESSENTIEL_MAMAN",
+                   name: "Essentiel",
+                   desc: "Pour un accompagnement court et ciblé",
+                   price: "65.000",
+                   period: "2 semaines",
+                   icon: "fa-seedling",
+                   badge: "",
+                   features: ["Suivi post-partum", "2 semaines", "Accompagnement de base"]
+               },
+               {
+                   id: "CONFORT_MAMAN",
+                   name: "Confort",
+                   desc: "Pour une présence plus régulière",
+                   price: "100.000",
+                   period: "3 semaines",
+                   icon: "fa-heart",
+                   badge: "Populaire",
+                   features: ["Accompagnement standard", "3 semaines", "Suivi maman & bébé"]
+               },
+               {
+                   id: "SERENITE_MAMAN",
+                   name: "Sérénité",
+                   desc: "Pour être accompagnée plus longtemps",
+                   price: "140.000",
+                   period: "4 semaines",
+                   icon: "fa-shield-heart",
+                   badge: "",
+                   features: ["Suivi rapproché", "4 semaines", "Conseils adaptés"]
+               },
+               {
+                   id: "PRIVILEGE_MAMAN",
+                   name: "Privilège",
+                   desc: "Pour un accompagnement plus complet",
+                   price: "200.000",
+                   period: "5 semaines",
+                   icon: "fa-crown",
+                   badge: "Premium",
+                   features: ["Coaching complet", "5 semaines", "Priorité coordination"]
+               }
+           ] : [
+               {
+                   id: "ESSENTIEL_SENIOR",
+                   name: "Essentiel",
+                   desc: "Pour garder un œil régulier",
+                   price: "45.000",
+                   period: "par mois",
+                   icon: "fa-seedling",
+                   badge: "",
+                   features: ["4 visites/mois", "Suivi léger", "Rapports simples"]
+               },
+               {
+                   id: "ACCOMPAGNEMENT_SENIOR",
+                   name: "Accompagnement",
+                   desc: "Pour un proche qui a besoin d’un suivi régulier",
+                   price: "80.000",
+                   period: "par mois",
+                   icon: "fa-hand-holding-heart",
+                   badge: "Populaire",
+                   features: ["8 visites/mois", "Convalescence", "Suivi renforcé"]
+               },
+               {
+                   id: "SERENITE_SENIOR",
+                   name: "Sérénité",
+                   desc: "Pour plus de présence et de tranquillité",
+                   price: "100.000",
+                   period: "par mois",
+                   icon: "fa-shield-heart",
+                   badge: "",
+                   features: ["12 visites/mois", "Suivi régulier", "Coordination"]
+               },
+               {
+                   id: "PRIVILEGE_SENIOR",
+                   name: "Privilège",
+                   desc: "Pour une prise en charge plus complète",
+                   price: "200.000",
+                   period: "par mois",
+                   icon: "fa-crown",
+                   badge: "Premium",
+                   features: ["Visites illimitées", "Coordination totale", "Priorité"]
+               }
+           ];
+       
+           return `
+               <div class="auth-form-heading">
+                   <h3>Choisissez la formule adaptée.</h3>
+                   <p>
+                       Sélectionnez l’offre qui correspond au niveau d’accompagnement souhaité.
+                   </p>
+               </div>
+       
+               <div class="auth-step-note">
+                   <i class="fa-solid fa-hand-holding-medical"></i>
+                   <p>
+                       Le coordinateur pourra confirmer avec vous la formule la plus adaptée avant le démarrage effectif du suivi.
+                   </p>
+               </div>
+       
+               <div id="pack-selector" class="auth-pack-list">
+                   ${packs.map(pack => `
+                       <div 
+                           onclick="window.selectPack('${pack.id}', '${pack.price}')"
+                           class="auth-pack-card pack-card ${registrationData.type_pack === pack.id ? "selected" : ""}"
+                           data-pack-id="${pack.id}"
+                       >
+                           ${pack.badge ? `
+                               <div class="auth-pack-badge">
+                                   <i class="fa-solid fa-star"></i> ${pack.badge}
+                               </div>
+                           ` : ""}
+       
+                           <div class="auth-pack-top">
+                               <div class="auth-pack-icon">
+                                   <i class="fa-solid ${pack.icon}"></i>
+                               </div>
+       
+                               <div class="auth-pack-info">
+                                   <h4>${pack.name}</h4>
+                                   <p>${pack.desc}</p>
+                               </div>
+       
+                               <div class="auth-pack-price">
+                                   <span class="price">${pack.price} F</span>
+                                   <span class="period">${pack.period}</span>
+                               </div>
+                           </div>
+       
+                           <div class="auth-pack-features">
+                               ${pack.features.map(f => `
+                                   <span class="auth-pack-feature">✓ ${f}</span>
+                               `).join("")}
+                           </div>
+                       </div>
+                   `).join("")}
+               </div>
+       
+               <div class="auth-step-footer">
+                   <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                       <i class="fa-solid fa-arrow-left"></i>
+                   </button>
+       
+                   <button 
+                       onclick="window.nextAuthStep()" 
+                       id="pack-continue-btn"
+                       class="auth-primary-btn"
+                       ${!registrationData.type_pack ? "disabled" : ""}
+                       style="${!registrationData.type_pack ? "opacity:.45; pointer-events:none;" : ""}"
+                   >
+                       Continuer <i class="fa-solid fa-arrow-right"></i>
+                   </button>
+               </div>
+           `;
         // ============================================
         // ÉTAPE 5 : CONFIRMATION (identique pour les deux types)
         // ============================================
         case 5: return `
-            <div class="text-center mb-8">
-                <h3 class="text-xl font-black text-slate-800">Dernière étape</h3>
-                <p class="text-xs text-slate-400 mt-1">Validation de votre demande</p>
-            </div>
-            <div class="bg-amber-50 p-5 rounded-2xl border border-amber-100 mb-6">
-                <p class="text-xs text-amber-800 leading-relaxed">
-                    <b>⚠️ À savoir :</b> Notre service propose un accompagnement <b>humain et logistique</b> (non médical).
+            <div class="auth-form-heading">
+                <h3>Vérifiez puis validez.</h3>
+                <p>
+                    Dernière étape avant l’envoi de votre demande à l’équipe Santé Plus.
                 </p>
             </div>
-            <label class="flex items-start gap-3 p-4 bg-white rounded-2xl border border-slate-200 cursor-pointer">
-                <input type="checkbox" id="legal-check" class="mt-1 w-5 h-5 accent-emerald-500">
-                <span class="text-xs font-medium text-slate-700">Je confirme avoir compris le principe de l'accompagnement non médical.</span>
+        
+            <div class="auth-review-box mb-3">
+                <h4>Résumé de votre demande</h4>
+                <p>
+                    <b>Compte :</b> ${registrationData.type_compte === "SANS_PATIENT" ? "Sans patient — Pack Confort" : "Avec patient — Suivi à domicile"}<br>
+                    <b>Demandeur :</b> ${registrationData.nom_famille || "Non renseigné"}<br>
+                    <b>Email :</b> ${registrationData.email || "Non renseigné"}<br>
+                    ${registrationData.type_compte !== "SANS_PATIENT" ? `<b>Patient :</b> ${registrationData.nom_patient || "Non renseigné"}<br>` : ""}
+                    <b>Formule :</b> ${registrationData.type_pack || "Non sélectionnée"}<br>
+                    <b>Montant prévu :</b> ${registrationData.montant_prevu || "À confirmer"} F
+                </p>
+            </div>
+        
+            <div class="auth-legal-card">
+                <i class="fa-solid fa-circle-info"></i>
+                <p>
+                    Santé Plus Services propose un accompagnement humain, logistique et de suivi à domicile.
+                    Ce service ne remplace pas une consultation médicale, un diagnostic ou une urgence hospitalière.
+                </p>
+            </div>
+        
+            <label class="auth-checkbox-card">
+                <input type="checkbox" id="legal-check">
+                <span>
+                    Je confirme avoir compris que Santé Plus Services propose un accompagnement non médical,
+                    et j’accepte l’envoi de ma demande pour validation.
+                </span>
             </label>
+        
+            <div class="auth-step-footer">
+                <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+        
+                <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                    Envoyer ma demande <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
         `;
-    }
-}
 // ============================================================
 // SÉLECTEUR DE CATÉGORIE (SENIOR / MAMAN)
 // ============================================================
@@ -1524,78 +1896,41 @@ window.clearCategorySelection = () => {
 window.selectPack = (packId, price) => {
     registrationData.type_pack = packId;
     registrationData.montant_prevu = price;
-    
-    const isMamanFlow = registrationData.categorie === 'MAMAN_BEBE';
-    const themeColor = isMamanFlow ? 'pink' : 'emerald';
-    const themeBgClass = isMamanFlow ? 'bg-pink-50 border-pink-200' : 'bg-emerald-50 border-emerald-200';
-    const themeColorClass = isMamanFlow ? 'text-pink-600' : 'text-emerald-600';
-    const borderColorClass = isMamanFlow ? 'border-pink-500' : 'border-emerald-500';
-    const bgColorClass = isMamanFlow ? 'bg-pink-500' : 'bg-emerald-500';
-    
-    document.querySelectorAll('.pack-card').forEach(card => {
-        const cardPackId = card.dataset.packId;
-        if (cardPackId === packId) {
-            card.classList.add(borderColorClass);
-            card.classList.add(isMamanFlow ? 'bg-pink-50' : 'bg-emerald-50');
-            card.classList.add(isMamanFlow ? 'border-pink-200' : 'border-emerald-200');
-            card.classList.remove('border-slate-100');
-            
-            const iconDiv = card.querySelector('.w-12.h-12');
-            if (iconDiv) {
-                iconDiv.classList.add(isMamanFlow ? 'bg-pink-50' : 'bg-emerald-50');
-                iconDiv.classList.add(isMamanFlow ? 'border-pink-200' : 'border-emerald-200');
-                iconDiv.classList.remove('bg-slate-50');
-                const icon = iconDiv.querySelector('i');
-                if (icon) {
-                    icon.classList.add(themeColorClass);
-                    icon.classList.remove('text-slate-400');
-                }
-            }
-            
-            const radioDiv = card.querySelector('.w-5.h-5');
-            if (radioDiv) {
-                radioDiv.classList.add(borderColorClass);
-                radioDiv.classList.add(bgColorClass);
-                radioDiv.classList.remove('border-slate-300', 'bg-transparent');
-                radioDiv.innerHTML = '<i class="fa-solid fa-check text-white text-[8px]"></i>';
-            }
-        } else {
-            card.classList.remove(borderColorClass);
-            card.classList.remove(isMamanFlow ? 'bg-pink-50' : 'bg-emerald-50');
-            card.classList.remove(isMamanFlow ? 'border-pink-200' : 'border-emerald-200');
-            card.classList.add('border-slate-100');
-            
-            const iconDiv = card.querySelector('.w-12.h-12');
-            if (iconDiv) {
-                iconDiv.classList.remove(isMamanFlow ? 'bg-pink-50' : 'bg-emerald-50');
-                iconDiv.classList.remove(isMamanFlow ? 'border-pink-200' : 'border-emerald-200');
-                iconDiv.classList.add('bg-slate-50');
-                const icon = iconDiv.querySelector('i');
-                if (icon) {
-                    icon.classList.remove(themeColorClass);
-                    icon.classList.add('text-slate-400');
-                }
-            }
-            
-            const radioDiv = card.querySelector('.w-5.h-5');
-            if (radioDiv) {
-                radioDiv.classList.remove(borderColorClass);
-                radioDiv.classList.remove(bgColorClass);
-                radioDiv.classList.add('border-slate-300');
-                radioDiv.innerHTML = '';
-            }
-        }
+
+    document.querySelectorAll(".pack-card").forEach(card => {
+        card.classList.toggle("selected", card.dataset.packId === packId);
     });
-    
-    const continueBtn = document.getElementById('pack-continue-btn');
+
+    const continueBtn = document.getElementById("pack-continue-btn");
+
     if (continueBtn) {
         continueBtn.disabled = false;
-        continueBtn.classList.remove('bg-slate-200', 'text-slate-400', 'cursor-not-allowed');
-        continueBtn.classList.add(isMamanFlow ? 'bg-pink-500' : 'bg-emerald-500');
-        continueBtn.classList.add(isMamanFlow ? 'hover:bg-pink-600' : 'hover:bg-emerald-600');
+        continueBtn.style.opacity = "1";
+        continueBtn.style.pointerEvents = "auto";
     }
-    
-    UI.vibrate('success');
+
+    UI.vibrate("success");
+};
+
+
+window.selectPackConfort = (packId, price, duration) => {
+    registrationData.type_pack = packId;
+    registrationData.montant_prevu = price;
+    registrationData.pack_duration = duration;
+
+    document.querySelectorAll(".pack-card").forEach(card => {
+        card.classList.toggle("selected", card.dataset.packId === packId);
+    });
+
+    const continueBtn = document.getElementById("pack-continue-btn");
+
+    if (continueBtn) {
+        continueBtn.disabled = false;
+        continueBtn.style.opacity = "1";
+        continueBtn.style.pointerEvents = "auto";
+    }
+
+    UI.vibrate("success");
 };
 
 // ============================================================
@@ -1621,48 +1956,94 @@ window.selectPack = (packId, price) => {
         return;
     }
     
-    if (currentStep === 1) {
-        registrationData.nom_famille = document.getElementById('f-nom')?.value;
-        registrationData.email = document.getElementById('f-email')?.value;
+       if (currentStep === 1) {
+        registrationData.nom_famille = document.getElementById('f-nom')?.value?.trim();
+        registrationData.email = document.getElementById('f-email')?.value?.trim().toLowerCase();
         registrationData.password = document.getElementById('f-pass')?.value;
-        registrationData.tel_famille = document.getElementById('f-tel')?.value || "";
+        registrationData.tel_famille = document.getElementById('f-tel')?.value?.trim() || "";
         registrationData.lien_parente = document.getElementById('f-lien')?.value || "";
-    }
     
-    if (currentStep === 2) {
-        registrationData.nom_patient = document.getElementById('p-nom')?.value;
-        registrationData.adresse_patient = document.getElementById('p-addr')?.value;
-        registrationData.contact_urgence = document.getElementById('p-urgence')?.value;
-        registrationData.age_patient = document.getElementById('p-age')?.value || "";
-        registrationData.sexe_patient = document.getElementById('p-sex')?.value || "";
-        registrationData.tel_patient = document.getElementById('p-tel')?.value || "";
-        registrationData.contact_urgence_tel = document.getElementById('p-urgence-tel')?.value || "";
-    }
-    
-    if (currentStep === 3) {
-        const meds = Array.from(document.querySelectorAll('.med-hist:checked')).map(el => el.value);
-        registrationData.pathologies = meds;  
-        registrationData.traitements = document.getElementById('p-traitements')?.value || "";
-        registrationData.allergies = document.getElementById('p-allergies')?.value || "";
-        registrationData.notes_medicales = document.getElementById('p-notes')?.value;
-    }
-    
-    // ✅ ÉTAPE 5 : Confirmation (c'est la dernière étape, pas 6)
-    if (currentStep === 5) { 
-        if(!document.getElementById('legal-check')?.checked) {
+        if (!registrationData.nom_famille || !registrationData.email || !registrationData.password) {
             UI.vibrate('error');
             Swal.fire({
-                title: "Confirmation requise",
-                text: "Veuillez accepter les conditions d'engagement",
                 icon: "warning",
-                customClass: { popup: 'rounded-2xl' }
+                title: "Informations incomplètes",
+                text: "Veuillez renseigner votre nom, votre email et votre mot de passe.",
+                confirmButtonText: "Compris",
+                confirmButtonColor: "#059669",
+                customClass: { popup: "rounded-2xl" }
             });
             return;
         }
-        registrationData.engagement_non_medical = true;
-        submitRegistration();
-        return;
+    
+        if (registrationData.password.length < 6) {
+            UI.vibrate('error');
+            Swal.fire({
+                icon: "warning",
+                title: "Mot de passe trop court",
+                text: "Choisissez un mot de passe d’au moins 6 caractères.",
+                confirmButtonText: "Compris",
+                confirmButtonColor: "#059669",
+                customClass: { popup: "rounded-2xl" }
+            });
+            return;
+        }
     }
+    
+     if (currentStep === 2) {
+      registrationData.nom_patient = document.getElementById('p-nom')?.value?.trim();
+      registrationData.adresse_patient = document.getElementById('p-addr')?.value?.trim();
+      registrationData.contact_urgence = document.getElementById('p-urgence')?.value?.trim();
+      registrationData.age_patient = document.getElementById('p-age')?.value?.trim() || "";
+      registrationData.sexe_patient = document.getElementById('p-sex')?.value || "";
+      registrationData.tel_patient = document.getElementById('p-tel')?.value?.trim() || "";
+      registrationData.contact_urgence_tel = document.getElementById('p-urgence-tel')?.value?.trim() || "";
+  
+      if (!registrationData.nom_patient || !registrationData.adresse_patient) {
+          UI.vibrate('error');
+          Swal.fire({
+              icon: "warning",
+              title: "Dossier incomplet",
+              text: "Veuillez renseigner au minimum le nom du patient et son adresse ou quartier.",
+              confirmButtonText: "Compris",
+              confirmButtonColor: "#059669",
+              customClass: { popup: "rounded-2xl" }
+          });
+          return;
+      }
+  }
+    
+   if (currentStep === 3) {
+        const meds = Array.from(document.querySelectorAll('.med-hist:checked')).map(el => el.value);
+    
+        registrationData.pathologies = meds;
+        registrationData.traitements = document.getElementById('p-traitements')?.value?.trim() || "";
+        registrationData.allergies = document.getElementById('p-allergies')?.value?.trim() || "";
+        registrationData.notes_medicales = document.getElementById('p-notes')?.value?.trim() || "";
+    
+        registrationData.type_accouchement = document.getElementById('accouchement')?.value || "";
+        registrationData.allaitement = document.getElementById('allaitement')?.value || "";
+    }
+    
+    // ✅ ÉTAPE 5 : Confirmation (c'est la dernière étape, pas 6)
+     if (currentStep === 5) { 
+      if (!document.getElementById('legal-check')?.checked) {
+          UI.vibrate('error');
+          Swal.fire({
+              icon: "warning",
+              title: "Confirmation requise",
+              text: "Veuillez confirmer avoir compris la nature non médicale de l’accompagnement.",
+              confirmButtonText: "Compris",
+              confirmButtonColor: "#059669",
+              customClass: { popup: "rounded-2xl" }
+          });
+          return;
+      }
+  
+      registrationData.engagement_non_medical = true;
+      submitRegistration();
+      return;
+  }
 
     currentStep++;
     renderAuthView('register', currentStep);
@@ -1720,13 +2101,18 @@ async function submitRegistration() {
             localStorage.setItem("user_categorie", registrationData.categorie);
             localStorage.setItem("user_is_maman", registrationData.categorie === 'MAMAN_BEBE');
             
-            Swal.fire({
-                icon: "success",
-                title: "Dossier Transmis !",
-                text: "Un coordinateur va valider vos informations sous 24h.",
-                confirmButtonText: "RETOUR À L'ACCUEIL",
-                confirmButtonColor: "#16a34a"
-            }).then(() => window.location.reload());
+          const isSansPatient = registrationData.type_compte === "SANS_PATIENT";
+          
+          Swal.fire({
+              icon: "success",
+              title: isSansPatient ? "Compte transmis !" : "Dossier transmis !",
+              text: isSansPatient
+                  ? "Votre compte personnel a été créé. Vous pourrez activer votre Pack Confort après validation."
+                  : "Un coordinateur va valider vos informations sous 24h.",
+              confirmButtonText: "RETOUR À L'ACCUEIL",
+              confirmButtonColor: "#059669",
+              customClass: { popup: "rounded-2xl" }
+          }).then(() => window.location.reload());
         } else {
             throw new Error(data.error || "Erreur lors de l'inscription");
         }
@@ -1785,25 +2171,63 @@ function renderAuthView(mode = 'login', stepSource = 1) {
     // MODE LOGIN
     // ============================================================
     if (mode === 'login') {
-        dynamicContent = `
-            <div class="space-y-4">
-                <div class="relative">
-                    <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input id="email" type="email" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-300 focus:ring-1 focus:ring-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-200 transition-all" placeholder="Adresse email" value="${registrationData.email || ''}">
+       dynamicContent = `
+            <div class="auth-form-heading">
+                <h3>Bon retour parmi nous.</h3>
+                <p>
+                    Connectez-vous pour accéder au suivi des visites, aux messages et aux demandes en cours.
+                </p>
+            </div>
+        
+            <div class="space-y-3">
+                <div class="auth-field">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input 
+                        id="login-email" 
+                        type="email" 
+                        autocomplete="email"
+                        class="auth-input" 
+                        placeholder="Adresse email"
+                    >
                 </div>
-                <div class="relative">
-                    <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input id="password" type="password" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-300 focus:ring-1 focus:ring-${isMamanFlow ? 'pink' : (category === 'aidant' ? 'amber' : (category === 'coordinateur' ? 'slate' : 'emerald'))}-200 transition-all" placeholder="Mot de passe">
+        
+                <div class="auth-field">
+                    <i class="fa-solid fa-lock"></i>
+                    <input 
+                        id="login-password" 
+                        type="password" 
+                        autocomplete="current-password"
+                        class="auth-input" 
+                        placeholder="Mot de passe"
+                    >
                 </div>
-                <div class="text-right">
-                    <button onclick="window.forgotPassword()" class="text-[11px] text-slate-400 hover:text-${isMamanFlow ? 'pink-500' : (category === 'aidant' ? 'amber-600' : (category === 'coordinateur' ? 'slate-600' : 'emerald-600'))} transition-all font-medium">
+        
+                <div class="flex justify-end">
+                    <button onclick="window.forgotPassword()" class="auth-link">
                         Mot de passe oublié ?
                     </button>
                 </div>
-                <button onclick="window.login()" id="btn-login" class="w-full py-3.5 rounded-xl font-black text-[11px] uppercase tracking-wider shadow-md active:scale-98 transition-all flex items-center justify-center gap-2" style="background: ${primaryColor}; color: white;">
-                    Se connecter <i class="fa-solid fa-arrow-right text-xs"></i>
+        
+                <button onclick="window.login()" id="btn-login" class="auth-primary-btn">
+                    Se connecter <i class="fa-solid fa-arrow-right"></i>
                 </button>
-            </div>`;
+            </div>
+        
+            <div class="auth-trust-row">
+                <div class="auth-trust-pill">
+                    <i class="fa-solid fa-shield-heart"></i>
+                    <span>Données protégées</span>
+                </div>
+                <div class="auth-trust-pill">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>Suivi en temps réel</span>
+                </div>
+                <div class="auth-trust-pill">
+                    <i class="fa-solid fa-house-medical"></i>
+                    <span>Assistance à domicile</span>
+                </div>
+            </div>
+        `;
     } 
     // ============================================================
     // MODE REGISTER (avec marges externes)
@@ -1879,28 +2303,26 @@ function renderAuthView(mode = 'login', stepSource = 1) {
 
     if (existingCard) {
          // Mettre à jour le conteneur parent pour qu'il utilise flex
-         const cardDiv = document.querySelector('#app .relative.w-full.max-w-md');
-         if (cardDiv && mode === 'register') {
-             cardDiv.classList.add('flex', 'flex-col');
-             cardDiv.style.height = '85vh';
-             cardDiv.style.maxHeight = '85vh';
-             cardDiv.style.overflow = 'hidden';
-         }
+     const cardDiv = document.querySelector(".auth-shell-card");
+     if (cardDiv) {
+         cardDiv.classList.toggle("auth-card--register", mode === "register");
+         cardDiv.classList.toggle("auth-card--login", mode === "login");
+     }
      
-        document.getElementById("auth-step-title").innerText = stepTitle;
+        const stepTitleEl = document.getElementById("auth-step-title"); if (stepTitleEl) {     stepTitleEl.innerText = stepTitle; }
         
         const tabContainer = document.getElementById("auth-tabs");
         if (tabContainer && mode !== 'otp') {
-            tabContainer.style.display = "block";
-            tabContainer.innerHTML = `
-                <div class="bg-slate-100 p-1 rounded-xl flex gap-1">
-                    <button onclick="window.renderAuthView('login')" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}">
-                        Connexion
-                    </button>
-                    <button onclick="window.renderAuthView('register', 0)" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${mode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}">
-                        Inscription
-                    </button>
-                </div>`;
+          tabContainer.style.display = "flex";
+          tabContainer.className = "auth-switch";
+          tabContainer.innerHTML = `
+              <button onclick="window.renderAuthView('login')" class="${mode === "login" ? "active" : ""}">
+                  Connexion
+              </button>
+              <button onclick="window.renderAuthView('register', 0)" class="${mode === "register" ? "active" : ""}">
+                  Inscription
+              </button>
+          `;
         } else if (tabContainer) {
             tabContainer.style.display = "none";
         }
@@ -1908,11 +2330,16 @@ function renderAuthView(mode = 'login', stepSource = 1) {
         const progressContainer = document.getElementById("auth-progress");
         if (progressContainer) {
             if (mode === 'register') {
-                progressContainer.style.display = "block";
-                progressContainer.innerHTML = `
-                    <div class="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full ${progressColor} transition-all duration-500" style="width: ${(currentStep/6)*100}%"></div>
-                    </div>`;
+                 const progressWrap = document.getElementById("auth-progress");
+                 if (progressWrap) {
+                     progressWrap.style.display = mode === "register" ? "block" : "none";
+                     progressWrap.className = "auth-progress-wrap";
+                     progressWrap.innerHTML = `
+                         <div class="auth-progress-track">
+                             <div class="auth-progress-fill" style="width: ${Math.min(100, Math.max(0, (currentStep / 5) * 100))}%"></div>
+                         </div>
+                     `;
+                 }
             } else {
                 progressContainer.style.display = "none";
             }
@@ -1950,50 +2377,56 @@ function renderAuthView(mode = 'login', stepSource = 1) {
            ? 'max-height: calc(100vh - 32px);'
            : '';
         
-        app.innerHTML = `
-         <div class="fixed inset-0 w-full h-screen flex items-center justify-center px-4 py-4 sm:px-6 sm:py-6 z-50" style="background: linear-gradient(135deg, ${primaryLight} 0%, white 100%);">
-            <div class="absolute -top-20 -left-20 w-96 h-96 rounded-full ${blurColor1} filter blur-[120px] opacity-30 pointer-events-none"></div>
-            <div class="absolute -bottom-20 -right-20 w-96 h-96 rounded-full ${blurColor2} filter blur-[120px] opacity-30 pointer-events-none"></div>
+      const logoSrc = isMamanFlow ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON;
+      const authCardModeClass = mode === "register" ? "auth-card--register" : "auth-card--login";
+      const progressPercent = Math.min(100, Math.max(0, (currentStep / 5) * 100));
+
+app.innerHTML = `
+    <div class="auth-container">
+        <div class="auth-shell-card relative w-full max-w-md ${authCardModeClass}">
             
-            <!-- Carte avec flex column pour que l'en-tête reste fixe -->
-            <div class="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 flex flex-col ${registerClasses}" style="max-height: 85vh; height: 85vh;">
-                
-                <!-- Logo (fixe en haut) -->
-                <div class="text-center pt-6 pb-2 flex-shrink-0">
-                    <div class="flex justify-center mb-2">
-                        <div class="pb-1" style="border-bottom: 2px solid ${primaryColor};">
-                            <img id="auth-logo-img" src="/assets/images/logo-general-icon.png" class="w-16 h-16 object-contain" style="border: none;">
-                        </div>
-                    </div>
-                    <p id="auth-step-title" class="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">${stepTitle}</p>
+            <div class="auth-brand-zone">
+                <div class="auth-logo-mark">
+                    <img id="auth-logo-img" src="${logoSrc}" alt="Santé Plus Services">
                 </div>
-                
-                <!-- Tabs (fixes) -->
-                <div id="auth-tabs" class="px-6 mt-2 flex-shrink-0" style="display: ${mode !== 'otp' ? 'block' : 'none'}">
-                    <div class="bg-slate-100 p-1 rounded-xl flex gap-1">
-                        <button onclick="window.renderAuthView('login')" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}">
-                            Connexion
-                        </button>
-                        <button onclick="window.renderAuthView('register', 0)" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${mode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}">
-                            Inscription
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Progress bar (fixe) -->
-                <div id="auth-progress" class="px-6 mt-3 flex-shrink-0" style="display: ${mode === 'register' ? 'block' : 'none'}">
-                    <div class="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full ${progressColor} transition-all duration-500" style="width: ${(currentStep/6)*100}%"></div>
-                    </div>
-                </div>
-                
-                <!-- Contenu scrollable -->
-                <div id="auth-card-content" class="px-5 sm:px-6 py-5 flex-1 overflow-y-auto custom-scroll">
-                    ${dynamicContent}
-                </div>
-                
+
+                <div class="auth-kicker">Santé Plus Services</div>
+
+                <h1 class="auth-title">
+                    ${mode === "login" 
+                        ? "Votre espace de suivi santé." 
+                        : "Créer un accès rassurant."}
+                </h1>
+
+                <p class="auth-subtitle">
+                    ${mode === "login"
+                        ? "Suivez les visites, les commandes et l’accompagnement de vos proches depuis un seul espace sécurisé."
+                        : "Choisissez le type de compte adapté, puis complétez les informations nécessaires à l’accompagnement."}
+                </p>
             </div>
-        </div>`;
+
+            <div id="auth-tabs" class="auth-switch" style="display: ${mode !== "otp" ? "flex" : "none"}">
+                <button onclick="window.renderAuthView('login')" class="${mode === "login" ? "active" : ""}">
+                    Connexion
+                </button>
+                <button onclick="window.renderAuthView('register', 0)" class="${mode === "register" ? "active" : ""}">
+                    Inscription
+                </button>
+            </div>
+
+            <div id="auth-progress" class="auth-progress-wrap" style="display: ${mode === "register" ? "block" : "none"}">
+                <div class="auth-progress-track">
+                    <div class="auth-progress-fill" style="width: ${progressPercent}%"></div>
+                </div>
+            </div>
+
+            <div id="auth-card-content">
+                ${dynamicContent}
+            </div>
+        </div>
+    </div>
+`;
+     
     }
 }
 
