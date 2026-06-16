@@ -503,8 +503,20 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
                                     mode_paiement: "FEDAPAY"
                                 })
                             });
+
+                            localStorage.setItem("subscription_active", "true");
+
+                            if (typeof window.refreshSubscriptionStatus === "function") {
+                                await window.refreshSubscriptionStatus();
+                            }
                             
                             console.log("✅ Résultat de /billing/pay:", result);
+
+                            localStorage.setItem("subscription_active", "true");
+
+                            if (typeof window.refreshSubscriptionStatus === "function") {
+                                await window.refreshSubscriptionStatus();
+                            }
                             
                             Swal.fire({
                                 icon: "success",
