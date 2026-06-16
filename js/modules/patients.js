@@ -36,11 +36,28 @@ export async function loadPatients() {
         // Stocker les patients filtrés dans l'état global
         AppState.patients = filteredPatients;
         
-        // Pour la famille, définir automatiquement le premier patient comme courant
-        if (userRole === "FAMILLE" && filteredPatients && filteredPatients.length > 0) {
+        // Définir le patient courant seulement si c'est clair
+        if (filteredPatients && filteredPatients.length === 1) {
             AppState.currentPatient = filteredPatients[0].id;
             localStorage.setItem("current_patient_id", filteredPatients[0].id);
-            console.log("✅ Patient famille chargé:", AppState.currentPatient);
+            localStorage.setItem("active_patient_id", filteredPatients[0].id);
+            console.log("✅ Patient unique chargé:", AppState.currentPatient);
+        } else if (filteredPatients && filteredPatients.length > 1) {
+            const savedPatientId =
+                localStorage.getItem("current_patient_id") ||
+                localStorage.getItem("active_patient_id");
+        
+            const savedStillExists = filteredPatients.some(p => String(p.id) === String(savedPatientId));
+        
+            if (savedPatientId && savedStillExists) {
+                AppState.currentPatient = savedPatientId;
+                console.log("✅ Patient actif conservé:", savedPatientId);
+            } else {
+                AppState.currentPatient = null;
+                localStorage.removeItem("current_patient_id");
+                localStorage.removeItem("active_patient_id");
+                console.log("ℹ️ Plusieurs patients disponibles, sélection nécessaire");
+            }
         }
         
         // Afficher la liste des patients
@@ -86,7 +103,7 @@ export function renderPatients() {
                  data-patient-id="${p.id}"
                  style="animation: fadeInUp 0.25s ease ${index * 0.03}s forwards; opacity: 0;">
                 
-                <div class="flex items-center gap-3" onclick="window.viewPatientFeed('${p.id}')" style="cursor: pointer;">
+                <div class="flex items-center gap-3" onclick="window.viewPatientDetails('${p.id}')" style="cursor: pointer;">
                     <!-- Avatar avec fond coloré -->
                     <div class="patient-avatar" style="background: ${primaryLight}; color: ${primaryColor};">
                         ${initials}
@@ -96,6 +113,9 @@ export function renderPatients() {
                     <div class="flex-1">
                         <div class="flex items-center gap-2 flex-wrap">
                             <h4 class="font-bold text-slate-800 text-base">${p.nom_complet || 'Inconnu'}</h4>
+                            
+                            <span class="patient-badge hidden min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black items-center justify-center"></span>
+                            
                             ${isPremium ? '<i class="fa-solid fa-crown text-amber-500 text-xs"></i>' : ''}
                         </div>
                         <div class="flex items-center gap-1 mt-0.5">
@@ -129,6 +149,20 @@ export function renderPatients() {
                     <span class="text-[10px] text-slate-400">
                         <i class="fa-regular fa-clock"></i> ID: ${p.id?.substring(0, 6)}
                     </span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mt-3">
+                    <button onclick="event.stopPropagation(); window.viewPatientFeed('${p.id}')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: ${primaryLight}; color: ${primaryColor};">
+                        <i class="fa-solid fa-newspaper mr-1"></i> Journal
+                    </button>
+                
+                    <button onclick="event.stopPropagation(); window.viewPatientMessages('${p.id}')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: #EEF2FF; color: #4F46E5;">
+                        <i class="fa-solid fa-comments mr-1"></i> Messages
+                    </button>
                 </div>
                 
                 <!-- Action lier famille (coordinateur uniquement) -->
@@ -438,7 +472,7 @@ export async function renderPatientDetailsView(patientId) {
 
                 <div id="aidant-active-area" class="mt-4"></div>
 
-                <button onclick="window.switchView('planning')" class="w-full mt-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 flex items-center justify-center gap-2">
+                <button onclick="window.switchView('patients')" class="w-full mt-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-arrow-left text-xs"></i> Retour
                 </button>
             </div>
@@ -458,7 +492,7 @@ export async function renderPatientDetailsView(patientId) {
                 <i class="fa-solid fa-circle-exclamation text-rose-500 text-3xl mb-3"></i>
                 <p class="text-sm font-bold text-rose-500">Erreur de chargement</p>
                 <p class="text-xs text-slate-400 mt-1">${err.message}</p>
-                <button onclick="window.switchView('planning')" class="mt-4 px-4 py-2 bg-slate-800 text-white rounded-xl">Retour</button>
+                <button onclick="window.switchView('patients')" class="mt-4 px-4 py-2 bg-slate-800 text-white rounded-xl">Retour</button>
             </div>
         `;
     }
@@ -524,33 +558,99 @@ window.submitLinkFamily = async (patientId) => {
 /**
  * 🎯 FIXATION GPS
  */
+
 export async function setPatientHomeDirect(patientId) {
     try {
         UI.vibrate();
-        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
-        Toast.fire({ icon: 'info', title: 'Calcul de la position...' });
+
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+
+        Toast.fire({
+            icon: 'info',
+            title: 'Calcul de la position...'
+        });
 
         const pos = await new Promise((res, rej) => {
-            navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true, timeout: 10000 });
+            navigator.geolocation.getCurrentPosition(res, rej, {
+                enableHighAccuracy: true,
+                timeout: 10000
+            });
         });
 
-        const res = await secureFetch("/patients/update-gps", {
+        await secureFetch("/patients/update-gps", {
             method: "POST",
-            body: JSON.stringify({ patient_id: patientId, lat: pos.coords.latitude, lng: pos.coords.longitude })
+            body: JSON.stringify({
+                patient_id: patientId,
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude
+            })
         });
 
-        if (res.ok) {
-            UI.success("Domicile enregistré !");
-            loadPatients();
-        }
+        UI.success("Domicile enregistré !");
+        loadPatients();
+
     } catch (err) {
+        console.error("Erreur GPS:", err);
         UI.error("Erreur GPS");
         Swal.fire("Erreur GPS", "Veuillez autoriser la localisation", "error");
     }
 }
 
+// ============================================================
+// 🧭 SÉLECTION D'UN PATIENT ACTIF
+// ============================================================
+function setActivePatient(patientId) {
+    if (!patientId) {
+        console.warn("patientId manquant dans setActivePatient");
+        return false;
+    }
+
+    AppState.currentPatient = patientId;
+    localStorage.setItem("current_patient_id", patientId);
+    localStorage.setItem("active_patient_id", patientId);
+
+    console.log("✅ Patient actif sélectionné:", patientId);
+    return true;
+}
+
+// ============================================================
+// 📰 OUVRIR LE JOURNAL D'UN PATIENT
+// ============================================================
+window.viewPatientFeed = async (patientId) => {
+    if (!setActivePatient(patientId)) return;
+
+    if (window.switchView) {
+        await window.switchView("feed");
+    }
+};
+
+// ============================================================
+// 💬 OUVRIR LES MESSAGES D'UN PATIENT
+// ============================================================
+window.viewPatientMessages = async (patientId) => {
+    if (!setActivePatient(patientId)) return;
+
+    if (window.switchView) {
+        await window.switchView("messages");
+    }
+};
+
+// ============================================================
+// 📄 OUVRIR LA FICHE DÉTAIL D'UN PATIENT
+// ============================================================
+window.viewPatientDetails = async (patientId) => {
+    if (!setActivePatient(patientId)) return;
+
+    await renderPatientDetailsView(patientId);
+};
+
 function updatePatientBadges() {
-    document.querySelectorAll(".patient-item").forEach(el => {
+    document.querySelectorAll(".patient-card-modern").forEach(el => {
         const patientId = el.dataset.patientId;
         const badge = el.querySelector(".patient-badge");
 
@@ -559,10 +659,12 @@ function updatePatientBadges() {
         const count = AppState.unreadByPatient?.[patientId] || 0;
 
         if (count > 0) {
-            badge.textContent = count;
+            badge.textContent = count > 99 ? "99+" : count;
             badge.classList.remove("hidden");
+            badge.classList.add("inline-flex");
         } else {
             badge.classList.add("hidden");
+            badge.classList.remove("inline-flex");
         }
     });
 }
