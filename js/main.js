@@ -3899,7 +3899,9 @@ async function performViewSwitch(viewName) {
                 await Visites.loadVisits();
                 break;
 
-          case "messages":
+           case "messages":
+                if (window.cleanupRealtime) window.cleanupRealtime();
+            
                 if (!AppState.currentPatient) {
                     const savedPatientId =
                         localStorage.getItem("current_patient_id") ||
@@ -3923,17 +3925,17 @@ async function performViewSwitch(viewName) {
                 }
             
                 if (!AppState.currentPatient) {
-                    console.warn("Aucun dossier assigné disponible pour ouvrir les messages");
+                    console.warn("Aucun dossier disponible pour ouvrir les messages");
                     await window.switchView("patients");
                     return;
                 }
             
-                if (Messages?.loadMessages) {
-                    await Messages.loadMessages(AppState.currentPatient);
-                } else if (window.loadMessages) {
-                    await window.loadMessages(AppState.currentPatient);
+                if (typeof window.loadFeed === "function") {
+                    await window.loadFeed();
+                } else if (Messages?.loadFeed) {
+                    await Messages.loadFeed();
                 } else {
-                    console.warn("Module messages introuvable");
+                    console.warn("Fonction loadFeed introuvable dans message.js");
                 }
             
                 break;
@@ -4525,6 +4527,7 @@ window.login = Auth.handleLogin;
 window.logout = Auth.handleLogout;
 window.refreshAidantUI = Visites.refreshAidantUI;
 window.renderFeed = Messages.renderFeed;
+window.loadFeed = Messages.loadFeed;
 window.loadPatients = Patients.loadPatients;
 window.loadVisits = Visites.loadVisits;
 window.verifyOTP = Auth.verifyOTP;
