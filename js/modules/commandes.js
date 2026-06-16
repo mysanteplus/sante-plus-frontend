@@ -1,6 +1,7 @@
 import { CONFIG } from "../core/config.js";
 import { UI, compressImage } from "../core/utils.js";
 import { secureFetch, clearApiCache } from "../core/api.js";
+import { AppState } from "../core/state.js";
 
 // ============================================================
 // VARIABLES GLOBALES
@@ -598,21 +599,9 @@ window.validateAllDeliveriesWithoutReload = async () => {
 export async function openOrderModal() { 
     // ✅ VÉRIFICATION ABONNEMENT
     const userRole = localStorage.getItem("user_role");
-    if (userRole === "FAMILLE") {
-        const hasSubscription = await checkUserSubscription();
-        if (!hasSubscription) {
-            Swal.fire({
-                icon: "warning",
-                title: "Abonnement requis",
-                text: "Vous devez avoir un abonnement actif pour passer une commande.",
-                confirmButtonText: "Voir les offres",
-                confirmButtonColor: "#10B981"
-            }).then(() => {
-                window.switchView("subscription");
-            });
-            return;
-        }
-    }
+    if (!(await window.requireActiveFamilySubscription?.("passer une commande"))) {
+    return;
+}
     
     const isMaman = localStorage.getItem("user_is_maman") === "true";
     const isFamily = userRole === "FAMILLE";
@@ -1198,3 +1187,7 @@ export async function markAsDelivered(commandeId) {
         });
     }
 }
+
+
+window.openOrderModal = openOrderModal;
+
