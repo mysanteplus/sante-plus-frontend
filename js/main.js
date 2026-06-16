@@ -557,8 +557,16 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
              } else if (userRole === "AIDANT") {
                  defaultView = "patients";
              }
-
-         const lastView = localStorage.getItem("last_view") || defaultView;
+           
+         let lastView = localStorage.getItem("last_view") || defaultView;
+            
+            const allowedViews = ROLE_VIEWS[userRole] || [];
+            
+            if (!allowedViews.includes(lastView)) {
+                console.warn(`Vue sauvegardée non autorisée pour ${userRole}:`, lastView);
+                localStorage.removeItem("last_view");
+                lastView = defaultView;
+            }
             
             await window.switchView(lastView);
 
@@ -2893,9 +2901,7 @@ function renderLayout() {
          }
         
          
-         if (serviceItems.length > 0) {
-             sections.push({ title: 'SERVICES', icon: 'fa-briefcase', items: serviceItems, defaultOpen: false });
-         }
+
          
          // Section COMPTE (profil pour tous)
          const accountItems = [
@@ -3620,40 +3626,45 @@ async function performViewSwitch(viewName) {
     const allowedViews = ROLE_VIEWS[userRole] || [];
     const isAllowed = allowedViews.includes(viewName) || PUBLIC_VIEWS.includes(viewName);
     
-    if (!isAllowed) {
-        console.log(`🚫 Accès refusé: ${userRole} tente d'accéder à ${viewName}`);
-        UI.error("Accès non autorisé");
-        
-        // Rediriger vers la vue par défaut selon le rôle
-        let defaultView = "home";
-        
-        if (userRole === "COORDINATEUR") {
-            defaultView = "dashboard";
-        } else if (userRole === "AIDANT") {
-            defaultView = "patients";
-        } else if (
-            userRole === "FAMILLE" &&
-            isMaman &&
-            !isSansPatient
-        ) {
-            defaultView = "dashboard-maman";
-        }
-        
-        window.switchView(defaultView);
-        return;
-    }
+   if (!isAllowed) {
+       console.warn(`Vue non autorisée pour ${userRole}:`, viewName);
+   
+       localStorage.removeItem("last_view");
+   
+       let defaultView = "home";
+   
+       if (userRole === "COORDINATEUR") {
+           defaultView = "dashboard";
+       } else if (userRole === "AIDANT") {
+           defaultView = "patients";
+       } else if (
+           userRole === "FAMILLE" &&
+           isMaman &&
+           !isSansPatient
+       ) {
+           defaultView = "dashboard-maman";
+       }
+   
+       if (viewName !== defaultView) {
+           await window.switchView(defaultView);
+       }
+   
+       return;
+   }
     
     // ✅ Vérification supplémentaire pour les vues admin
     if (ADMIN_ONLY_VIEWS.includes(viewName) && userRole !== "COORDINATEUR") {
-        UI.error("Accès non autorisé - Droits administrateur requis");
-        window.switchView("home");
+        console.warn(`Vue admin bloquée pour ${userRole}:`, viewName);
+        localStorage.removeItem("last_view");
+        await window.switchView("home");
         return;
     }
     
     // ✅ Vérification pour les vues aidant
     if (AIDANT_ONLY_VIEWS.includes(viewName) && userRole !== "AIDANT" && userRole !== "COORDINATEUR") {
-        UI.error("Accès non autorisé");
-        window.switchView("home");
+        console.warn(`Vue aidant bloquée pour ${userRole}:`, viewName);
+        localStorage.removeItem("last_view");
+        await window.switchView("home");
         return;
     }
 
@@ -3861,16 +3872,17 @@ async function performViewSwitch(viewName) {
     // ============================================================
     try {
         switch (viewName) {
-                case "dashboard":
-                    if (userRole !== "COORDINATEUR") {
-                        UI.error("Accès non autorisé");
-                        window.switchView("home");
-                        return;
-                    }
-                
-                    container.innerHTML = document.getElementById("template-dashboard").innerHTML;
-                    await Dashboard.loadAdminDashboard();
-                    break;
+          case "dashboard":
+              if (userRole !== "COORDINATEUR") {
+                  console.warn(`Dashboard admin bloqué pour ${userRole}`);
+                  localStorage.removeItem("last_view");
+                  await window.switchView("home");
+                  return;
+              }
+          
+              container.innerHTML = document.getElementById("template-dashboard").innerHTML;
+              await Dashboard.loadAdminDashboard();
+              break;
             case "patients":
                 await Patients.loadPatients();
                 refreshMicroInteractions();
@@ -3964,8 +3976,9 @@ async function performViewSwitch(viewName) {
                 break;
             case "dashboard-maman":
                 if (userRole !== "FAMILLE" || !isMaman) {
-                    UI.error("Accès non autorisé");
-                    window.switchView("home");
+                    console.warn(`Dashboard maman bloqué pour ${userRole}`);
+                    localStorage.removeItem("last_view");
+                    await window.switchView("home");
                     return;
                 }
             
