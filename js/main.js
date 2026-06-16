@@ -3983,7 +3983,6 @@ async function performViewSwitch(viewName) {
     // 7. CHARGEMENT DES DONNÉES PAR VUE
     // ============================================================
     try {
-
                console.log("🧭 Vue demandée :", viewName);
                console.log("👤 Rôle :", userRole);
                console.log("✅ Vue autorisée :", isAllowed);
