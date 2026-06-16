@@ -3686,19 +3686,20 @@ const ROLE_VIEWS = {
        "end-visit"
    ],
 
-    FAMILLE: [
-        "home",
-        "dashboard-maman",
-        "feed",
-        "visits",
-        "commandes",
-        "billing",
-        "subscription",
-        "profile",
-        "education",
-        "notifications",
-        "maman-planning"
-    ]
+   FAMILLE: [
+       "home",
+       "dashboard-maman",
+       "feed",
+       "visits",
+       "commandes",
+       "billing",
+       "subscription",
+       "profile",
+       "education",
+       "notifications",
+       "maman-planning",
+       "map"
+   ]
 };
 
 
