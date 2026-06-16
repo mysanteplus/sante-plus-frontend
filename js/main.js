@@ -80,6 +80,58 @@ async function checkSubscriptionForViews() {
 
 
 
+window.hasActiveFamilySubscription = function () {
+    const userRole = localStorage.getItem("user_role");
+
+    if (userRole !== "FAMILLE") {
+        return true;
+    }
+
+    return (
+        localStorage.getItem("subscription_active") === "true" ||
+        localStorage.getItem("user_subscription_active") === "true"
+    );
+};
+
+window.requireActiveFamilySubscription = async function (actionLabel = "utiliser cette fonctionnalité") {
+    const userRole = localStorage.getItem("user_role");
+
+    if (userRole !== "FAMILLE") {
+        return true;
+    }
+
+    if (window.hasActiveFamilySubscription()) {
+        return true;
+    }
+
+    const result = await Swal.fire({
+        icon: "warning",
+        title: "Abonnement requis",
+        html: `
+            <div style="text-align:center;">
+                <p style="font-size:14px; color:#475569; line-height:1.6;">
+                    Pour ${actionLabel}, vous devez activer un abonnement.
+                </p>
+                <p style="font-size:12px; color:#94A3B8; margin-top:8px;">
+                    Vous pouvez toujours consulter votre historique, vos messages et vos anciennes visites.
+                </p>
+            </div>
+        `,
+        confirmButtonText: "Activer mon abonnement",
+        showCancelButton: true,
+        cancelButtonText: "Plus tard",
+        confirmButtonColor: "#059669",
+        customClass: {
+            popup: "rounded-2xl"
+        }
+    });
+
+    if (result.isConfirmed && window.switchView) {
+        await window.switchView("subscription");
+    }
+
+    return false;
+};
 
 async function initPushNotifications() {
   try {
@@ -390,6 +442,7 @@ async function initApp() {
     preloadOnboardingImages();
     initPushNotifications();
     applyUserTheme();
+    await refreshSubscriptionStatus();
 
 // Écouter les changements de visites en temps réel
 if (window.Realtime && window.Realtime.subscribeToVisites) {
@@ -439,17 +492,8 @@ if (window.Realtime && window.Realtime.subscribeToVisites) {
     console.log("✅ Écoute des visites en temps réel activée");
 }
 
-// Écouter les commandes
 
-
-    // ============================================================
-// 💬 REALTIME MESSAGES (VERSION CORRECTE)
 // ============================================================
-
-
-
-
-    // ============================================================
 // 🔔 REALTIME NOTIFICATIONS
 // ============================================================
 if (window.Realtime && window.Realtime.subscribeToNotifications) {
@@ -830,6 +874,50 @@ function hideGlobalLoaderWithDelay() {
         hideGlobalLoader();
     }, 5000);
 }
+
+
+async function refreshSubscriptionStatus() {
+    const userRole = localStorage.getItem("user_role");
+
+    if (userRole !== "FAMILLE") {
+        localStorage.setItem("subscription_active", "true");
+        return true;
+    }
+
+    try {
+        const status = await secureFetch("/billing/subscription-status", {
+            noCache: true
+        });
+
+        const isActive = status?.active === true;
+
+        localStorage.setItem("subscription_active", isActive ? "true" : "false");
+
+        if (status?.endDate) {
+            localStorage.setItem("subscription_date_fin", status.endDate);
+        } else {
+            localStorage.removeItem("subscription_date_fin");
+        }
+
+        if (status?.type) {
+            localStorage.setItem("subscription_type_pack", status.type);
+        } else {
+            localStorage.removeItem("subscription_type_pack");
+        }
+
+        if (status?.daysRemaining !== undefined) {
+            localStorage.setItem("subscription_days_remaining", String(status.daysRemaining));
+        }
+
+        return isActive;
+    } catch (err) {
+        console.warn("Impossible de vérifier l’abonnement:", err.message);
+        localStorage.setItem("subscription_active", "false");
+        return false;
+    }
+}
+
+
 
 // ============================================================
 // CONFIGURATION SWEETALERT
@@ -4635,6 +4723,7 @@ window.setPlan = (plan) => {
 };
 window.submitRegistration = submitRegistration;
 window.loadMamanPlanning = Maman.loadMamanPlanning;
+window.refreshSubscriptionStatus = refreshSubscriptionStatus;
 window.startOnboarding = startOnboarding;
 window.finishOnboarding = finishOnboarding;
 window.nextOnboarding = nextOnboarding;
