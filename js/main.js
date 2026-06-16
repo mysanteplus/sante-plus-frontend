@@ -3899,83 +3899,115 @@ async function performViewSwitch(viewName) {
                 await Visites.loadVisits();
                 break;
 
-           case "messages":
-                if (window.cleanupRealtime) window.cleanupRealtime();
-            
-                if (!AppState.currentPatient) {
-                    const savedPatientId =
-                        localStorage.getItem("current_patient_id") ||
-                        localStorage.getItem("active_patient_id");
-            
-                    if (savedPatientId) {
-                        AppState.currentPatient = savedPatientId;
-                    } else {
-                        try {
-                            let patients = await secureFetch("/patients", { noCache: true });
-            
-                            if (!Array.isArray(patients)) {
-                                patients = patients?.data || patients?.results || [];
-                            }
-            
-                            if (patients && patients.length > 0) {
-                                AppState.currentPatient = patients[0].id;
-                                localStorage.setItem("current_patient_id", AppState.currentPatient);
-                                localStorage.setItem("active_patient_id", AppState.currentPatient);
-                            }
-                        } catch (err) {
-                            console.warn("Impossible de récupérer le dossier pour les messages:", err);
-                        }
-                    }
-                }
-            
-                if (!AppState.currentPatient) {
-                    console.warn("Aucun dossier disponible pour ouvrir les messages");
-                    await window.switchView("patients");
-                    return;
-                }
-            
-                if (Messages?.loadFeed) {
-                    await Messages.loadFeed();
-                } else if (typeof window.loadFeed === "function") {
-                    await window.loadFeed();
-                } else {
-                    console.warn("Fonction loadFeed introuvable");
-                }
-            
-                break;
-            case "feed":
-                if (window.cleanupRealtime) window.cleanupRealtime();
-            
-                if (!AppState.currentPatient) {
-                    const savedPatientId =
-                        localStorage.getItem("current_patient_id") ||
-                        localStorage.getItem("active_patient_id");
-            
-                    if (savedPatientId) {
-                        AppState.currentPatient = savedPatientId;
-                    } else {
-                        try {
-                            const patients = await secureFetch("/patients");
-            
-                            if (patients && patients.length > 0) {
-                                AppState.currentPatient = patients[0].id;
-                                localStorage.setItem("current_patient_id", AppState.currentPatient);
-                                localStorage.setItem("active_patient_id", AppState.currentPatient);
-                            }
-                        } catch (err) {
-                            console.warn("Impossible de récupérer le dossier pour le journal:", err);
-                        }
-                    }
-                }
-            
-                if (!AppState.currentPatient) {
-                    console.warn("Aucun dossier assigné disponible pour ouvrir le journal");
-                    await window.switchView("patients");
-                    return;
-                }
-            
-                await window.loadFeed();
-                break;
+           case "messages": {
+                 if (window.cleanupRealtime) window.cleanupRealtime();
+             
+                 let patientId =
+                     AppState.currentPatient ||
+                     localStorage.getItem("current_patient_id") ||
+                     localStorage.getItem("active_patient_id");
+             
+                 // Si aucun patient n'est encore sélectionné, on vérifie les dossiers disponibles
+                 if (!patientId) {
+                     try {
+                         let patients = await secureFetch("/patients", { noCache: true });
+             
+                         if (!Array.isArray(patients)) {
+                             patients = patients?.data || patients?.results || [];
+                         }
+             
+                         // S'il n'y a qu'un seul dossier, on peut l'utiliser directement
+                         if (patients.length === 1) {
+                             patientId = patients[0].id;
+                         }
+             
+                         // S'il y a plusieurs dossiers, on ne choisit pas à la place de l'utilisateur
+                         else if (patients.length > 1) {
+                             console.warn("Plusieurs dossiers disponibles. Sélection obligatoire avant d'ouvrir les messages.");
+                             await window.switchView("patients");
+                             return;
+                         }
+             
+                     } catch (err) {
+                         console.warn("Impossible de récupérer les dossiers pour les messages:", err);
+                     }
+                 }
+             
+                 if (!patientId) {
+                     console.warn("Aucun dossier disponible pour ouvrir les messages");
+                     await window.switchView("patients");
+                     return;
+                 }
+             
+                 AppState.currentPatient = patientId;
+                 localStorage.setItem("current_patient_id", patientId);
+                 localStorage.setItem("active_patient_id", patientId);
+             
+                 if (Messages?.loadFeed) {
+                     await Messages.loadFeed();
+                 } else if (typeof window.loadFeed === "function") {
+                     await window.loadFeed();
+                 } else {
+                     console.warn("Fonction loadFeed introuvable pour les messages");
+                 }
+             
+                 break;
+             }
+             
+             case "feed": {
+                 if (window.cleanupRealtime) window.cleanupRealtime();
+             
+                 let patientId =
+                     AppState.currentPatient ||
+                     localStorage.getItem("current_patient_id") ||
+                     localStorage.getItem("active_patient_id");
+             
+                 // Si aucun patient n'est encore sélectionné, on vérifie les dossiers disponibles
+                 if (!patientId) {
+                     try {
+                         let patients = await secureFetch("/patients", { noCache: true });
+             
+                         if (!Array.isArray(patients)) {
+                             patients = patients?.data || patients?.results || [];
+                         }
+             
+                         // S'il n'y a qu'un seul dossier, on peut l'utiliser directement
+                         if (patients.length === 1) {
+                             patientId = patients[0].id;
+                         }
+             
+                         // S'il y a plusieurs dossiers, on ne choisit pas à la place de l'utilisateur
+                         else if (patients.length > 1) {
+                             console.warn("Plusieurs dossiers disponibles. Sélection obligatoire avant d'ouvrir le journal.");
+                             await window.switchView("patients");
+                             return;
+                         }
+             
+                     } catch (err) {
+                         console.warn("Impossible de récupérer les dossiers pour le journal:", err);
+                     }
+                 }
+             
+                 if (!patientId) {
+                     console.warn("Aucun dossier disponible pour ouvrir le journal");
+                     await window.switchView("patients");
+                     return;
+                 }
+             
+                 AppState.currentPatient = patientId;
+                 localStorage.setItem("current_patient_id", patientId);
+                 localStorage.setItem("active_patient_id", patientId);
+             
+                 if (Messages?.loadFeed) {
+                     await Messages.loadFeed();
+                 } else if (typeof window.loadFeed === "function") {
+                     await window.loadFeed();
+                 } else {
+                     console.warn("Fonction loadFeed introuvable pour le journal");
+                 }
+             
+                 break;
+             }
             case "billing":
                 const billingTemplate = document.getElementById("template-billing");
                 if (billingTemplate) {
