@@ -1201,7 +1201,7 @@ function getStepHTML() {
                 <div class="auth-step-note">
                     <i class="fa-solid fa-house-medical"></i>
                     <p>
-                        Indiquez les informations les plus utiles. Vous pourrez compléter ou corriger le dossier plus tard avec le coordinateur.
+                        Indiquez les informations les plus utiles. Vous pourrez compléter ou corriger le dossier plus tard .
                     </p>
                 </div>
 
@@ -2216,67 +2216,26 @@ function renderAuthView(mode = 'login', stepSource = 1) {
                 </button>
             </div>
         
-            <div class="auth-trust-row">
-                <div class="auth-trust-pill">
-                    <i class="fa-solid fa-shield-heart"></i>
-                    <span>Données protégées</span>
-                </div>
-                <div class="auth-trust-pill">
-                    <i class="fa-solid fa-clock"></i>
-                    <span>Suivi en temps réel</span>
-                </div>
-                <div class="auth-trust-pill">
-                    <i class="fa-solid fa-house-medical"></i>
-                    <span>Assistance à domicile</span>
-                </div>
-            </div>
+
         `;
     } 
     // ============================================================
     // MODE REGISTER (avec marges externes)
     // ============================================================
-       else if (mode === 'register') {
-           const isLastStep = currentStep === 5;
-           
-           // À l'étape 0, on affiche le choix du type de compte
-           if (currentStep === 0) {
-               dynamicContent = getTypeCompteChoiceHTML();
-           } 
-           else if (!registrationData.type_compte) {
-               currentStep = 0;
-               dynamicContent = getTypeCompteChoiceHTML();
-           }
-           else {
-               dynamicContent = `
-                   <div class="flex flex-col h-full">
-                       <div class="flex-1 overflow-y-auto custom-scroll pr-1" style="padding-bottom: 4px;">
-                           ${getStepHTML()}
-                       </div>
+      else if (mode === "register") {
+         if (currentStep === 0) {
+             dynamicContent = getTypeCompteChoiceHTML();
+         } 
+         else if (!registrationData.type_compte) {
+             currentStep = 0;
+             dynamicContent = getTypeCompteChoiceHTML();
+         }
+         else {
+             dynamicContent = getStepHTML();
+         }
+     }
+
        
-                       ${currentStep !== 4 ? `
-                           <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4 flex-shrink-0">
-                               ${currentStep > 1 ? `
-                                   <button 
-                                       onclick="window.prevAuthStep()" 
-                                       class="prev-btn w-12 h-12 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shadow-sm active:scale-95 transition-all hover:bg-slate-200"
-                                   >
-                                       <i class="fa-solid fa-arrow-left"></i>
-                                   </button>
-                               ` : ''}
-       
-                               <button 
-                                   onclick="window.nextAuthStep()" 
-                                   class="next-btn flex-1 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-md active:scale-95 transition-all" 
-                                   style="background: ${primaryColor}; color: white;"
-                               >
-                                   ${isLastStep ? 'Valider la demande' : 'Étape suivante'}
-                               </button>
-                           </div>
-                       ` : ''}
-                   </div>
-               `;
-           }
-       }
     // ============================================================
     // MODE OTP
     // ============================================================
@@ -2296,7 +2255,7 @@ function renderAuthView(mode = 'login', stepSource = 1) {
                 <button onclick="window.verifyOTP('${otpEmail}')" id="btn-otp" class="w-full py-3.5 rounded-xl font-black text-[11px] uppercase tracking-wider shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" style="background: ${primaryColor}; color: white;">
                     Vérifier <i class="fa-solid fa-shield-check text-xs"></i>
                 </button>
-                <button onclick="window.renderAuthView('login')" class="text-[10px] text-slate-400 hover:text-slate-600 transition-colors">
+               <button onclick="window.renderAuthView('login')" class="text-[10px] text-slate-400 hover:text-slate-600 transition-colors">
                     Annuler la vérification
                 </button>
             </div>`;
