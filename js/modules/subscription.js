@@ -484,14 +484,22 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
                     try {
                         if (isSansPatient) {
                             // Pour les comptes SANS_PATIENT, la confirmation est déjà faite
-                            Swal.fire({
-                                icon: "success",
-                                title: "✅ Pack Confort activé !",
-                                text: "Votre abonnement est maintenant actif.",
-                                timer: 2000,
-                                showConfirmButton: false
-                            });
-                            window.switchView("billing");
+                                localStorage.setItem("subscription_active", "true");
+                                localStorage.setItem("subscription_type_pack", "CONFORT_247");
+                                
+                                if (typeof window.refreshSubscriptionStatus === "function") {
+                                    await window.refreshSubscriptionStatus();
+                                }
+                                
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "✅ Pack Confort activé !",
+                                    text: "Votre Pack Confort est maintenant actif.",
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                                
+                                window.switchView("billing");
                         } else {
                             // Pour les comptes AVEC_PATIENT, valider le paiement
                             const result = await secureFetch("/billing/pay", {
