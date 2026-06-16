@@ -2849,7 +2849,10 @@ function renderLayout() {
          
          else if (userRole === "AIDANT") {
              mainItems = [
-                 { id: "patients", icon: "fa-folder-open", label: "Patients" },
+                 { id: "home", icon: "fa-home", label: "Accueil" },
+                 { id: "patients", icon: "fa-folder-open", label: "Dossiers" },
+                 { id: "feed", icon: "fa-newspaper", label: "Journal" },
+                 { id: "messages", icon: "fa-comments", label: "Messages" },
                  { id: "planning", icon: "fa-calendar-days", label: "Planning" },
                  { id: "visits", icon: "fa-calendar-check", label: "Visites" },
                  { id: "commandes", icon: "fa-box", label: "Livraisons" },
@@ -3381,16 +3384,19 @@ function getNavLinks(role, mode) {
     // ============================================================
     // AIDANT
     // ============================================================
-    else if (isAidant) {
-        tabs = [
-            { id: "patients", icon: "fa-folder-open", label: "Patients" },
-            { id: "planning", icon: "fa-calendar-days", label: "Planning" },
-            { id: "visits", icon: "fa-calendar-check", label: "Visites" },
-            { id: "commandes", icon: "fa-box", label: "Livraisons" },
-            { id: "map", icon: "fa-location-dot", label: "Radar" },
-            { id: "profile", icon: "fa-user-circle", label: "Profil" }
-        ];
-    }
+      else if (isAidant) {
+          tabs = [
+              { id: "home", icon: "fa-home", label: "Accueil" },
+              { id: "patients", icon: "fa-folder-open", label: "Dossiers" },
+              { id: "feed", icon: "fa-newspaper", label: "Journal" },
+              { id: "messages", icon: "fa-comments", label: "Messages" },
+              { id: "planning", icon: "fa-calendar-days", label: "Planning" },
+              { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+              { id: "commandes", icon: "fa-box", label: "Livraisons" },
+              { id: "map", icon: "fa-location-dot", label: "Radar" },
+              { id: "profile", icon: "fa-user-circle", label: "Profil" }
+          ];
+      }
 
     // ============================================================
     // FAMILLE MAMAN & BÉBÉ
@@ -3562,18 +3568,20 @@ const ROLE_VIEWS = {
         "notifications"
     ],
 
-    AIDANT: [
-        "home",
-        "patients",
-        "planning",
-        "visits",
-        "commandes",
-        "map",
-        "profile",
-        "notifications",
-        "start-visit",
-        "end-visit"
-    ],
+      AIDANT: [
+       "home",
+       "patients",
+       "feed",
+       "messages",
+       "planning",
+       "visits",
+       "commandes",
+       "map",
+       "profile",
+       "notifications",
+       "start-visit",
+       "end-visit"
+   ],
 
     FAMILLE: [
         "home",
@@ -3890,11 +3898,12 @@ async function performViewSwitch(viewName) {
             case "visits":
                 await Visites.loadVisits();
                 break;
-            case "feed":
-                if (window.cleanupRealtime) window.cleanupRealtime();
-            
+
+          case "messages":
                 if (!AppState.currentPatient) {
-                    const savedPatientId = localStorage.getItem("current_patient_id");
+                    const savedPatientId =
+                        localStorage.getItem("current_patient_id") ||
+                        localStorage.getItem("active_patient_id");
             
                     if (savedPatientId) {
                         AppState.currentPatient = savedPatientId;
@@ -3905,20 +3914,60 @@ async function performViewSwitch(viewName) {
                             if (patients && patients.length > 0) {
                                 AppState.currentPatient = patients[0].id;
                                 localStorage.setItem("current_patient_id", AppState.currentPatient);
+                                localStorage.setItem("active_patient_id", AppState.currentPatient);
                             }
                         } catch (err) {
-                            console.warn("Impossible de récupérer le patient pour le journal:", err);
+                            console.warn("Impossible de récupérer le dossier pour les messages:", err);
                         }
                     }
                 }
             
                 if (!AppState.currentPatient) {
-                    console.warn("Aucun patient disponible pour ouvrir le journal de soins");
-                    await window.switchView("home");
+                    console.warn("Aucun dossier assigné disponible pour ouvrir les messages");
+                    await window.switchView("patients");
                     return;
                 }
             
-                console.log("🔄 [switchView] Ouverture du feed pour patient:", AppState.currentPatient);
+                if (Messages?.loadMessages) {
+                    await Messages.loadMessages(AppState.currentPatient);
+                } else if (window.loadMessages) {
+                    await window.loadMessages(AppState.currentPatient);
+                } else {
+                    console.warn("Module messages introuvable");
+                }
+            
+                break;
+            case "feed":
+                if (window.cleanupRealtime) window.cleanupRealtime();
+            
+                if (!AppState.currentPatient) {
+                    const savedPatientId =
+                        localStorage.getItem("current_patient_id") ||
+                        localStorage.getItem("active_patient_id");
+            
+                    if (savedPatientId) {
+                        AppState.currentPatient = savedPatientId;
+                    } else {
+                        try {
+                            const patients = await secureFetch("/patients");
+            
+                            if (patients && patients.length > 0) {
+                                AppState.currentPatient = patients[0].id;
+                                localStorage.setItem("current_patient_id", AppState.currentPatient);
+                                localStorage.setItem("active_patient_id", AppState.currentPatient);
+                            }
+                        } catch (err) {
+                            console.warn("Impossible de récupérer le dossier pour le journal:", err);
+                        }
+                    }
+                }
+            
+                if (!AppState.currentPatient) {
+                    console.warn("Aucun dossier assigné disponible pour ouvrir le journal");
+                    await window.switchView("patients");
+                    return;
+                }
+            
                 await window.loadFeed();
                 break;
             case "billing":
