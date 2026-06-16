@@ -2823,39 +2823,75 @@ function renderLayout() {
          const sections = [];
          
          // Section PRINCIPAL
-         const mainItems = [
-             { id: 'home', icon: 'fa-home', label: 'Accueil', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-             { id: 'map', icon: 'fa-location-dot', label: 'Radar', roles: ['COORDINATEUR', 'AIDANT', 'FAMILLE'] },
-             { id: 'patients', icon: 'fa-folder-open', label: isMaman ? 'Mon suivi' : 'Dossiers', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-             { id: 'feed', icon: 'fa-newspaper', label: 'Journal', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-             { id: 'visits', icon: 'fa-calendar-check', label: 'Visites', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-             { id: 'commandes', icon: 'fa-box', label: isMaman ? 'Commandes bébé' : 'Commandes', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] },
-             { id: 'planning', icon: 'fa-calendar-days', label: 'Planning', roles: ['COORDINATEUR', 'AIDANT'] },
-             { id: 'users', icon: 'fa-users', label: 'Utilisateurs', roles: ['COORDINATEUR'] },
-         ].filter(item => item.roles.includes(userRole));
+         let mainItems = [];
+         
+         if (userRole === "COORDINATEUR") {
+             mainItems = [
+                 { id: "dashboard", icon: "fa-chart-pie", label: "Dashboard" },
+                 { id: "patients", icon: "fa-folder-open", label: "Patients" },
+                 { id: "aidants", icon: "fa-user-nurse", label: "Aidants" },
+                 { id: "planning", icon: "fa-calendar-days", label: "Planning" },
+                 { id: "rh-dashboard", icon: "fa-users", label: "RH" },
+                 { id: "map", icon: "fa-location-dot", label: "Radar" },
+                 { id: "commandes", icon: "fa-box", label: "Commandes" },
+                 { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+                 { id: "users", icon: "fa-users-gear", label: "Utilisateurs" }
+             ];
+         }
+         
+         else if (userRole === "AIDANT") {
+             mainItems = [
+                 { id: "patients", icon: "fa-folder-open", label: "Patients" },
+                 { id: "planning", icon: "fa-calendar-days", label: "Planning" },
+                 { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+                 { id: "commandes", icon: "fa-box", label: "Livraisons" },
+                 { id: "map", icon: "fa-location-dot", label: "Radar" }
+             ];
+         }
+         
+         else if (userRole === "FAMILLE") {
+             const isSansPatient = localStorage.getItem("user_type_compte") === "SANS_PATIENT";
+         
+             if (isMaman && !isSansPatient) {
+                 mainItems = [
+                     { id: "dashboard-maman", icon: "fa-chart-line", label: "Tableau maman" },
+                     { id: "feed", icon: "fa-newspaper", label: "Journal bébé" },
+                     { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+                     { id: "commandes", icon: "fa-box", label: "Commandes" },
+                     { id: "education", icon: "fa-graduation-cap", label: "Éducation" },
+                     { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+                     { id: "subscription", icon: "fa-crown", label: "Abonnement" }
+                 ];
+             }
+         
+             else if (!isMaman && !isSansPatient) {
+                 mainItems = [
+                     { id: "home", icon: "fa-home", label: "Accueil" },
+                     { id: "feed", icon: "fa-newspaper", label: "Journal de soins" },
+                     { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+                     { id: "commandes", icon: "fa-box", label: "Commandes" },
+                     { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+                     { id: "subscription", icon: "fa-crown", label: "Abonnement" }
+                 ];
+             }
+         
+             else {
+                 mainItems = [
+                     { id: "home", icon: "fa-home", label: "Accueil" },
+                     { id: "commandes", icon: "fa-box", label: "Commandes" },
+                     { id: "subscription", icon: "fa-crown", label: "Abonnement" }
+                 ];
+         
+                 if (isMaman) {
+                     mainItems.splice(2, 0, { id: "education", icon: "fa-graduation-cap", label: "Éducation" });
+                 }
+             }
+         }
          
          if (mainItems.length > 0) {
              sections.push({ title: 'PRINCIPAL', icon: 'fa-compass', items: mainItems, defaultOpen: true });
          }
-         
-         // Section SERVICES (uniquement pour les services spécifiques)
-         const serviceItems = [];
-         if (userRole === 'COORDINATEUR') {
-             serviceItems.push(
-                 { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', roles: ['COORDINATEUR'] },
-                 { id: 'aidants', icon: 'fa-user-nurse', label: 'Aidants', roles: ['COORDINATEUR'] },
-                 { id: 'rh-dashboard', icon: 'fa-users', label: 'RH & Assignations', roles: ['COORDINATEUR'] }
-             );
-         }
-         if (userRole === 'FAMILLE') {
-             serviceItems.push(
-                 { id: 'billing', icon: 'fa-file-invoice-dollar', label: 'Factures', roles: ['FAMILLE'] },
-                 { id: 'subscription', icon: 'fa-ticket', label: 'Abonnement', roles: ['FAMILLE'] }
-             );
-             if (isMaman) {
-                 serviceItems.push({ id: 'education', icon: 'fa-graduation-cap', label: 'Éducation', roles: ['FAMILLE'] });
-             }
-         }
+        
          
          if (serviceItems.length > 0) {
              sections.push({ title: 'SERVICES', icon: 'fa-briefcase', items: serviceItems, defaultOpen: false });
@@ -3589,10 +3625,19 @@ async function performViewSwitch(viewName) {
         UI.error("Accès non autorisé");
         
         // Rediriger vers la vue par défaut selon le rôle
-        let defaultView = 'home';
-        if (userRole === 'COORDINATEUR') defaultView = 'dashboard';
-        else if (userRole === 'AIDANT') defaultView = 'patients';
-        else if (userRole === 'FAMILLE') defaultView = 'home';
+        let defaultView = "home";
+        
+        if (userRole === "COORDINATEUR") {
+            defaultView = "dashboard";
+        } else if (userRole === "AIDANT") {
+            defaultView = "patients";
+        } else if (
+            userRole === "FAMILLE" &&
+            isMaman &&
+            !isSansPatient
+        ) {
+            defaultView = "dashboard-maman";
+        }
         
         window.switchView(defaultView);
         return;
@@ -3917,15 +3962,15 @@ async function performViewSwitch(viewName) {
             case "notifications":
                 await Notifications.renderNotificationsPage();
                 break;
-           case "dashboard-maman":
-              if (userRole !== "FAMILLE") {
-                  UI.error("Accès non autorisé");
-                  window.switchView("home");
-                  return;
-              }
-          
-              await Maman.loadMamanDashboard();
-              break;
+            case "dashboard-maman":
+                if (userRole !== "FAMILLE" || !isMaman) {
+                    UI.error("Accès non autorisé");
+                    window.switchView("home");
+                    return;
+                }
+            
+                await Maman.loadMamanDashboard();
+                break;
             case "maman-planning":
                 if (typeof loadMamanPlanning === 'function') {
                     await loadMamanPlanning();
@@ -4621,7 +4666,15 @@ window.processValidation = async (id, email, nom, role) => {
         });
         
         setTimeout(() => {
-            window.switchView('dashboard');
+         
+           const role = localStorage.getItem("user_role");
+           
+           if (role === "COORDINATEUR") {
+               window.switchView("dashboard");
+           } else {
+               window.switchView("home");
+           }
+         
         }, 500);
         
     } catch(error) {
