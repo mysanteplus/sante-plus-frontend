@@ -3892,17 +3892,32 @@ async function performViewSwitch(viewName) {
                 break;
             case "feed":
                 if (window.cleanupRealtime) window.cleanupRealtime();
-                if (!AppState.currentPatient && userRole === "FAMILLE") {
-                    window.switchView("patients");
-                    return;
-                }
+            
                 if (!AppState.currentPatient) {
-                    const patients = await secureFetch("/patients");
-                    if (patients && patients.length > 0) {
-                        AppState.currentPatient = patients[0].id;
-                        localStorage.setItem("current_patient_id", AppState.currentPatient);
+                    const savedPatientId = localStorage.getItem("current_patient_id");
+            
+                    if (savedPatientId) {
+                        AppState.currentPatient = savedPatientId;
+                    } else {
+                        try {
+                            const patients = await secureFetch("/patients");
+            
+                            if (patients && patients.length > 0) {
+                                AppState.currentPatient = patients[0].id;
+                                localStorage.setItem("current_patient_id", AppState.currentPatient);
+                            }
+                        } catch (err) {
+                            console.warn("Impossible de récupérer le patient pour le journal:", err);
+                        }
                     }
                 }
+            
+                if (!AppState.currentPatient) {
+                    console.warn("Aucun patient disponible pour ouvrir le journal de soins");
+                    await window.switchView("home");
+                    return;
+                }
+            
                 console.log("🔄 [switchView] Ouverture du feed pour patient:", AppState.currentPatient);
                 await window.loadFeed();
                 break;
