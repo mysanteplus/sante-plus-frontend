@@ -1,5 +1,6 @@
 import { secureFetch } from "../core/api.js";
 import { UI } from "../core/utils.js";
+import { AppState } from "../core/state.js";
 
 /**
  * 📚 PAGE CONTENUS ÉDUCATIFS (AVEC VRAIES DONNÉES)
@@ -10,11 +11,36 @@ export async function loadEducationPage() {
 
     const isMaman = localStorage.getItem("user_is_maman") === "true";
     const userRole = localStorage.getItem("user_role");
+    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+    const isSansPatient = typeCompte === "SANS_PATIENT";
     const isSenior = userRole === "FAMILLE" && !isMaman;
     const themeColor = isMaman ? 'pink' : 'emerald';
     const activeTab = window._educationTab || 'videos';
 
-    // 🔥 Si c'est un senior (Famille non Maman), afficher un message personnalisé
+    // Compte sans patient : pas d'espace éducation
+    if (userRole === "FAMILLE" && isSansPatient) {
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center">
+                <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-lock text-3xl text-slate-300"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-800">Espace Éducation</h3>
+                <p class="text-sm text-slate-500 mt-2 max-w-xs">
+                    Cette section est réservée aux comptes Maman & Bébé avec un dossier patient actif.
+                </p>
+                <p class="text-xs text-slate-400 mt-4">
+                    Vous pouvez ajouter un patient plus tard depuis votre espace.
+                </p>
+                <button onclick="window.switchView('home')" 
+                        class="mt-6 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
+                    Retour à l'accueil
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    // Senior : pas encore disponible
     if (isSenior) {
         container.innerHTML = `
             <div class="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center">
@@ -23,10 +49,10 @@ export async function loadEducationPage() {
                 </div>
                 <h3 class="text-xl font-black text-slate-800">Contenu éducatif</h3>
                 <p class="text-sm text-slate-500 mt-2 max-w-xs">
-                    Cette section est actuellement dédiée aux mamans et futurs mamans.
+                    Cette section est actuellement dédiée aux mamans et futures mamans.
                 </p>
                 <p class="text-xs text-slate-400 mt-4">
-                    Des contenus adaptés aux seniors arrivent bientôt !
+                    Des contenus adaptés aux seniors arrivent bientôt.
                 </p>
                 <button onclick="window.switchView('home')" 
                         class="mt-6 px-6 py-3 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
@@ -37,7 +63,7 @@ export async function loadEducationPage() {
         return;
     }
 
-    // 🔥 Si ce n'est pas une maman (cas improbable), rediriger
+    // Toute autre personne non maman : retour accueil
     if (!isMaman) {
         window.switchView('home');
         return;
@@ -112,7 +138,11 @@ async function fetchEducationalContents() {
  */
 async function fetchBirthChecklist() {
     try {
-        const patientId = AppState.currentPatient;
+        const patientId =
+            AppState.currentPatient ||
+            localStorage.getItem("current_patient_id") ||
+            localStorage.getItem("active_patient_id");
+        
         if (!patientId) return [];
         
         const data = await secureFetch(`/birth-checklist/${patientId}`);
@@ -272,7 +302,16 @@ function renderChecklist(checklist, themeColor) {
  */
 async function saveChecklistItem(itemId, isChecked) {
     try {
-        const patientId = AppState.currentPatient;
+        const patientId =
+            AppState.currentPatient ||
+            localStorage.getItem("current_patient_id") ||
+            localStorage.getItem("active_patient_id");
+
+        if (!patientId) {
+            console.warn("Aucun patient actif pour sauvegarder la checklist");
+            return;
+        }
+
         await secureFetch("/birth-checklist/update", {
             method: "POST",
             body: JSON.stringify({
