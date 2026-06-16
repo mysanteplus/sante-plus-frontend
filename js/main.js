@@ -3983,10 +3983,11 @@ async function performViewSwitch(viewName) {
     // 7. CHARGEMENT DES DONNÉES PAR VUE
     // ============================================================
     try {
+
+               console.log("🧭 Vue demandée :", viewName);
+               console.log("👤 Rôle :", userRole);
+               console.log("✅ Vue autorisée :", isAllowed);
         switch (viewName) {
-          console.log("🧭 Vue demandée :", viewName);
-          console.log("👤 Rôle :", userRole);
-          console.log("✅ Vue autorisée :", isAllowed);
           case "dashboard":
               if (userRole !== "COORDINATEUR") {
                   console.warn(`Dashboard admin bloqué pour ${userRole}`);
