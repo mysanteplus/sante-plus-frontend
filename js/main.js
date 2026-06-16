@@ -2382,9 +2382,11 @@ app.innerHTML = `
                 </div>
             </div>
 
-            <div id="auth-card-content">
-                ${dynamicContent}
-            </div>
+           <div id="auth-card-content">
+               <form id="auth-form" autocomplete="on" onsubmit="event.preventDefault();">
+                   ${dynamicContent}
+               </form>
+           </div>
         </div>
     </div>
 `;
