@@ -2838,18 +2838,23 @@ function renderLayout() {
             <!-- Contenu principal -->
             <div class="flex-1 flex flex-col min-w-0 h-[100dvh] relative overflow-hidden">
                 <!-- Header -->
-                <header class="h-14 lg:h-16 bg-white/95 backdrop-blur-xl border-b border-slate-100 flex items-center justify-between px-4 lg:px-6 shrink-0 z-40">
+                <header class="h-14 lg:h-16 bg-white/95 backdrop-blur-xl border-b border-slate-100 flex items-center justify-between px-4 lg:px-6 shrink-0 z-40 overflow-hidden">
                     <!-- Menu hamburger (mobile) -->
                     <button id="menu-hamburger" class="lg:hidden w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600 active:scale-95 transition-all">
                         <i class="fa-solid fa-bars text-lg"></i>
                     </button>
                     
-                    <!-- Logo mobile -->
-                        <div class="lg:hidden flex items-center justify-center">
-                            <div class="w-16 h-16">
-                                <img id="header-logo-img" class="w-full h-full object-contain" src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}">
-                            </div>
-                        </div>
+                   <!-- Logo mobile -->
+                   <div class="lg:hidden flex items-center justify-center h-14 overflow-hidden">
+                       <div class="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden">
+                           <img 
+                               id="header-logo-img" 
+                               class="w-9 h-9 object-contain block" 
+                               src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}"
+                               alt="Santé Plus"
+                           >
+                       </div>
+                   </div>
                     
                     <!-- Titre desktop -->
                     <div class="hidden lg:block">
