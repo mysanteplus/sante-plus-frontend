@@ -298,6 +298,12 @@ async function initCoordinatorMap() {
         map = null;
         markers = {};
     }
+
+    const existingMapElement = document.getElementById("map");
+
+    if (existingMapElement && existingMapElement._leaflet_id) {
+        existingMapElement._leaflet_id = null;
+    }
     
     // ✅ Initialiser la carte AVEC un centre par défaut
     map = L.map('map', { 
