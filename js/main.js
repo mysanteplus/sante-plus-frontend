@@ -104,6 +104,17 @@ window.requireActiveFamilySubscription = async function (actionLabel = "utiliser
         return true;
     }
 
+    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+    const isSansPatient = typeCompte === "SANS_PATIENT";
+
+    const helperText = isSansPatient
+        ? "Activez le Pack Confort 24/7 pour profiter des commandes, du support prioritaire et des contenus premium."
+        : "Vous pouvez toujours consulter votre historique, vos messages et vos anciennes visites.";
+
+    const buttonText = isSansPatient
+        ? "Activer le Pack Confort"
+        : "Activer mon abonnement";
+
     const result = await Swal.fire({
         icon: "warning",
         title: "Abonnement requis",
@@ -113,11 +124,11 @@ window.requireActiveFamilySubscription = async function (actionLabel = "utiliser
                     Pour ${actionLabel}, vous devez activer un abonnement.
                 </p>
                 <p style="font-size:12px; color:#94A3B8; margin-top:8px;">
-                    Vous pouvez toujours consulter votre historique, vos messages et vos anciennes visites.
+                    ${helperText}
                 </p>
             </div>
         `,
-        confirmButtonText: "Activer mon abonnement",
+        confirmButtonText: buttonText,
         showCancelButton: true,
         cancelButtonText: "Plus tard",
         confirmButtonColor: "#059669",
@@ -892,6 +903,10 @@ async function refreshSubscriptionStatus() {
         const isActive = status?.active === true;
 
         localStorage.setItem("subscription_active", isActive ? "true" : "false");
+
+        if (status?.type_compte) {
+            localStorage.setItem("user_type_compte", status.type_compte);
+        }
 
         if (status?.endDate) {
             localStorage.setItem("subscription_date_fin", status.endDate);
