@@ -84,7 +84,7 @@ export async function loadBilling() {
           <td class="p-4 text-right font-black text-slate-900 text-xs">${UI.formatMoney(abo.montant_du)}</td>
           <td class="p-4 text-center">${statusBadge}</td>
           <td class="p-4 text-center">${actionButton}</td>
-        </table>
+        </tr>
       `;
     });
 
@@ -445,7 +445,18 @@ window.payConfortPack = async (abonnementId, montant) => {
     
     Swal.close();
     
-    if (response.status === "success") {
+       if (response.status === "success") {
+      localStorage.setItem("subscription_active", "true");
+      localStorage.setItem("subscription_type_pack", "CONFORT_247");
+    
+      if (response.date_fin) {
+        localStorage.setItem("subscription_date_fin", response.date_fin);
+      }
+    
+      if (typeof window.refreshSubscriptionStatus === "function") {
+        await window.refreshSubscriptionStatus();
+      }
+    
       Swal.fire({
         icon: "success",
         title: "Pack Confort activé !",
