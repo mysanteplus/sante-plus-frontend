@@ -2186,7 +2186,7 @@ function renderAuthView(mode = 'login', stepSource = 1) {
                 <div class="auth-field">
                     <i class="fa-solid fa-envelope"></i>
                     <input 
-                        id="login-email" 
+                        id="email" 
                         type="email" 
                         autocomplete="email"
                         class="auth-input" 
@@ -2197,7 +2197,7 @@ function renderAuthView(mode = 'login', stepSource = 1) {
                 <div class="auth-field">
                     <i class="fa-solid fa-lock"></i>
                     <input 
-                        id="login-password" 
+                        id="password" 
                         type="password" 
                         autocomplete="current-password"
                         class="auth-input" 
