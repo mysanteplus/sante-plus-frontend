@@ -3911,7 +3911,11 @@ async function performViewSwitch(viewName) {
                         AppState.currentPatient = savedPatientId;
                     } else {
                         try {
-                            const patients = await secureFetch("/patients");
+                            let patients = await secureFetch("/patients", { noCache: true });
+            
+                            if (!Array.isArray(patients)) {
+                                patients = patients?.data || patients?.results || [];
+                            }
             
                             if (patients && patients.length > 0) {
                                 AppState.currentPatient = patients[0].id;
@@ -3930,12 +3934,12 @@ async function performViewSwitch(viewName) {
                     return;
                 }
             
-                if (typeof window.loadFeed === "function") {
-                    await window.loadFeed();
-                } else if (Messages?.loadFeed) {
+                if (Messages?.loadFeed) {
                     await Messages.loadFeed();
+                } else if (typeof window.loadFeed === "function") {
+                    await window.loadFeed();
                 } else {
-                    console.warn("Fonction loadFeed introuvable dans message.js");
+                    console.warn("Fonction loadFeed introuvable");
                 }
             
                 break;
