@@ -3984,6 +3984,9 @@ async function performViewSwitch(viewName) {
     // ============================================================
     try {
         switch (viewName) {
+          console.log("🧭 Vue demandée :", viewName);
+          console.log("👤 Rôle :", userRole);
+          console.log("✅ Vue autorisée :", isAllowed);
           case "dashboard":
               if (userRole !== "COORDINATEUR") {
                   console.warn(`Dashboard admin bloqué pour ${userRole}`);
@@ -4198,6 +4201,13 @@ async function performViewSwitch(viewName) {
                     await loadMamanPlanning();
                 }
                 break;
+          case "map":
+               console.log("📡 Entrée dans case map");
+               console.log("🧩 MapModule:", MapModule);
+               console.log("🧩 initLiveMap:", typeof MapModule.initLiveMap);
+           
+               await MapModule.initLiveMap();
+               break;
             case "education":
                 if (!isMaman) {
                     UI.warning("Cette section est réservée aux mamans");
