@@ -1,5 +1,6 @@
 import { secureFetch } from "../core/api.js";
 import { UI } from "../core/utils.js";
+import { AppState } from "../core/state.js";
 
 // ============================================================
 // FONCTIONS UTILITAIRES
@@ -15,6 +16,57 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
+async function getCurrentPatientForSubscription() {
+    let patientId =
+        AppState.currentPatient ||
+        localStorage.getItem("current_patient_id") ||
+        localStorage.getItem("active_patient_id");
+
+    let patients = await secureFetch("/patients");
+
+    if (!Array.isArray(patients)) {
+        patients = patients?.data || patients?.results || [];
+    }
+
+    if (!patients.length) {
+        return {
+            patient: null,
+            reason: "NO_PATIENT"
+        };
+    }
+
+    if (patientId) {
+        const found = patients.find(p => p.id === patientId);
+
+        if (found) {
+            AppState.currentPatient = found.id;
+            localStorage.setItem("current_patient_id", found.id);
+            localStorage.setItem("active_patient_id", found.id);
+
+            return {
+                patient: found,
+                reason: "FOUND"
+            };
+        }
+    }
+
+    if (patients.length === 1) {
+        AppState.currentPatient = patients[0].id;
+        localStorage.setItem("current_patient_id", patients[0].id);
+        localStorage.setItem("active_patient_id", patients[0].id);
+
+        return {
+            patient: patients[0],
+            reason: "ONLY_ONE"
+        };
+    }
+
+    return {
+        patient: null,
+        reason: "MULTIPLE_PATIENTS"
+    };
+}
+
 // ============================================================
 // PAGE D'ABONNEMENT
 // ============================================================
@@ -26,17 +78,58 @@ export async function renderSubscriptionPage() {
     const isSansPatient = typeCompte === "SANS_PATIENT";
     
     // Récupérer le patient actuel (uniquement pour les comptes AVEC_PATIENT)
+   
     let currentPatient = null;
-    if (userRole === "FAMILLE" && !isSansPatient) {
-        try {
-            const patients = await secureFetch("/patients");
-            if (patients && patients.length > 0) {
-                currentPatient = patients[0];
-            }
-        } catch (e) {
-            console.error("Erreur récupération patient:", e);
+
+if (userRole === "FAMILLE" && !isSansPatient) {
+    try {
+        const result = await getCurrentPatientForSubscription();
+
+        if (result.reason === "MULTIPLE_PATIENTS") {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center min-h-[55vh] p-8 text-center">
+                    <div class="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-users text-3xl text-amber-500"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-slate-800">Choisissez un dossier</h3>
+                    <p class="text-sm text-slate-500 mt-2 max-w-xs">
+                        Vous avez plusieurs dossiers patients. Sélectionnez d’abord le dossier concerné avant de choisir une formule.
+                    </p>
+                    <button onclick="window.switchView('patients')" 
+                            class="mt-6 px-6 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
+                        Choisir un dossier
+                    </button>
+                </div>
+            `;
+            return;
         }
+
+        if (result.reason === "NO_PATIENT") {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center min-h-[55vh] p-8 text-center">
+                    <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-user-slash text-3xl text-slate-300"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-slate-800">Aucun dossier patient</h3>
+                    <p class="text-sm text-slate-500 mt-2 max-w-xs">
+                        Vous devez avoir un dossier patient actif pour souscrire à une formule médicale.
+                    </p>
+                    <button onclick="window.switchView('home')" 
+                            class="mt-6 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
+                        Retour à l'accueil
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        currentPatient = result.patient;
+
+    } catch (e) {
+        console.error("Erreur récupération patient:", e);
+        UI.error("Impossible de charger le dossier patient");
     }
+}
     
     // Définition des packs selon le type de compte
     let packs = [];
@@ -124,7 +217,7 @@ export async function renderSubscriptionPage() {
                     ${isSansPatient ? `
                         <li class="flex items-center gap-2">✓ Commandes de produits illimitées</li>
                         <li class="flex items-center gap-2">✓ Support prioritaire 24/7</li>
-                        <li class="flex items-center gap-2">✓ Accès aux contenus éducatifs</li>
+                        <li class="flex items-center gap-2">✓ Historique de commandes conservé</li>
                         <li class="flex items-center gap-2">✓ Ajout possible d'un patient plus tard</li>
                         <li class="flex items-center gap-2">✓ Paiement sécurisé via FedaPay</li>
                     ` : `
@@ -155,7 +248,7 @@ function getConfortPacks() {
             priceDisplay: '25.000 CFA', 
             duration: 1, 
             durationText: '1 mois',
-            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Accès contenu éducatif'],
+            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Historique de commandes'],
             icon: 'fa-crown',
             color: 'text-emerald-600',
             bg: 'bg-emerald-50',
@@ -170,7 +263,7 @@ function getConfortPacks() {
             originalPrice: 75000,
             duration: 3, 
             durationText: '3 mois',
-            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Accès contenu éducatif', 'Économie 5%'],
+            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Historique de commandes', 'Économie 5%'],
             icon: 'fa-calendar-alt',
             color: 'text-blue-600',
             bg: 'bg-blue-50',
@@ -186,7 +279,7 @@ function getConfortPacks() {
             originalPrice: 300000,
             duration: 12, 
             durationText: '12 mois',
-            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Accès contenu éducatif', 'Économie 15%', 'Paiement unique'],
+            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Historique de commandes', 'Économie 15%', 'Paiement unique'],
             icon: 'fa-calendar-year',
             color: 'text-emerald-600',
             bg: 'bg-emerald-50',
@@ -352,25 +445,37 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
     
     // Récupérer le patient ID (uniquement pour les comptes AVEC_PATIENT)
     let patientId = null;
-    if (!isSansPatient) {
-        patientId = AppState.currentPatient;
-        if (!patientId) {
-            try {
-                const patients = await secureFetch("/patients");
-                if (patients && patients.length > 0) {
-                    patientId = patients[0].id;
-                    AppState.currentPatient = patientId;
-                    localStorage.setItem("current_patient_id", patientId);
-                } else {
-                    UI.error("Aucun patient trouvé");
-                    return;
-                }
-            } catch (err) {
-                UI.error("Impossible de récupérer le patient");
-                return;
-            }
+
+if (!isSansPatient) {
+    try {
+        const result = await getCurrentPatientForSubscription();
+
+        if (result.reason === "MULTIPLE_PATIENTS") {
+            await Swal.fire({
+                icon: "info",
+                title: "Choisissez d’abord un dossier",
+                text: "Vous avez plusieurs dossiers patients. Sélectionnez le dossier concerné avant de payer une formule.",
+                confirmButtonText: "Choisir un dossier",
+                confirmButtonColor: "#10B981"
+            });
+
+            await window.switchView("patients");
+            return;
         }
+
+        if (result.reason === "NO_PATIENT" || !result.patient) {
+            UI.error("Aucun patient trouvé");
+            return;
+        }
+
+        patientId = result.patient.id;
+
+    } catch (err) {
+        console.error("Erreur récupération patient:", err);
+        UI.error("Impossible de récupérer le patient");
+        return;
     }
+}
     
     // Confirmation avant paiement
     const confirm = await Swal.fire({
@@ -389,7 +494,7 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
                 </div>
                 ${isSansPatient ? `
                     <div class="mt-3 p-2 bg-blue-50 rounded-lg">
-                        <p class="text-[8px] text-blue-600">✨ Inclus: commandes illimitées, support prioritaire, accès contenu éducatif</p>
+                        <p class="text-[8px] text-blue-600">✨ Inclus: commandes illimitées, support prioritaire, historique conservé</p>
                     </div>
                 ` : ''}
             </div>
@@ -416,17 +521,22 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
         let facture;
         
         if (isSansPatient) {
-            // Pour les comptes SANS_PATIENT : souscrire au Pack Confort
-            const response = await secureFetch("/billing/subscribe-confort", {
+            const response = await secureFetch("/billing/init-confort-payment", {
                 method: "POST",
                 body: JSON.stringify({
                     montant: price,
-                    duree_mois: durationMonths,
-                    mode_paiement: "FEDAPAY"
+                    duree_mois: durationMonths
                 })
             });
-            facture = { id: response.abonnement_id };
-            console.log("✅ Pack Confort créé:", facture);
+        
+            Swal.close();
+        
+            if (response.success === true && response.payment_url) {
+                window.location.href = response.payment_url;
+                return;
+            }
+        
+            throw new Error("URL de paiement FedaPay non reçue");
         } else {
             // Pour les comptes AVEC_PATIENT : créer une facture médicale
             facture = await secureFetch("/billing/generate", {
@@ -469,93 +579,71 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
                 lastname: lastName
             },
             onComplete: async (response) => {
-                console.log("FedaPay fermé - Réponse complète:", response);
-                
-                const transaction = response.transaction || response;
-                const isApproved = transaction && transaction.status === 'approved';
-                
-                if (isApproved) {
-                    Swal.fire({
-                        title: "Validation du paiement...",
-                        didOpen: () => Swal.showLoading(),
-                        allowOutsideClick: false
-                    });
-                    
-                    try {
-                        if (isSansPatient) {
-                            // Pour les comptes SANS_PATIENT, la confirmation est déjà faite
-                                localStorage.setItem("subscription_active", "true");
-                                localStorage.setItem("subscription_type_pack", "CONFORT_247");
-                                
-                                if (typeof window.refreshSubscriptionStatus === "function") {
-                                    await window.refreshSubscriptionStatus();
-                                }
-                                
-                                Swal.fire({
-                                    icon: "success",
-                                    title: "✅ Pack Confort activé !",
-                                    text: "Votre Pack Confort est maintenant actif.",
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                });
-                                
-                                window.switchView("billing");
-                        } else {
-                            // Pour les comptes AVEC_PATIENT, valider le paiement
-                            const result = await secureFetch("/billing/pay", {
-                                method: "POST",
-                                body: JSON.stringify({
-                                    abonnement_id: facture.id,
-                                    montant: price,
-                                    transaction_id: transaction.id,
-                                    mode_paiement: "FEDAPAY"
-                                })
-                            });
+    console.log("FedaPay fermé - Réponse complète:", response);
 
-                            localStorage.setItem("subscription_active", "true");
+    const transaction = response.transaction || response;
+    const isApproved = transaction && transaction.status === "approved";
 
-                            if (typeof window.refreshSubscriptionStatus === "function") {
-                                await window.refreshSubscriptionStatus();
-                            }
-                            
-                            console.log("✅ Résultat de /billing/pay:", result);
+    if (!isApproved) {
+        Swal.fire({
+            icon: "info",
+            title: "Paiement annulé",
+            text: "Vous pouvez réessayer quand vous voulez.",
+            confirmButtonText: "OK"
+        });
 
-                            localStorage.setItem("subscription_active", "true");
+        tempBtn.remove();
+        return;
+    }
 
-                            if (typeof window.refreshSubscriptionStatus === "function") {
-                                await window.refreshSubscriptionStatus();
-                            }
-                            
-                            Swal.fire({
-                                icon: "success",
-                                title: "✅ Abonnement activé !",
-                                timer: 2000,
-                                showConfirmButton: false
-                            });
-                            
-                            window.switchView("billing");
-                        }
-                        
-                    } catch (err) {
-                        console.error("❌ Erreur lors de la validation:", err);
-                        Swal.fire({
-                            icon: "error",
-                            title: "Erreur",
-                            text: err.message || "Erreur lors de l'activation",
-                            confirmButtonText: "OK"
-                        });
-                    }
-                } else {
-                    Swal.fire({
-                        icon: "info",
-                        title: "Paiement annulé",
-                        text: "Vous pouvez réessayer quand vous voulez.",
-                        confirmButtonText: "OK"
-                    });
-                }
-                
-                tempBtn.remove();
-            }
+    Swal.fire({
+        title: "Validation du paiement...",
+        didOpen: () => Swal.showLoading(),
+        allowOutsideClick: false
+    });
+
+    try {
+        const result = await secureFetch("/billing/pay", {
+            method: "POST",
+            body: JSON.stringify({
+                abonnement_id: facture.id,
+                montant: price,
+                transaction_id: transaction.id,
+                mode_paiement: "FEDAPAY"
+            })
+        });
+
+        console.log("✅ Résultat de /billing/pay:", result);
+
+        localStorage.setItem("subscription_active", "true");
+
+        if (typeof window.refreshSubscriptionStatus === "function") {
+            await window.refreshSubscriptionStatus();
+        }
+
+        Swal.fire({
+            icon: "success",
+            title: "✅ Abonnement activé !",
+            timer: 2000,
+            showConfirmButton: false
+        });
+
+        window.switchView("billing");
+
+    } catch (err) {
+        console.error("❌ Erreur lors de la validation:", err);
+
+        Swal.fire({
+            icon: "error",
+            title: "Erreur",
+            text: err.message || "Erreur lors de l'activation",
+            confirmButtonText: "OK"
+        });
+    } finally {
+        tempBtn.remove();
+    }
+}
+            
         });
         
         // Déclencher l'ouverture du popup
@@ -576,23 +664,40 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
 
 window.retryPayment = async (abonnementId, montant, patientNom, packId, durationMonths) => {
     // Récupérer le patient ID
-    let patientId = AppState.currentPatient;
-    if (!patientId) {
-        try {
-            const patients = await secureFetch("/patients");
-            if (patients && patients.length > 0) {
-                patientId = patients[0].id;
-                AppState.currentPatient = patientId;
-                localStorage.setItem("current_patient_id", patientId);
-            } else {
-                UI.error("Aucun patient trouvé");
-                return;
-            }
-        } catch (err) {
-            UI.error("Impossible de récupérer le patient");
+   let patientId = AppState.currentPatient ||
+    localStorage.getItem("current_patient_id") ||
+    localStorage.getItem("active_patient_id");
+
+if (!patientId) {
+    try {
+        const result = await getCurrentPatientForSubscription();
+
+        if (result.reason === "MULTIPLE_PATIENTS") {
+            await Swal.fire({
+                icon: "info",
+                title: "Choisissez d’abord un dossier",
+                text: "Vous avez plusieurs dossiers patients. Sélectionnez le dossier concerné avant de payer cette facture.",
+                confirmButtonText: "Choisir un dossier",
+                confirmButtonColor: "#10B981"
+            });
+
+            await window.switchView("patients");
             return;
         }
+
+        if (result.reason === "NO_PATIENT" || !result.patient) {
+            UI.error("Aucun patient trouvé");
+            return;
+        }
+
+        patientId = result.patient.id;
+
+    } catch (err) {
+        console.error("Erreur récupération patient:", err);
+        UI.error("Impossible de récupérer le patient");
+        return;
     }
+}
     
     // Confirmation avant paiement
     const confirm = await Swal.fire({
