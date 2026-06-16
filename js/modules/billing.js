@@ -435,37 +435,22 @@ window.payConfortPack = async (abonnementId, montant) => {
   
   try {
     // Appel à l'API pour initier le paiement FedaPay
-    const response = await secureFetch("/billing/subscribe-confort", {
-      method: "POST",
-      body: JSON.stringify({
-        montant: montant,
-        duree_mois: 1
-      })
-    });
+      const response = await secureFetch("/billing/init-confort-payment", {
+        method: "POST",
+        body: JSON.stringify({
+          montant: montant,
+          duree_mois: 1
+        })
+      });
     
     Swal.close();
     
-       if (response.status === "success") {
-      localStorage.setItem("subscription_active", "true");
-      localStorage.setItem("subscription_type_pack", "CONFORT_247");
-    
-      if (response.date_fin) {
-        localStorage.setItem("subscription_date_fin", response.date_fin);
-      }
-    
-      if (typeof window.refreshSubscriptionStatus === "function") {
-        await window.refreshSubscriptionStatus();
-      }
-    
-      Swal.fire({
-        icon: "success",
-        title: "Pack Confort activé !",
-        text: `Votre pack est actif jusqu'au ${new Date(response.date_fin).toLocaleDateString('fr-FR')}`,
-        confirmButtonText: "OK"
-      }).then(() => {
-        window.switchView("billing");
-      });
-    }
+  if (response.success === true && response.payment_url) {
+    window.location.href = response.payment_url;
+    return;
+  }
+  
+  throw new Error("URL de paiement FedaPay non reçue");
     
   } catch (err) {
     Swal.close();
