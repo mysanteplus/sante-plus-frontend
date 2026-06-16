@@ -1079,718 +1079,721 @@ window.selectTypeCompte = (type) => {
  * 6 étapes : Payeur → Patient → Santé → Catégorie → Pack → Validation
  */
 function getStepHTML() {
-    const isMamanFlow = registrationData.categorie === 'MAMAN_BEBE';
-    const themeColor = isMamanFlow ? 'pink' : 'emerald';
-    const themeBgClass = isMamanFlow ? 'bg-pink-50' : 'bg-emerald-50';
-    const themeBorderClass = isMamanFlow ? 'border-pink-200' : 'border-emerald-200';
-    const themeTextClass = isMamanFlow ? 'text-pink-600' : 'text-emerald-600';
-    
-    // Déterminer si on est en mode SANS_PATIENT
-    const isSansPatient = registrationData.type_compte === 'SANS_PATIENT';
-    
-    switch(currentStep) {
+    const isMamanFlow = registrationData.categorie === "MAMAN_BEBE";
+    const isSansPatient = registrationData.type_compte === "SANS_PATIENT";
+
+    switch (currentStep) {
         // ============================================
-        // ÉTAPE 0 : CHOIX DU TYPE DE COMPTE (AVEC ou SANS PATIENT)
+        // ÉTAPE 0 : CHOIX DU TYPE DE COMPTE
         // ============================================
-       case 0:
-           return getTypeCompteChoiceHTML();
-        
+        case 0:
+            return getTypeCompteChoiceHTML();
+
         // ============================================
-        // ÉTAPE 1 : QUI PAYE ? (identique pour les deux types)
+        // ÉTAPE 1 : DEMANDEUR
         // ============================================
-       case 1: return `
-           <div class="auth-form-heading">
-               <h3>Qui fait la demande ?</h3>
-               <p>
-                   Ces informations permettent au coordinateur de vous identifier et de vous recontacter rapidement.
-               </p>
-           </div>
-       
-           <div class="auth-step-note">
-               <i class="fa-solid fa-shield-heart"></i>
-               <p>
-                   Votre compte sera utilisé pour suivre les demandes, les visites, les commandes et les échanges avec Santé Plus.
-               </p>
-           </div>
-       
-           <div class="auth-form-grid">
-               <div>
-                   <label class="auth-mini-label">Nom complet</label>
-                   <div class="auth-field">
-                       <i class="fa-solid fa-user"></i>
-                       <input 
-                           id="f-nom" 
-                           class="auth-input" 
-                           placeholder="Ex : Marie Ahouansou"
-                           value="${registrationData.nom_famille || ''}"
-                       >
-                   </div>
-               </div>
-       
-               <div>
-                   <label class="auth-mini-label">Adresse email</label>
-                   <div class="auth-field">
-                       <i class="fa-solid fa-envelope"></i>
-                       <input 
-                           id="f-email" 
-                           type="email" 
-                           autocomplete="email"
-                           class="auth-input" 
-                           placeholder="exemple@email.com"
-                           value="${registrationData.email || ''}"
-                       >
-                   </div>
-               </div>
-       
-               <div>
-                   <label class="auth-mini-label">Téléphone</label>
-                   <div class="auth-field">
-                       <i class="fa-solid fa-phone"></i>
-                       <input 
-                           id="f-tel" 
-                           class="auth-input" 
-                           placeholder="Ex : +229 01 XX XX XX XX"
-                           value="${registrationData.tel_famille || ''}"
-                       >
-                   </div>
-               </div>
-       
-               <div>
-                   <label class="auth-mini-label">Mot de passe</label>
-                   <div class="auth-field">
-                       <i class="fa-solid fa-lock"></i>
-                       <input 
-                           id="f-pass" 
-                           type="password" 
-                           autocomplete="new-password"
-                           class="auth-input" 
-                           placeholder="Créer un mot de passe"
-                       >
-                   </div>
-               </div>
-           </div>
-       
-           <div class="auth-step-footer">
-               <button onclick="window.renderAuthView('register', 0)" class="auth-back-btn">
-                   <i class="fa-solid fa-arrow-left"></i>
-               </button>
-       
-               <button onclick="window.nextAuthStep()" class="auth-primary-btn">
-                   Continuer <i class="fa-solid fa-arrow-right"></i>
-               </button>
-           </div>
-       `;
-        
+        case 1:
+            return `
+                <div class="auth-form-heading">
+                    <h3>Qui fait la demande ?</h3>
+                    <p>
+                        Ces informations permettent au coordinateur de vous identifier et de vous recontacter rapidement.
+                    </p>
+                </div>
+
+                <div class="auth-step-note">
+                    <i class="fa-solid fa-shield-heart"></i>
+                    <p>
+                        Votre compte sera utilisé pour suivre les demandes, les visites, les commandes et les échanges avec Santé Plus.
+                    </p>
+                </div>
+
+                <div class="auth-form-grid">
+                    <div>
+                        <label class="auth-mini-label">Nom complet</label>
+                        <div class="auth-field">
+                            <i class="fa-solid fa-user"></i>
+                            <input 
+                                id="f-nom" 
+                                class="auth-input" 
+                                placeholder="Ex : Marie Ahouansou"
+                                value="${registrationData.nom_famille || ""}"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="auth-mini-label">Adresse email</label>
+                        <div class="auth-field">
+                            <i class="fa-solid fa-envelope"></i>
+                            <input 
+                                id="f-email" 
+                                type="email" 
+                                autocomplete="email"
+                                class="auth-input" 
+                                placeholder="exemple@email.com"
+                                value="${registrationData.email || ""}"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="auth-mini-label">Téléphone</label>
+                        <div class="auth-field">
+                            <i class="fa-solid fa-phone"></i>
+                            <input 
+                                id="f-tel" 
+                                class="auth-input" 
+                                placeholder="Ex : +229 01 XX XX XX XX"
+                                value="${registrationData.tel_famille || ""}"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="auth-mini-label">Mot de passe</label>
+                        <div class="auth-field">
+                            <i class="fa-solid fa-lock"></i>
+                            <input 
+                                id="f-pass" 
+                                type="password" 
+                                autocomplete="new-password"
+                                class="auth-input" 
+                                placeholder="Créer un mot de passe"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="auth-step-footer">
+                    <button onclick="window.renderAuthView('register', 0)" class="auth-back-btn">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+
+                    <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                        Continuer <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            `;
+
         // ============================================
-        // ÉTAPE 2 : PATIENT (UNIQUEMENT si AVEC_PATIENT)
+        // ÉTAPE 2 : PATIENT
         // ============================================
-       case 2: 
-          if (isSansPatient) {
-              setTimeout(() => window.nextAuthStep(), 100);
-              return `
-                  <div class="text-center py-10">
-                      <i class="fa-solid fa-spinner fa-spin text-emerald-500 text-xl"></i>
-                      <p class="text-xs text-slate-400 mt-3">Préparation de votre espace personnel...</p>
-                  </div>
-              `;
-          }
-      
-          return `
-              <div class="auth-form-heading">
-                  <h3>Qui souhaitez-vous accompagner ?</h3>
-                  <p>
-                      Ces informations permettent de créer le dossier de la personne suivie et d’organiser les visites à domicile.
-                  </p>
-              </div>
-      
-              <div class="auth-step-note">
-                  <i class="fa-solid fa-house-medical"></i>
-                  <p>
-                      Indiquez les informations les plus utiles. Vous pourrez compléter ou corriger le dossier plus tard avec le coordinateur.
-                  </p>
-              </div>
-      
-              <div class="auth-form-grid">
-                  <div>
-                      <label class="auth-mini-label">Nom complet du patient</label>
-                      <div class="auth-field">
-                          <i class="fa-solid fa-user-circle"></i>
-                          <input 
-                              id="p-nom" 
-                              class="auth-input" 
-                              placeholder="Ex : Jean Hounkpatin"
-                              value="${registrationData.nom_patient || ''}"
-                          >
-                      </div>
-                  </div>
-      
-                  <div class="auth-form-grid two">
-                      <div>
-                          <label class="auth-mini-label">Âge</label>
-                          <div class="auth-field">
-                              <i class="fa-solid fa-cake-candles"></i>
-                              <input 
-                                  id="p-age" 
-                                  type="number" 
-                                  class="auth-input" 
-                                  placeholder="Âge"
-                                  value="${registrationData.age_patient || ''}"
-                              >
-                          </div>
-                      </div>
-      
-                      <div>
-                          <label class="auth-mini-label">Sexe</label>
-                          <div class="auth-field">
-                              <i class="fa-solid fa-venus-mars"></i>
-                              <select id="p-sex" class="auth-select">
-                                  <option value="">Sexe</option>
-                                  <option value="Homme" ${registrationData.sexe_patient === "Homme" ? "selected" : ""}>Homme</option>
-                                  <option value="Femme" ${registrationData.sexe_patient === "Femme" ? "selected" : ""}>Femme</option>
-                              </select>
-                          </div>
-                      </div>
-                  </div>
-      
-                  <div>
-                      <label class="auth-mini-label">Adresse ou quartier</label>
-                      <div class="auth-field">
-                          <i class="fa-solid fa-location-dot"></i>
-                          <input 
-                              id="p-addr" 
-                              class="auth-input" 
-                              placeholder="Ex : Calavi, Fidjrossè, Akpakpa..."
-                              value="${registrationData.adresse_patient || ''}"
-                          >
-                      </div>
-                  </div>
-      
-                  <div>
-                      <label class="auth-mini-label">Téléphone du patient</label>
-                      <div class="auth-field">
-                          <i class="fa-solid fa-phone"></i>
-                          <input 
-                              id="p-tel" 
-                              class="auth-input" 
-                              placeholder="Optionnel"
-                              value="${registrationData.tel_patient || ''}"
-                          >
-                      </div>
-                  </div>
-      
-                  <div>
-                      <label class="auth-mini-label">Contact d’urgence</label>
-                      <div class="auth-field">
-                          <i class="fa-solid fa-address-card"></i>
-                          <input 
-                              id="p-urgence" 
-                              class="auth-input" 
-                              placeholder="Nom ou téléphone d’un proche / voisin"
-                              value="${registrationData.contact_urgence || ''}"
-                          >
-                      </div>
-                  </div>
-              </div>
-      
-              <div class="auth-step-footer">
-                  <button onclick="window.prevAuthStep()" class="auth-back-btn">
-                      <i class="fa-solid fa-arrow-left"></i>
-                  </button>
-      
-                  <button onclick="window.nextAuthStep()" class="auth-primary-btn">
-                      Continuer <i class="fa-solid fa-arrow-right"></i>
-                  </button>
-              </div>
-          `;
-        
+        case 2:
+            if (isSansPatient) {
+                setTimeout(() => window.nextAuthStep(), 100);
+                return `
+                    <div class="text-center py-10">
+                        <i class="fa-solid fa-spinner fa-spin text-emerald-500 text-xl"></i>
+                        <p class="text-xs text-slate-400 mt-3">Préparation de votre espace personnel...</p>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="auth-form-heading">
+                    <h3>Qui souhaitez-vous accompagner ?</h3>
+                    <p>
+                        Ces informations permettent de créer le dossier de la personne suivie et d’organiser les visites à domicile.
+                    </p>
+                </div>
+
+                <div class="auth-step-note">
+                    <i class="fa-solid fa-house-medical"></i>
+                    <p>
+                        Indiquez les informations les plus utiles. Vous pourrez compléter ou corriger le dossier plus tard avec le coordinateur.
+                    </p>
+                </div>
+
+                <div class="auth-form-grid">
+                    <div>
+                        <label class="auth-mini-label">Nom complet du patient</label>
+                        <div class="auth-field">
+                            <i class="fa-solid fa-user-circle"></i>
+                            <input 
+                                id="p-nom" 
+                                class="auth-input" 
+                                placeholder="Ex : Jean Hounkpatin"
+                                value="${registrationData.nom_patient || ""}"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="auth-form-grid two">
+                        <div>
+                            <label class="auth-mini-label">Âge</label>
+                            <div class="auth-field">
+                                <i class="fa-solid fa-cake-candles"></i>
+                                <input 
+                                    id="p-age" 
+                                    type="number" 
+                                    class="auth-input" 
+                                    placeholder="Âge"
+                                    value="${registrationData.age_patient || ""}"
+                                >
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="auth-mini-label">Sexe</label>
+                            <div class="auth-field">
+                                <i class="fa-solid fa-venus-mars"></i>
+                                <select id="p-sex" class="auth-select">
+                                    <option value="">Sexe</option>
+                                    <option value="Homme" ${registrationData.sexe_patient === "Homme" ? "selected" : ""}>Homme</option>
+                                    <option value="Femme" ${registrationData.sexe_patient === "Femme" ? "selected" : ""}>Femme</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="auth-mini-label">Adresse ou quartier</label>
+                        <div class="auth-field">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <input 
+                                id="p-addr" 
+                                class="auth-input" 
+                                placeholder="Ex : Calavi, Fidjrossè, Akpakpa..."
+                                value="${registrationData.adresse_patient || ""}"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="auth-mini-label">Téléphone du patient</label>
+                        <div class="auth-field">
+                            <i class="fa-solid fa-phone"></i>
+                            <input 
+                                id="p-tel" 
+                                class="auth-input" 
+                                placeholder="Optionnel"
+                                value="${registrationData.tel_patient || ""}"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="auth-mini-label">Contact d’urgence</label>
+                        <div class="auth-field">
+                            <i class="fa-solid fa-address-card"></i>
+                            <input 
+                                id="p-urgence" 
+                                class="auth-input" 
+                                placeholder="Nom ou téléphone d’un proche / voisin"
+                                value="${registrationData.contact_urgence || ""}"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="auth-step-footer">
+                    <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+
+                    <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                        Continuer <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            `;
+
         // ============================================
-        // ÉTAPE 3 : SANTÉ (UNIQUEMENT si AVEC_PATIENT)
+        // ÉTAPE 3 : SANTÉ
         // ============================================
-       case 3:
-             if (isSansPatient) {
-                 setTimeout(() => window.nextAuthStep(), 100);
-                 return `
-                     <div class="text-center py-10">
-                         <i class="fa-solid fa-spinner fa-spin text-emerald-500 text-xl"></i>
-                         <p class="text-xs text-slate-400 mt-3">Préparation du Pack Confort...</p>
-                     </div>
-                 `;
-             }
-         
-             if (isMamanFlow) {
-                 return `
-                     <div class="auth-form-heading">
-                         <h3>Quelques informations utiles.</h3>
-                         <p>
-                             Elles permettent d’adapter l’accompagnement à votre situation après la naissance ou pendant le suivi bébé.
-                         </p>
-                     </div>
-         
-                     <div class="auth-step-note">
-                         <i class="fa-solid fa-heart-pulse"></i>
-                         <p>
-                             Ces informations ne remplacent pas un avis médical. Elles aident simplement l’équipe à mieux organiser l’accompagnement.
-                         </p>
-                     </div>
-         
-                     <div class="auth-form-grid">
-                         <div>
-                             <label class="auth-mini-label">Type d’accouchement</label>
-                             <div class="auth-field">
-                                 <i class="fa-solid fa-hospital-user"></i>
-                                 <select id="accouchement" class="auth-select">
-                                     <option value="">Choisir une option</option>
-                                     <option value="voie_basse" ${registrationData.type_accouchement === "voie_basse" ? "selected" : ""}>Voie basse</option>
-                                     <option value="cesarienne" ${registrationData.type_accouchement === "cesarienne" ? "selected" : ""}>Césarienne</option>
-                                     <option value="non_precise" ${registrationData.type_accouchement === "non_precise" ? "selected" : ""}>Je préfère préciser plus tard</option>
-                                 </select>
-                             </div>
-                         </div>
-         
-                         <div>
-                             <label class="auth-mini-label">Allaitement</label>
-                             <div class="auth-field">
-                                 <i class="fa-solid fa-hand-holding-heart"></i>
-                                 <select id="allaitement" class="auth-select">
-                                     <option value="">Choisir une option</option>
-                                     <option value="maternel" ${registrationData.allaitement === "maternel" ? "selected" : ""}>Allaitement maternel</option>
-                                     <option value="mixte" ${registrationData.allaitement === "mixte" ? "selected" : ""}>Allaitement mixte</option>
-                                     <option value="artificiel" ${registrationData.allaitement === "artificiel" ? "selected" : ""}>Lait artificiel</option>
-                                     <option value="non_precise" ${registrationData.allaitement === "non_precise" ? "selected" : ""}>Je préciserai plus tard</option>
-                                 </select>
-                             </div>
-                         </div>
-         
-                         <div>
-                             <label class="auth-mini-label">Notes importantes</label>
-                             <textarea 
-                                 id="p-notes" 
-                                 class="auth-textarea" 
-                                 placeholder="Sommeil, fatigue, inquiétudes, besoins particuliers, habitudes du bébé..."
-                             >${registrationData.notes_medicales || ""}</textarea>
-                         </div>
-                     </div>
-         
-                     <div class="auth-step-footer">
-                         <button onclick="window.prevAuthStep()" class="auth-back-btn">
-                             <i class="fa-solid fa-arrow-left"></i>
-                         </button>
-         
-                         <button onclick="window.nextAuthStep()" class="auth-primary-btn">
-                             Continuer <i class="fa-solid fa-arrow-right"></i>
-                         </button>
-                     </div>
-                 `;
-             }
-         
-             return `
-                 <div class="auth-form-heading">
-                     <h3>Informations de santé.</h3>
-                     <p>
-                         Ces éléments aident l’équipe à préparer un accompagnement plus sûr, plus clair et plus adapté.
-                     </p>
-                 </div>
-         
-                 <div class="auth-step-note">
-                     <i class="fa-solid fa-triangle-exclamation"></i>
-                     <p>
-                         Santé Plus organise un accompagnement humain et logistique. Ces informations servent au suivi, pas à poser un diagnostic.
-                     </p>
-                 </div>
-         
-                 <div class="auth-form-grid">
-                     <div>
-                         <label class="auth-mini-label">Pathologies connues</label>
-                         <div class="auth-chip-grid">
-                             <label class="auth-chip">
-                                 <input type="checkbox" class="med-hist" value="Diabète" ${registrationData.pathologies?.includes("Diabète") ? "checked" : ""}>
-                                 Diabète
-                             </label>
-         
-                             <label class="auth-chip">
-                                 <input type="checkbox" class="med-hist" value="Hypertension" ${registrationData.pathologies?.includes("Hypertension") ? "checked" : ""}>
-                                 Hypertension
-                             </label>
-         
-                             <label class="auth-chip">
-                                 <input type="checkbox" class="med-hist" value="Arthrose" ${registrationData.pathologies?.includes("Arthrose") ? "checked" : ""}>
-                                 Arthrose
-                             </label>
-         
-                             <label class="auth-chip">
-                                 <input type="checkbox" class="med-hist" value="Alzheimer" ${registrationData.pathologies?.includes("Alzheimer") ? "checked" : ""}>
-                                 Alzheimer
-                             </label>
-         
-                             <label class="auth-chip">
-                                 <input type="checkbox" class="med-hist" value="Aucune connue" ${registrationData.pathologies?.includes("Aucune connue") ? "checked" : ""}>
-                                 Aucune connue
-                             </label>
-                         </div>
-                     </div>
-         
-                     <div>
-                         <label class="auth-mini-label">Traitements en cours</label>
-                         <textarea 
-                             id="p-traitements" 
-                             class="auth-textarea" 
-                             placeholder="Médicaments, fréquence, posologie si connue..."
-                         >${registrationData.traitements || ""}</textarea>
-                     </div>
-         
-                     <div>
-                         <label class="auth-mini-label">Allergies connues</label>
-                         <textarea 
-                             id="p-allergies" 
-                             class="auth-textarea" 
-                             placeholder="Médicaments, aliments, produits, ou écrire : aucune connue"
-                         >${registrationData.allergies || ""}</textarea>
-                     </div>
-         
-                     <div>
-                         <label class="auth-mini-label">Autres précautions</label>
-                         <textarea 
-                             id="p-notes" 
-                             class="auth-textarea" 
-                             placeholder="Mobilité, habitudes, risques de chute, besoin d’aide particulier..."
-                         >${registrationData.notes_medicales || ""}</textarea>
-                     </div>
-                 </div>
-         
-                 <div class="auth-step-footer">
-                     <button onclick="window.prevAuthStep()" class="auth-back-btn">
-                         <i class="fa-solid fa-arrow-left"></i>
-                     </button>
-         
-                     <button onclick="window.nextAuthStep()" class="auth-primary-btn">
-                         Continuer <i class="fa-solid fa-arrow-right"></i>
-                     </button>
-                 </div>
-             `;
+        case 3:
+            if (isSansPatient) {
+                setTimeout(() => window.nextAuthStep(), 100);
+                return `
+                    <div class="text-center py-10">
+                        <i class="fa-solid fa-spinner fa-spin text-emerald-500 text-xl"></i>
+                        <p class="text-xs text-slate-400 mt-3">Préparation du Pack Confort...</p>
+                    </div>
+                `;
+            }
+
+            if (isMamanFlow) {
+                return `
+                    <div class="auth-form-heading">
+                        <h3>Quelques informations utiles.</h3>
+                        <p>
+                            Elles permettent d’adapter l’accompagnement à votre situation après la naissance ou pendant le suivi bébé.
+                        </p>
+                    </div>
+
+                    <div class="auth-step-note">
+                        <i class="fa-solid fa-heart-pulse"></i>
+                        <p>
+                            Ces informations ne remplacent pas un avis médical. Elles aident simplement l’équipe à mieux organiser l’accompagnement.
+                        </p>
+                    </div>
+
+                    <div class="auth-form-grid">
+                        <div>
+                            <label class="auth-mini-label">Type d’accouchement</label>
+                            <div class="auth-field">
+                                <i class="fa-solid fa-hospital-user"></i>
+                                <select id="accouchement" class="auth-select">
+                                    <option value="">Choisir une option</option>
+                                    <option value="voie_basse" ${registrationData.type_accouchement === "voie_basse" ? "selected" : ""}>Voie basse</option>
+                                    <option value="cesarienne" ${registrationData.type_accouchement === "cesarienne" ? "selected" : ""}>Césarienne</option>
+                                    <option value="non_precise" ${registrationData.type_accouchement === "non_precise" ? "selected" : ""}>Je préfère préciser plus tard</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="auth-mini-label">Allaitement</label>
+                            <div class="auth-field">
+                                <i class="fa-solid fa-hand-holding-heart"></i>
+                                <select id="allaitement" class="auth-select">
+                                    <option value="">Choisir une option</option>
+                                    <option value="maternel" ${registrationData.allaitement === "maternel" ? "selected" : ""}>Allaitement maternel</option>
+                                    <option value="mixte" ${registrationData.allaitement === "mixte" ? "selected" : ""}>Allaitement mixte</option>
+                                    <option value="artificiel" ${registrationData.allaitement === "artificiel" ? "selected" : ""}>Lait artificiel</option>
+                                    <option value="non_precise" ${registrationData.allaitement === "non_precise" ? "selected" : ""}>Je préciserai plus tard</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="auth-mini-label">Notes importantes</label>
+                            <textarea 
+                                id="p-notes" 
+                                class="auth-textarea" 
+                                placeholder="Sommeil, fatigue, inquiétudes, besoins particuliers, habitudes du bébé..."
+                            >${registrationData.notes_medicales || ""}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="auth-step-footer">
+                        <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+
+                        <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                            Continuer <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="auth-form-heading">
+                    <h3>Informations de santé.</h3>
+                    <p>
+                        Ces éléments aident l’équipe à préparer un accompagnement plus sûr, plus clair et plus adapté.
+                    </p>
+                </div>
+
+                <div class="auth-step-note">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <p>
+                        Santé Plus organise un accompagnement humain et logistique. Ces informations servent au suivi, pas à poser un diagnostic.
+                    </p>
+                </div>
+
+                <div class="auth-form-grid">
+                    <div>
+                        <label class="auth-mini-label">Pathologies connues</label>
+                        <div class="auth-chip-grid">
+                            <label class="auth-chip">
+                                <input type="checkbox" class="med-hist" value="Diabète" ${registrationData.pathologies?.includes("Diabète") ? "checked" : ""}>
+                                Diabète
+                            </label>
+
+                            <label class="auth-chip">
+                                <input type="checkbox" class="med-hist" value="Hypertension" ${registrationData.pathologies?.includes("Hypertension") ? "checked" : ""}>
+                                Hypertension
+                            </label>
+
+                            <label class="auth-chip">
+                                <input type="checkbox" class="med-hist" value="Arthrose" ${registrationData.pathologies?.includes("Arthrose") ? "checked" : ""}>
+                                Arthrose
+                            </label>
+
+                            <label class="auth-chip">
+                                <input type="checkbox" class="med-hist" value="Alzheimer" ${registrationData.pathologies?.includes("Alzheimer") ? "checked" : ""}>
+                                Alzheimer
+                            </label>
+
+                            <label class="auth-chip">
+                                <input type="checkbox" class="med-hist" value="Aucune connue" ${registrationData.pathologies?.includes("Aucune connue") ? "checked" : ""}>
+                                Aucune connue
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="auth-mini-label">Traitements en cours</label>
+                        <textarea 
+                            id="p-traitements" 
+                            class="auth-textarea" 
+                            placeholder="Médicaments, fréquence, posologie si connue..."
+                        >${registrationData.traitements || ""}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="auth-mini-label">Allergies connues</label>
+                        <textarea 
+                            id="p-allergies" 
+                            class="auth-textarea" 
+                            placeholder="Médicaments, aliments, produits, ou écrire : aucune connue"
+                        >${registrationData.allergies || ""}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="auth-mini-label">Autres précautions</label>
+                        <textarea 
+                            id="p-notes" 
+                            class="auth-textarea" 
+                            placeholder="Mobilité, habitudes, risques de chute, besoin d’aide particulier..."
+                        >${registrationData.notes_medicales || ""}</textarea>
+                    </div>
+                </div>
+
+                <div class="auth-step-footer">
+                    <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+
+                    <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                        Continuer <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            `;
+
         // ============================================
-        // ÉTAPE 4 : FORFAIT (adapté selon le type de compte)
+        // ÉTAPE 4 : FORMULE / PACK
         // ============================================
-       case 4:
-           if (isSansPatient) {
-               const confortPacks = [
-                   {
-                       id: "CONFORT_247_MENSUEL",
-                       name: "Pack Confort Mensuel",
-                       desc: "Pour commencer simplement",
-                       price: "25.000",
-                       duration: 1,
-                       period: "1 mois",
-                       badge: "",
-                       icon: "fa-headset",
-                       features: ["Commandes personnelles", "Support prioritaire", "Historique de commandes"]
-                   },
-                   {
-                       id: "CONFORT_247_TRIMESTRIEL",
-                       name: "Pack Confort 3 mois",
-                       desc: "Plus pratique et plus économique",
-                       price: "71.250",
-                       originalPrice: "75.000",
-                       duration: 3,
-                       period: "3 mois",
-                       badge: "Économie 5%",
-                       icon: "fa-shield-heart",
-                       features: ["Commandes personnelles", "Support prioritaire", "Suivi plus confortable"]
-                   },
-                   {
-                       id: "CONFORT_247_ANNUEL",
-                       name: "Pack Confort 1 an",
-                       desc: "Le plus avantageux sur la durée",
-                       price: "255.000",
-                       originalPrice: "300.000",
-                       duration: 12,
-                       period: "12 mois",
-                       badge: "Meilleure valeur",
-                       icon: "fa-crown",
-                       features: ["Commandes personnelles", "Support prioritaire", "Économie 15%"]
-                   }
-               ];
-       
-               return `
-                   <div class="auth-form-heading">
-                       <h3>Activez votre Pack Confort.</h3>
-                       <p>
-                           Un accès simple pour gérer vos commandes personnelles, vos demandes et votre suivi sans dossier patient.
-                       </p>
-                   </div>
-       
-                   <div class="auth-step-note">
-                       <i class="fa-solid fa-circle-info"></i>
-                       <p>
-                           Le Pack Confort est lié à votre compte personnel. Vous pourrez ajouter un patient plus tard si nécessaire.
-                       </p>
-                   </div>
-       
-                   <div id="pack-selector" class="auth-pack-list">
-                       ${confortPacks.map(pack => `
-                           <div 
-                               onclick="window.selectPackConfort('${pack.id}', '${pack.price}', ${pack.duration})"
-                               class="auth-pack-card pack-card ${registrationData.type_pack === pack.id ? "selected" : ""}"
-                               data-pack-id="${pack.id}"
-                           >
-                               ${pack.badge ? `
-                                   <div class="auth-pack-badge">
-                                       <i class="fa-solid fa-star"></i> ${pack.badge}
-                                   </div>
-                               ` : ""}
-       
-                               <div class="auth-pack-top">
-                                   <div class="auth-pack-icon">
-                                       <i class="fa-solid ${pack.icon}"></i>
-                                   </div>
-       
-                                   <div class="auth-pack-info">
-                                       <h4>${pack.name}</h4>
-                                       <p>${pack.desc}</p>
-                                   </div>
-       
-                                   <div class="auth-pack-price">
-                                       ${pack.originalPrice ? `<span class="old">${pack.originalPrice} F</span>` : ""}
-                                       <span class="price">${pack.price} F</span>
-                                       <span class="period">${pack.period}</span>
-                                   </div>
-                               </div>
-       
-                               <div class="auth-pack-features">
-                                   ${pack.features.map(f => `
-                                       <span class="auth-pack-feature">✓ ${f}</span>
-                                   `).join("")}
-                               </div>
-                           </div>
-                       `).join("")}
-                   </div>
-       
-                   <div class="auth-pack-note">
-                       <i class="fa-solid fa-lock"></i>
-                       <p>
-                           Le paiement sera lancé après validation. Votre accès sera activé automatiquement après confirmation du paiement.
-                       </p>
-                   </div>
-       
-                   <div class="auth-step-footer">
-                       <button onclick="window.prevAuthStep()" class="auth-back-btn">
-                           <i class="fa-solid fa-arrow-left"></i>
-                       </button>
-       
-                       <button 
-                           onclick="window.nextAuthStep()" 
-                           id="pack-continue-btn"
-                           class="auth-primary-btn"
-                           ${!registrationData.type_pack ? "disabled" : ""}
-                           style="${!registrationData.type_pack ? "opacity:.45; pointer-events:none;" : ""}"
-                       >
-                           Continuer <i class="fa-solid fa-arrow-right"></i>
-                       </button>
-                   </div>
-               `;
-           }
-       
-           const packs = isMamanFlow ? [
-               {
-                   id: "ESSENTIEL_MAMAN",
-                   name: "Essentiel",
-                   desc: "Pour un accompagnement court et ciblé",
-                   price: "65.000",
-                   period: "2 semaines",
-                   icon: "fa-seedling",
-                   badge: "",
-                   features: ["Suivi post-partum", "2 semaines", "Accompagnement de base"]
-               },
-               {
-                   id: "CONFORT_MAMAN",
-                   name: "Confort",
-                   desc: "Pour une présence plus régulière",
-                   price: "100.000",
-                   period: "3 semaines",
-                   icon: "fa-heart",
-                   badge: "Populaire",
-                   features: ["Accompagnement standard", "3 semaines", "Suivi maman & bébé"]
-               },
-               {
-                   id: "SERENITE_MAMAN",
-                   name: "Sérénité",
-                   desc: "Pour être accompagnée plus longtemps",
-                   price: "140.000",
-                   period: "4 semaines",
-                   icon: "fa-shield-heart",
-                   badge: "",
-                   features: ["Suivi rapproché", "4 semaines", "Conseils adaptés"]
-               },
-               {
-                   id: "PRIVILEGE_MAMAN",
-                   name: "Privilège",
-                   desc: "Pour un accompagnement plus complet",
-                   price: "200.000",
-                   period: "5 semaines",
-                   icon: "fa-crown",
-                   badge: "Premium",
-                   features: ["Coaching complet", "5 semaines", "Priorité coordination"]
-               }
-           ] : [
-               {
-                   id: "ESSENTIEL_SENIOR",
-                   name: "Essentiel",
-                   desc: "Pour garder un œil régulier",
-                   price: "45.000",
-                   period: "par mois",
-                   icon: "fa-seedling",
-                   badge: "",
-                   features: ["4 visites/mois", "Suivi léger", "Rapports simples"]
-               },
-               {
-                   id: "ACCOMPAGNEMENT_SENIOR",
-                   name: "Accompagnement",
-                   desc: "Pour un proche qui a besoin d’un suivi régulier",
-                   price: "80.000",
-                   period: "par mois",
-                   icon: "fa-hand-holding-heart",
-                   badge: "Populaire",
-                   features: ["8 visites/mois", "Convalescence", "Suivi renforcé"]
-               },
-               {
-                   id: "SERENITE_SENIOR",
-                   name: "Sérénité",
-                   desc: "Pour plus de présence et de tranquillité",
-                   price: "100.000",
-                   period: "par mois",
-                   icon: "fa-shield-heart",
-                   badge: "",
-                   features: ["12 visites/mois", "Suivi régulier", "Coordination"]
-               },
-               {
-                   id: "PRIVILEGE_SENIOR",
-                   name: "Privilège",
-                   desc: "Pour une prise en charge plus complète",
-                   price: "200.000",
-                   period: "par mois",
-                   icon: "fa-crown",
-                   badge: "Premium",
-                   features: ["Visites illimitées", "Coordination totale", "Priorité"]
-               }
-           ];
-       
-           return `
-               <div class="auth-form-heading">
-                   <h3>Choisissez la formule adaptée.</h3>
-                   <p>
-                       Sélectionnez l’offre qui correspond au niveau d’accompagnement souhaité.
-                   </p>
-               </div>
-       
-               <div class="auth-step-note">
-                   <i class="fa-solid fa-hand-holding-medical"></i>
-                   <p>
-                       Le coordinateur pourra confirmer avec vous la formule la plus adaptée avant le démarrage effectif du suivi.
-                   </p>
-               </div>
-       
-               <div id="pack-selector" class="auth-pack-list">
-                   ${packs.map(pack => `
-                       <div 
-                           onclick="window.selectPack('${pack.id}', '${pack.price}')"
-                           class="auth-pack-card pack-card ${registrationData.type_pack === pack.id ? "selected" : ""}"
-                           data-pack-id="${pack.id}"
-                       >
-                           ${pack.badge ? `
-                               <div class="auth-pack-badge">
-                                   <i class="fa-solid fa-star"></i> ${pack.badge}
-                               </div>
-                           ` : ""}
-       
-                           <div class="auth-pack-top">
-                               <div class="auth-pack-icon">
-                                   <i class="fa-solid ${pack.icon}"></i>
-                               </div>
-       
-                               <div class="auth-pack-info">
-                                   <h4>${pack.name}</h4>
-                                   <p>${pack.desc}</p>
-                               </div>
-       
-                               <div class="auth-pack-price">
-                                   <span class="price">${pack.price} F</span>
-                                   <span class="period">${pack.period}</span>
-                               </div>
-                           </div>
-       
-                           <div class="auth-pack-features">
-                               ${pack.features.map(f => `
-                                   <span class="auth-pack-feature">✓ ${f}</span>
-                               `).join("")}
-                           </div>
-                       </div>
-                   `).join("")}
-               </div>
-       
-               <div class="auth-step-footer">
-                   <button onclick="window.prevAuthStep()" class="auth-back-btn">
-                       <i class="fa-solid fa-arrow-left"></i>
-                   </button>
-       
-                   <button 
-                       onclick="window.nextAuthStep()" 
-                       id="pack-continue-btn"
-                       class="auth-primary-btn"
-                       ${!registrationData.type_pack ? "disabled" : ""}
-                       style="${!registrationData.type_pack ? "opacity:.45; pointer-events:none;" : ""}"
-                   >
-                       Continuer <i class="fa-solid fa-arrow-right"></i>
-                   </button>
-               </div>
-           `;
+        case 4:
+            if (isSansPatient) {
+                const confortPacks = [
+                    {
+                        id: "CONFORT_247_MENSUEL",
+                        name: "Pack Confort Mensuel",
+                        desc: "Pour commencer simplement",
+                        price: "25.000",
+                        duration: 1,
+                        period: "1 mois",
+                        badge: "",
+                        icon: "fa-headset",
+                        features: ["Commandes personnelles", "Support prioritaire", "Historique de commandes"]
+                    },
+                    {
+                        id: "CONFORT_247_TRIMESTRIEL",
+                        name: "Pack Confort 3 mois",
+                        desc: "Plus pratique et plus économique",
+                        price: "71.250",
+                        originalPrice: "75.000",
+                        duration: 3,
+                        period: "3 mois",
+                        badge: "Économie 5%",
+                        icon: "fa-shield-heart",
+                        features: ["Commandes personnelles", "Support prioritaire", "Suivi plus confortable"]
+                    },
+                    {
+                        id: "CONFORT_247_ANNUEL",
+                        name: "Pack Confort 1 an",
+                        desc: "Le plus avantageux sur la durée",
+                        price: "255.000",
+                        originalPrice: "300.000",
+                        duration: 12,
+                        period: "12 mois",
+                        badge: "Meilleure valeur",
+                        icon: "fa-crown",
+                        features: ["Commandes personnelles", "Support prioritaire", "Économie 15%"]
+                    }
+                ];
+
+                return `
+                    <div class="auth-form-heading">
+                        <h3>Activez votre Pack Confort.</h3>
+                        <p>
+                            Un accès simple pour gérer vos commandes personnelles, vos demandes et votre suivi sans dossier patient.
+                        </p>
+                    </div>
+
+                    <div class="auth-step-note">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <p>
+                            Le Pack Confort est lié à votre compte personnel. Vous pourrez ajouter un patient plus tard si nécessaire.
+                        </p>
+                    </div>
+
+                    <div id="pack-selector" class="auth-pack-list">
+                        ${confortPacks.map(pack => `
+                            <div 
+                                onclick="window.selectPackConfort('${pack.id}', '${pack.price}', ${pack.duration})"
+                                class="auth-pack-card pack-card ${registrationData.type_pack === pack.id ? "selected" : ""}"
+                                data-pack-id="${pack.id}"
+                            >
+                                ${pack.badge ? `
+                                    <div class="auth-pack-badge">
+                                        <i class="fa-solid fa-star"></i> ${pack.badge}
+                                    </div>
+                                ` : ""}
+
+                                <div class="auth-pack-top">
+                                    <div class="auth-pack-icon">
+                                        <i class="fa-solid ${pack.icon}"></i>
+                                    </div>
+
+                                    <div class="auth-pack-info">
+                                        <h4>${pack.name}</h4>
+                                        <p>${pack.desc}</p>
+                                    </div>
+
+                                    <div class="auth-pack-price">
+                                        ${pack.originalPrice ? `<span class="old">${pack.originalPrice} F</span>` : ""}
+                                        <span class="price">${pack.price} F</span>
+                                        <span class="period">${pack.period}</span>
+                                    </div>
+                                </div>
+
+                                <div class="auth-pack-features">
+                                    ${pack.features.map(f => `
+                                        <span class="auth-pack-feature">✓ ${f}</span>
+                                    `).join("")}
+                                </div>
+                            </div>
+                        `).join("")}
+                    </div>
+
+                    <div class="auth-pack-note">
+                        <i class="fa-solid fa-lock"></i>
+                        <p>
+                            Le paiement sera lancé après validation. Votre accès sera activé automatiquement après confirmation du paiement.
+                        </p>
+                    </div>
+
+                    <div class="auth-step-footer">
+                        <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+
+                        <button 
+                            onclick="window.nextAuthStep()" 
+                            id="pack-continue-btn"
+                            class="auth-primary-btn"
+                            ${!registrationData.type_pack ? "disabled" : ""}
+                            style="${!registrationData.type_pack ? "opacity:.45; pointer-events:none;" : ""}"
+                        >
+                            Continuer <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                `;
+            }
+
+            const packs = isMamanFlow ? [
+                {
+                    id: "ESSENTIEL_MAMAN",
+                    name: "Essentiel",
+                    desc: "Pour un accompagnement court et ciblé",
+                    price: "65.000",
+                    period: "2 semaines",
+                    icon: "fa-seedling",
+                    badge: "",
+                    features: ["Suivi post-partum", "2 semaines", "Accompagnement de base"]
+                },
+                {
+                    id: "CONFORT_MAMAN",
+                    name: "Confort",
+                    desc: "Pour une présence plus régulière",
+                    price: "100.000",
+                    period: "3 semaines",
+                    icon: "fa-heart",
+                    badge: "Populaire",
+                    features: ["Accompagnement standard", "3 semaines", "Suivi maman & bébé"]
+                },
+                {
+                    id: "SERENITE_MAMAN",
+                    name: "Sérénité",
+                    desc: "Pour être accompagnée plus longtemps",
+                    price: "140.000",
+                    period: "4 semaines",
+                    icon: "fa-shield-heart",
+                    badge: "",
+                    features: ["Suivi rapproché", "4 semaines", "Conseils adaptés"]
+                },
+                {
+                    id: "PRIVILEGE_MAMAN",
+                    name: "Privilège",
+                    desc: "Pour un accompagnement plus complet",
+                    price: "200.000",
+                    period: "5 semaines",
+                    icon: "fa-crown",
+                    badge: "Premium",
+                    features: ["Coaching complet", "5 semaines", "Priorité coordination"]
+                }
+            ] : [
+                {
+                    id: "ESSENTIEL_SENIOR",
+                    name: "Essentiel",
+                    desc: "Pour garder un œil régulier",
+                    price: "45.000",
+                    period: "par mois",
+                    icon: "fa-seedling",
+                    badge: "",
+                    features: ["4 visites/mois", "Suivi léger", "Rapports simples"]
+                },
+                {
+                    id: "ACCOMPAGNEMENT_SENIOR",
+                    name: "Accompagnement",
+                    desc: "Pour un proche qui a besoin d’un suivi régulier",
+                    price: "80.000",
+                    period: "par mois",
+                    icon: "fa-hand-holding-heart",
+                    badge: "Populaire",
+                    features: ["8 visites/mois", "Convalescence", "Suivi renforcé"]
+                },
+                {
+                    id: "SERENITE_SENIOR",
+                    name: "Sérénité",
+                    desc: "Pour plus de présence et de tranquillité",
+                    price: "100.000",
+                    period: "par mois",
+                    icon: "fa-shield-heart",
+                    badge: "",
+                    features: ["12 visites/mois", "Suivi régulier", "Coordination"]
+                },
+                {
+                    id: "PRIVILEGE_SENIOR",
+                    name: "Privilège",
+                    desc: "Pour une prise en charge plus complète",
+                    price: "200.000",
+                    period: "par mois",
+                    icon: "fa-crown",
+                    badge: "Premium",
+                    features: ["Visites illimitées", "Coordination totale", "Priorité"]
+                }
+            ];
+
+            return `
+                <div class="auth-form-heading">
+                    <h3>Choisissez la formule adaptée.</h3>
+                    <p>
+                        Sélectionnez l’offre qui correspond au niveau d’accompagnement souhaité.
+                    </p>
+                </div>
+
+                <div class="auth-step-note">
+                    <i class="fa-solid fa-hand-holding-medical"></i>
+                    <p>
+                        Le coordinateur pourra confirmer avec vous la formule la plus adaptée avant le démarrage effectif du suivi.
+                    </p>
+                </div>
+
+                <div id="pack-selector" class="auth-pack-list">
+                    ${packs.map(pack => `
+                        <div 
+                            onclick="window.selectPack('${pack.id}', '${pack.price}')"
+                            class="auth-pack-card pack-card ${registrationData.type_pack === pack.id ? "selected" : ""}"
+                            data-pack-id="${pack.id}"
+                        >
+                            ${pack.badge ? `
+                                <div class="auth-pack-badge">
+                                    <i class="fa-solid fa-star"></i> ${pack.badge}
+                                </div>
+                            ` : ""}
+
+                            <div class="auth-pack-top">
+                                <div class="auth-pack-icon">
+                                    <i class="fa-solid ${pack.icon}"></i>
+                                </div>
+
+                                <div class="auth-pack-info">
+                                    <h4>${pack.name}</h4>
+                                    <p>${pack.desc}</p>
+                                </div>
+
+                                <div class="auth-pack-price">
+                                    <span class="price">${pack.price} F</span>
+                                    <span class="period">${pack.period}</span>
+                                </div>
+                            </div>
+
+                            <div class="auth-pack-features">
+                                ${pack.features.map(f => `
+                                    <span class="auth-pack-feature">✓ ${f}</span>
+                                `).join("")}
+                            </div>
+                        </div>
+                    `).join("")}
+                </div>
+
+                <div class="auth-step-footer">
+                    <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+
+                    <button 
+                        onclick="window.nextAuthStep()" 
+                        id="pack-continue-btn"
+                        class="auth-primary-btn"
+                        ${!registrationData.type_pack ? "disabled" : ""}
+                        style="${!registrationData.type_pack ? "opacity:.45; pointer-events:none;" : ""}"
+                    >
+                        Continuer <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            `;
+
         // ============================================
-        // ÉTAPE 5 : CONFIRMATION (identique pour les deux types)
+        // ÉTAPE 5 : CONFIRMATION
         // ============================================
-        case 5: return `
-            <div class="auth-form-heading">
-                <h3>Vérifiez puis validez.</h3>
-                <p>
-                    Dernière étape avant l’envoi de votre demande à l’équipe Santé Plus.
-                </p>
-            </div>
-        
-            <div class="auth-review-box mb-3">
-                <h4>Résumé de votre demande</h4>
-                <p>
-                    <b>Compte :</b> ${registrationData.type_compte === "SANS_PATIENT" ? "Sans patient — Pack Confort" : "Avec patient — Suivi à domicile"}<br>
-                    <b>Demandeur :</b> ${registrationData.nom_famille || "Non renseigné"}<br>
-                    <b>Email :</b> ${registrationData.email || "Non renseigné"}<br>
-                    ${registrationData.type_compte !== "SANS_PATIENT" ? `<b>Patient :</b> ${registrationData.nom_patient || "Non renseigné"}<br>` : ""}
-                    <b>Formule :</b> ${registrationData.type_pack || "Non sélectionnée"}<br>
-                    <b>Montant prévu :</b> ${registrationData.montant_prevu || "À confirmer"} F
-                </p>
-            </div>
-        
-            <div class="auth-legal-card">
-                <i class="fa-solid fa-circle-info"></i>
-                <p>
-                    Santé Plus Services propose un accompagnement humain, logistique et de suivi à domicile.
-                    Ce service ne remplace pas une consultation médicale, un diagnostic ou une urgence hospitalière.
-                </p>
-            </div>
-        
-            <label class="auth-checkbox-card">
-                <input type="checkbox" id="legal-check">
-                <span>
-                    Je confirme avoir compris que Santé Plus Services propose un accompagnement non médical,
-                    et j’accepte l’envoi de ma demande pour validation.
-                </span>
-            </label>
-        
-            <div class="auth-step-footer">
-                <button onclick="window.prevAuthStep()" class="auth-back-btn">
-                    <i class="fa-solid fa-arrow-left"></i>
-                </button>
-        
-                <button onclick="window.nextAuthStep()" class="auth-primary-btn">
-                    Envoyer ma demande <i class="fa-solid fa-paper-plane"></i>
-                </button>
-            </div>
-        `;
+        case 5:
+            return `
+                <div class="auth-form-heading">
+                    <h3>Vérifiez puis validez.</h3>
+                    <p>
+                        Dernière étape avant l’envoi de votre demande à l’équipe Santé Plus.
+                    </p>
+                </div>
+
+                <div class="auth-review-box mb-3">
+                    <h4>Résumé de votre demande</h4>
+                    <p>
+                        <b>Compte :</b> ${registrationData.type_compte === "SANS_PATIENT" ? "Sans patient — Pack Confort" : "Avec patient — Suivi à domicile"}<br>
+                        <b>Demandeur :</b> ${registrationData.nom_famille || "Non renseigné"}<br>
+                        <b>Email :</b> ${registrationData.email || "Non renseigné"}<br>
+                        ${registrationData.type_compte !== "SANS_PATIENT" ? `<b>Patient :</b> ${registrationData.nom_patient || "Non renseigné"}<br>` : ""}
+                        <b>Formule :</b> ${registrationData.type_pack || "Non sélectionnée"}<br>
+                        <b>Montant prévu :</b> ${registrationData.montant_prevu || "À confirmer"} F
+                    </p>
+                </div>
+
+                <div class="auth-legal-card">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <p>
+                        Santé Plus Services propose un accompagnement humain, logistique et de suivi à domicile.
+                        Ce service ne remplace pas une consultation médicale, un diagnostic ou une urgence hospitalière.
+                    </p>
+                </div>
+
+                <label class="auth-checkbox-card">
+                    <input type="checkbox" id="legal-check">
+                    <span>
+                        Je confirme avoir compris que Santé Plus Services propose un accompagnement non médical,
+                        et j’accepte l’envoi de ma demande pour validation.
+                    </span>
+                </label>
+
+                <div class="auth-step-footer">
+                    <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+
+                    <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                        Envoyer ma demande <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            `;
+
+        default:
+            return getTypeCompteChoiceHTML();
+    }
+}
 // ============================================================
 // SÉLECTEUR DE CATÉGORIE (SENIOR / MAMAN)
 // ============================================================
