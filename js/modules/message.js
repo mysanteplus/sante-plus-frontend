@@ -373,7 +373,7 @@ function renderStoryCard(msg, isReply = false) {
 // RENDU DU FEED
 // ============================================================
 
-function renderFeed() {
+export function renderFeed() {
     const content = document.getElementById('care-feed-content');
     const inputArea = document.getElementById('input-area');
     const btnStory = document.getElementById('tab-story');
@@ -1068,7 +1068,7 @@ function getVisibilityLabel(visibility) {
 // CHARGEMENT DU FEED (FONCTION PRINCIPALE)
 // ============================================================
 
-async function loadFeed() {
+export async function loadFeed() {
     const container = document.getElementById('view-container');
     if (!container) return;
 
