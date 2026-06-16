@@ -2968,44 +2968,44 @@ function renderLayout() {
              ];
          }
          
-         else if (userRole === "FAMILLE") {
-             const isSansPatient = localStorage.getItem("user_type_compte") === "SANS_PATIENT";
-         
-             if (isMaman && !isSansPatient) {
-                 mainItems = [
-                     { id: "dashboard-maman", icon: "fa-chart-line", label: "Tableau maman" },
-                     { id: "feed", icon: "fa-newspaper", label: "Journal bébé" },
-                     { id: "visits", icon: "fa-calendar-check", label: "Visites" },
-                     { id: "commandes", icon: "fa-box", label: "Commandes" },
-                     { id: "education", icon: "fa-graduation-cap", label: "Éducation" },
-                     { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
-                     { id: "subscription", icon: "fa-crown", label: "Abonnement" }
-                 ];
-             }
-         
-             else if (!isMaman && !isSansPatient) {
-                 mainItems = [
-                     { id: "home", icon: "fa-home", label: "Accueil" },
-                     { id: "feed", icon: "fa-newspaper", label: "Journal de soins" },
-                     { id: "visits", icon: "fa-calendar-check", label: "Visites" },
-                     { id: "commandes", icon: "fa-box", label: "Commandes" },
-                     { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
-                     { id: "subscription", icon: "fa-crown", label: "Abonnement" }
-                 ];
-             }
-         
-             else {
-                 mainItems = [
-                     { id: "home", icon: "fa-home", label: "Accueil" },
-                     { id: "commandes", icon: "fa-box", label: "Commandes" },
-                     { id: "subscription", icon: "fa-crown", label: "Abonnement" }
-                 ];
-         
-                 if (isMaman) {
-                     mainItems.splice(2, 0, { id: "education", icon: "fa-graduation-cap", label: "Éducation" });
-                 }
-             }
-         }
+      else if (userRole === "FAMILLE") {
+          const isSansPatient = localStorage.getItem("user_type_compte") === "SANS_PATIENT";
+      
+          if (isMaman && !isSansPatient) {
+              mainItems = [
+                  { id: "dashboard-maman", icon: "fa-chart-line", label: "Tableau maman" },
+                  { id: "feed", icon: "fa-newspaper", label: "Journal bébé" },
+                  { id: "map", icon: "fa-location-dot", label: "Radar" },
+                  { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+                  { id: "commandes", icon: "fa-box", label: "Commandes" },
+                  { id: "education", icon: "fa-graduation-cap", label: "Éducation" },
+                  { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+                  { id: "subscription", icon: "fa-crown", label: "Abonnement" }
+              ];
+          }
+      
+          else if (!isMaman && !isSansPatient) {
+              mainItems = [
+                  { id: "home", icon: "fa-home", label: "Accueil" },
+                  { id: "feed", icon: "fa-newspaper", label: "Journal de soins" },
+                  { id: "map", icon: "fa-location-dot", label: "Radar" },
+                  { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+                  { id: "commandes", icon: "fa-box", label: "Commandes" },
+                  { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+                  { id: "subscription", icon: "fa-crown", label: "Abonnement" }
+              ];
+          }
+      
+          else {
+              mainItems = [
+                  { id: "home", icon: "fa-home", label: "Accueil" },
+                  { id: "commandes", icon: "fa-box", label: "Commandes" },
+                  { id: "map", icon: "fa-location-dot", label: "Radar" },
+                  { id: "subscription", icon: "fa-crown", label: "Abonnement" },
+                  { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" }
+              ];
+          }
+      }
          
          if (mainItems.length > 0) {
              sections.push({ title: 'PRINCIPAL', icon: 'fa-compass', items: mainItems, defaultOpen: true });
