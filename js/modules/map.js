@@ -128,31 +128,87 @@ function createCoordinatorIcon(color, iconName, isAnimated) {
 // ============================================================
 
 export async function initLiveMap() {
-    console.log("🗺️ Initialisation de la carte...");
-    
-    const userRole = localStorage.getItem("user_role");
-    console.log("👤 Rôle utilisateur pour la carte:", userRole);
-    
-    // Appeler la bonne fonction selon le rôle
-    if (userRole === "COORDINATEUR") {
-        await initCoordinatorMap();
-    } else if (userRole === "FAMILLE") {
-        await initFamilyMap();
-    } else if (userRole === "AIDANT") {
-        await initAidantMap();
-    } else {
-        // Fallback si rôle non reconnu
-        const container = document.getElementById("view-container");
+    const container = document.getElementById("view-container");
+
+    try {
+        console.log("🗺️ Initialisation de la carte...");
+
+        const userRole = localStorage.getItem("user_role");
+        console.log("👤 Rôle utilisateur pour la carte:", userRole);
+
+        if (!container) {
+            console.error("❌ view-container introuvable");
+            return;
+        }
+
+        if (typeof L === "undefined") {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center bg-white rounded-3xl border border-slate-100 shadow-sm">
+                    <div class="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-map-location-dot text-3xl text-red-400"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-slate-800">Carte indisponible</h3>
+                    <p class="text-sm text-slate-500 mt-2 max-w-sm">
+                        Le module Leaflet n’est pas chargé. Vérifiez le script Leaflet dans index.html.
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        if (userRole === "COORDINATEUR") {
+            await initCoordinatorMap();
+            return;
+        }
+
+        if (userRole === "FAMILLE") {
+            await initFamilyMap();
+            return;
+        }
+
+        if (userRole === "AIDANT") {
+            await initAidantMap();
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center bg-white rounded-3xl border border-slate-100 shadow-sm">
+                <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-map-location-dot text-3xl text-slate-300"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-800">Radar indisponible</h3>
+                <p class="text-sm text-slate-500 mt-2">
+                    Cette vue n’est pas disponible pour ce rôle.
+                </p>
+            </div>
+        `;
+
+    } catch (err) {
+        console.error("❌ Erreur initLiveMap:", err);
+
         if (container) {
             container.innerHTML = `
-                <div class="text-center py-20">
-                    <i class="fa-solid fa-map-location-dot text-5xl text-slate-300 mb-4"></i>
-                    <p class="text-slate-500">Vue carte non disponible pour ce rôle</p>
+                <div class="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center bg-white rounded-3xl border border-red-100 shadow-sm">
+                    <div class="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-triangle-exclamation text-3xl text-red-400"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-slate-800">Erreur Radar</h3>
+                    <p class="text-sm text-slate-500 mt-2 max-w-sm">
+                        La carte n’a pas pu être chargée.
+                    </p>
+                    <p class="text-[10px] text-red-400 mt-3 font-mono break-all max-w-sm">
+                        ${escapeHtml(err.message || "Erreur inconnue")}
+                    </p>
+                    <button onclick="window.switchView('map')" 
+                            class="mt-6 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase">
+                        Réessayer
+                    </button>
                 </div>
             `;
         }
     }
 }
+
 // ============================================================
 // 🗺️ VUE COORDINATEUR
 // ============================================================
