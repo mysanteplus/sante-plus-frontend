@@ -5,6 +5,7 @@
 // ============================================================
 
 import { secureFetch } from "../core/api.js";
+import { AppState } from "../core/state.js";
 import { UI, showToast } from "../core/utils.js";
 
 // ============================================================
@@ -209,6 +210,94 @@ export async function initLiveMap() {
     }
 }
 
+
+
+function isFreshPosition(item, maxMinutes = 10) {
+    const date =
+        item?.last_position?.created_at ||
+        item?.last_position?.updated_at ||
+        item?.updated_at ||
+        item?.created_at ||
+        null;
+
+    if (!date) return false;
+
+    const diffMs = Date.now() - new Date(date).getTime();
+    const diffMinutes = diffMs / 60000;
+
+    return diffMinutes <= maxMinutes;
+}
+
+function getPositionAgeText(item) {
+    const date =
+        item?.last_position?.created_at ||
+        item?.last_position?.updated_at ||
+        item?.updated_at ||
+        item?.created_at ||
+        null;
+
+    if (!date) return "Position inconnue";
+
+    const diffMs = Date.now() - new Date(date).getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+
+    if (diffMinutes < 1) return "À l’instant";
+    if (diffMinutes < 60) return `Il y a ${diffMinutes} min`;
+
+    const hours = Math.floor(diffMinutes / 60);
+    return `Il y a ${hours}h`;
+}
+
+function renderCoordinatorEmptyNotice(message) {
+    const container = document.getElementById("live-map-container");
+
+    if (!container) return;
+
+    let notice = document.getElementById("coordinator-empty-notice");
+
+    if (!notice) {
+        notice = document.createElement("div");
+        notice.id = "coordinator-empty-notice";
+        notice.className = "absolute top-4 left-4 right-4 z-30 bg-white/95 backdrop-blur-sm border border-slate-100 rounded-2xl p-4 shadow-lg text-center";
+        container.appendChild(notice);
+    }
+
+    notice.innerHTML = `
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">État du terrain</p>
+        <p class="text-sm font-bold text-slate-700 mt-1">${escapeHtml(message)}</p>
+    `;
+}
+
+function hideCoordinatorEmptyNotice() {
+    const notice = document.getElementById("coordinator-empty-notice");
+    if (notice) notice.remove();
+}
+
+function updateCoordinatorCounters({ aidants = [], patients = [], outside = 0, stale = 0 }) {
+    const liveEl = document.getElementById("admin-live-count");
+    const patientEl = document.getElementById("admin-patient-count");
+    const alertEl = document.getElementById("admin-alert-count");
+    const staleEl = document.getElementById("admin-stale-count");
+
+    if (liveEl) liveEl.innerHTML = String(aidants.length);
+    if (patientEl) patientEl.innerHTML = String(patients.length);
+    if (alertEl) alertEl.innerHTML = String(outside);
+    if (staleEl) staleEl.innerHTML = String(stale);
+}
+
+function safeLatLng(lat, lng) {
+    const nLat = Number(lat);
+    const nLng = Number(lng);
+
+    if (!Number.isFinite(nLat) || !Number.isFinite(nLng)) return null;
+    if (nLat === 0 || nLng === 0) return null;
+
+    return {
+        lat: nLat,
+        lng: nLng
+    };
+}
+
 // ============================================================
 // 🗺️ VUE COORDINATEUR
 // ============================================================
@@ -235,6 +324,28 @@ async function initCoordinatorMap() {
                     </button>
                 </div>
             </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Aidants live</p>
+                        <p id="admin-live-count" class="text-2xl font-black text-emerald-600 mt-1">0</p>
+                    </div>
+                
+                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Patients GPS</p>
+                        <p id="admin-patient-count" class="text-2xl font-black text-blue-600 mt-1">0</p>
+                    </div>
+                
+                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Hors zone</p>
+                        <p id="admin-alert-count" class="text-2xl font-black text-rose-600 mt-1">0</p>
+                    </div>
+                
+                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Positions anciennes</p>
+                        <p id="admin-stale-count" class="text-2xl font-black text-amber-600 mt-1">0</p>
+                    </div>
+              </div>
             
             <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -269,6 +380,27 @@ async function initCoordinatorMap() {
                             <div class="absolute inset-0 border-3 border-slate-100 border-t-emerald-500 rounded-full animate-spin"></div>
                         </div>
                         <p class="text-[10px] font-black text-slate-400">Chargement de la carte...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3 bg-white/90 backdrop-blur-sm p-3 rounded-xl border border-slate-100">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[8px] font-bold">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span>Aidant actif</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                        <span>Domicile patient</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-rose-500 animate-pulse"></div>
+                        <span>Hors zone</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                        <span>Position ancienne</span>
                     </div>
                 </div>
             </div>
@@ -326,17 +458,7 @@ async function initCoordinatorMap() {
         if (map) map.invalidateSize(true);
     }, 200);
     
-    // ✅ Cacher le loader
-    const mapLoading = document.getElementById('map-loading');
-    if (mapLoading) {
-        setTimeout(() => {
-            mapLoading.style.opacity = '0';
-            setTimeout(() => mapLoading.style.display = 'none', 300);
-        }, 500);
-    }
-
-
-    
+ 
     // ✅ Événements
     document.getElementById('refresh-map-btn')?.addEventListener('click', () => loadCoordinatorData());
     document.getElementById('center-all-btn')?.addEventListener('click', () => centerAllMarkers());
@@ -360,124 +482,327 @@ async function initCoordinatorMap() {
 
 async function loadCoordinatorData() {
     try {
-        const aidants = await secureFetch('/visites/active-aidants');
-        const patients = await secureFetch('/visites/patients-locations');
+        const aidantsRaw = await secureFetch("/visites/active-aidants");
+        const patientsRaw = await secureFetch("/visites/patients-locations");
+
+        const aidants = normalizeArray(aidantsRaw);
+        const patients = normalizeArray(patientsRaw);
+
         activeAidants = aidants;
+
+        const outside = aidants.filter(a => a.is_inside_geofence === false).length;
+        const stale = aidants.filter(a => a.last_position && !isFreshPosition(a, 10)).length;
+
+        updateCoordinatorCounters({
+            aidants,
+            patients,
+            outside,
+            stale
+        });
+
         updateCoordinatorMarkers(aidants, patients);
         updateCoordinatorStats(aidants);
+
+        if (!aidants.length && !patients.length) {
+            renderCoordinatorEmptyNotice("Aucune donnée GPS disponible pour le moment.");
+        } else if (!aidants.length) {
+            renderCoordinatorEmptyNotice("Aucun aidant actif actuellement. Les patients géolocalisés restent visibles.");
+        } else {
+            hideCoordinatorEmptyNotice();
+        }
+
+        hideMapLoading();
+
     } catch (err) {
         console.error("❌ Erreur chargement données:", err);
+
+        renderCoordinatorEmptyNotice("Impossible de charger les données terrain. Vérifiez la connexion ou le backend.");
+        hideMapLoading();
+
+        showToast("Erreur de chargement Radar Admin", "error");
     }
 }
 
 function updateCoordinatorMarkers(aidants, patients) {
     if (!map) return;
-    
-    // Supprimer les anciens marqueurs
+
     Object.keys(markers).forEach(key => {
         if (markers[key] && map) {
             try {
                 map.removeLayer(markers[key]);
-            } catch(e) {}
+            } catch (e) {}
             delete markers[key];
         }
     });
-    
-    // Marqueurs patients - avec vérification de sécurité
-    if (patients && Array.isArray(patients) && patients.length) {
+
+    const bounds = [];
+
+    // Patients
+    if (Array.isArray(patients) && patients.length) {
         patients.forEach(patient => {
-            // ✅ Vérification que patient existe et a des coordonnées
-            if (!patient || !patient.lat || !patient.lng) return;
+            const coords = safeLatLng(patient?.lat, patient?.lng);
+            if (!coords) return;
+
             try {
-                const icon = createCoordinatorIcon('#3B82F6', 'home', false);
-                const marker = L.marker([patient.lat, patient.lng], { icon }).addTo(map);
+                const icon = createCoordinatorIcon("#3B82F6", "home", false);
+
+                const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(map);
+
                 marker.bindPopup(`
-                    <div class="text-center p-2">
-                        <p class="font-black text-slate-800">🏠 ${escapeHtml(patient.nom_complet || 'Patient')}</p>
-                        <p class="text-[10px] text-slate-500">${escapeHtml(patient.adresse || 'Adresse non renseignée')}</p>
+                    <div class="text-center p-2 min-w-[180px]">
+                        <p class="font-black text-slate-800">🏠 ${escapeHtml(patient.nom_complet || "Patient")}</p>
+                        <p class="text-[10px] text-slate-500 mt-1">${escapeHtml(patient.adresse || "Adresse non renseignée")}</p>
+                        <button onclick="window.centerOnPatient(${coords.lat}, ${coords.lng})"
+                                class="mt-2 w-full py-1.5 bg-blue-600 text-white rounded-lg text-[9px] font-black">
+                            Centrer
+                        </button>
                     </div>
                 `);
+
                 markers[`patient_${patient.id}`] = marker;
-            } catch(e) { console.warn("Erreur marqueur patient:", e); }
+                bounds.push([coords.lat, coords.lng]);
+
+            } catch (e) {
+                console.warn("Erreur marqueur patient:", e);
+            }
         });
     }
-    
-    // Marqueurs aidants - avec vérification de sécurité
-    if (aidants && Array.isArray(aidants) && aidants.length) {
+
+    // Aidants
+    if (Array.isArray(aidants) && aidants.length) {
         aidants.forEach(aidant => {
-            // ✅ Vérification que aidant existe et a une position
-            if (!aidant || !aidant.last_position?.lat || !aidant.last_position?.lng) return;
+            const coords = safeLatLng(
+                aidant?.last_position?.lat,
+                aidant?.last_position?.lng
+            );
+
+            if (!coords) return;
+
             try {
                 const isInside = aidant.is_inside_geofence === true;
-                const color = isInside ? '#10B981' : '#F43F5E';
-                const icon = createCoordinatorIcon(color, 'user-nurse', true);
-                const marker = L.marker([aidant.last_position.lat, aidant.last_position.lng], { icon }).addTo(map);
+                const isStale = !isFreshPosition(aidant, 10);
+
+                let color = "#10B981";
+                let label = "✅ Dans la zone";
+                let iconName = "user-nurse";
+
+                if (!isInside) {
+                    color = "#F43F5E";
+                    label = "⚠️ Hors zone";
+                } else if (isStale) {
+                    color = "#F59E0B";
+                    label = "🟠 Position ancienne";
+                }
+
+                const icon = createCoordinatorIcon(color, iconName, !isStale);
+
+                const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(map);
+
                 marker.bindPopup(`
-                    <div class="text-center p-2 min-w-[200px]">
-                        <p class="font-black text-slate-800">${escapeHtml(aidant.aidant?.nom || 'Aidant')}</p>
-                        <p class="text-[10px] text-slate-500">Patient: ${escapeHtml(aidant.patient?.nom_complet || '?')}</p>
-                        <p class="text-[9px] ${isInside ? 'text-emerald-600' : 'text-rose-600'} font-bold">${isInside ? '✅ Dans la zone' : '⚠️ Hors zone'}</p>
-                        <button onclick="window.viewAidantHistory('${aidant.aidant?.id}')" class="mt-1 w-full py-1 bg-indigo-500 text-white rounded-lg text-[9px]">📜 Historique</button>
+                    <div class="text-center p-2 min-w-[220px]">
+                        <p class="font-black text-slate-800">${escapeHtml(aidant.aidant?.nom || aidant.aidant_nom || "Aidant")}</p>
+                        <p class="text-[10px] text-slate-500 mt-1">
+                            Patient : ${escapeHtml(aidant.patient?.nom_complet || aidant.patient_nom || "?")}
+                        </p>
+                        <p class="text-[9px] font-bold mt-1" style="color:${color};">
+                            ${label}
+                        </p>
+                        <p class="text-[9px] text-slate-400 mt-1">
+                            Dernière position : ${escapeHtml(getPositionAgeText(aidant))}
+                        </p>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <button onclick="window.centerOnAidant(${coords.lat}, ${coords.lng})"
+                                    class="py-1.5 bg-slate-800 text-white rounded-lg text-[9px] font-black">
+                                Centrer
+                            </button>
+                            <button onclick="window.viewAidantHistory('${aidant.aidant?.id || aidant.aidant_id}')"
+                                    class="py-1.5 bg-indigo-500 text-white rounded-lg text-[9px] font-black">
+                                Historique
+                            </button>
+                        </div>
                     </div>
                 `);
+
                 markers[`aidant_${aidant.id}`] = marker;
-            } catch(e) { console.warn("Erreur marqueur aidant:", e); }
+                bounds.push([coords.lat, coords.lng]);
+
+            } catch (e) {
+                console.warn("Erreur marqueur aidant:", e);
+            }
         });
+    }
+
+    if (bounds.length > 0) {
+        try {
+            map.fitBounds(bounds, { padding: [50, 50] });
+        } catch (e) {
+            map.setView([SPS_HQ.lat, SPS_HQ.lng], 12);
+        }
+    } else {
+        map.setView([SPS_HQ.lat, SPS_HQ.lng], 12);
     }
 }
 
+
+
+let lastOutsideAlertCount = 0;
+
 function updateCoordinatorStats(aidants) {
     const total = aidants.length;
-    const outside = aidants.filter(a => !a.is_inside_geofence).length;
-    const badge = document.getElementById('active-count-badge');
+    const outside = aidants.filter(a => a.is_inside_geofence === false).length;
+
+    const badge = document.getElementById("active-count-badge");
+
     if (badge) {
-        badge.innerHTML = `${total} AIDANT${total > 1 ? 'S' : ''} LIVE`;
-        badge.classList.toggle('bg-amber-500', outside > 0);
-        badge.classList.toggle('bg-emerald-500', outside === 0);
+        badge.innerHTML = `${total} AIDANT${total > 1 ? "S" : ""} LIVE`;
+        badge.classList.toggle("bg-amber-500", outside > 0);
+        badge.classList.toggle("bg-emerald-500", outside === 0);
     }
-    if (outside > 0) showToast(`${outside} aidant${outside > 1 ? 's' : ''} hors zone`, "warning", 5000);
+
+    if (outside > 0 && outside !== lastOutsideAlertCount) {
+        showToast(`${outside} aidant${outside > 1 ? "s" : ""} hors zone`, "warning", 5000);
+    }
+
+    lastOutsideAlertCount = outside;
 }
 
 async function loadFiltersData() {
     try {
-        const aidants = await secureFetch('/visites/active-aidants');
-        const patients = await secureFetch('/visites/patients-locations');
-        const aidantSelect = document.getElementById('filter-aidant');
-        const patientSelect = document.getElementById('filter-patient');
+        const aidants = normalizeArray(await secureFetch("/visites/active-aidants"));
+        const patients = normalizeArray(await secureFetch("/visites/patients-locations"));
+
+        const aidantSelect = document.getElementById("filter-aidant");
+        const patientSelect = document.getElementById("filter-patient");
+
         if (aidantSelect) {
-            aidantSelect.innerHTML = '<option value="">Tous les aidants</option>' +
-                [...new Map(aidants.map(a => [a.aidant?.id, a.aidant])).values()]
-                .filter(a => a).map(a => `<option value="${a.id}">${escapeHtml(a.nom)}</option>`).join('');
+            const uniqueAidants = [
+                ...new Map(
+                    aidants
+                        .map(a => [
+                            a.aidant?.id || a.aidant_id,
+                            a.aidant || {
+                                id: a.aidant_id,
+                                nom: a.aidant_nom || "Aidant"
+                            }
+                        ])
+                        .filter(([id]) => id)
+                ).values()
+            ];
+
+            aidantSelect.innerHTML =
+                '<option value="">Tous les aidants</option>' +
+                uniqueAidants
+                    .map(a => `<option value="${a.id}">${escapeHtml(a.nom || "Aidant")}</option>`)
+                    .join("");
         }
+
         if (patientSelect) {
-            patientSelect.innerHTML = '<option value="">Tous les patients</option>' +
-                patients.map(p => `<option value="${p.id}">${escapeHtml(p.nom_complet)}</option>`).join('');
+            patientSelect.innerHTML =
+                '<option value="">Tous les patients</option>' +
+                patients
+                    .filter(p => p?.id)
+                    .map(p => `<option value="${p.id}">${escapeHtml(p.nom_complet || "Patient")}</option>`)
+                    .join("");
         }
-    } catch (err) { console.error(err); }
+
+    } catch (err) {
+        console.error("Erreur filtres Radar Admin:", err);
+    }
 }
 
 function applyFilters() {
-    const aidantFilter = document.getElementById('filter-aidant')?.value;
-    const patientFilter = document.getElementById('filter-patient')?.value;
-    const statusFilter = document.getElementById('filter-status')?.value;
+    const aidantFilter = document.getElementById("filter-aidant")?.value;
+    const patientFilter = document.getElementById("filter-patient")?.value;
+    const statusFilter = document.getElementById("filter-status")?.value;
+
     let filtered = [...activeAidants];
-    if (aidantFilter) filtered = filtered.filter(a => a.aidant?.id === aidantFilter);
-    if (patientFilter) filtered = filtered.filter(a => a.patient?.id === patientFilter);
-    if (statusFilter === 'inside') filtered = filtered.filter(a => a.is_inside_geofence);
-    if (statusFilter === 'outside') filtered = filtered.filter(a => !a.is_inside_geofence);
-    
+
+    if (aidantFilter) {
+        filtered = filtered.filter(a =>
+            String(a.aidant?.id || a.aidant_id) === String(aidantFilter)
+        );
+    }
+
+    if (patientFilter) {
+        filtered = filtered.filter(a =>
+            String(a.patient?.id || a.patient_id) === String(patientFilter)
+        );
+    }
+
+    if (statusFilter === "inside") {
+        filtered = filtered.filter(a => a.is_inside_geofence === true);
+    }
+
+    if (statusFilter === "outside") {
+        filtered = filtered.filter(a => a.is_inside_geofence === false);
+    }
+
+    const existingPatients = Object.keys(markers)
+        .filter(key => key.startsWith("patient_"))
+        .map(key => markers[key]);
+
     Object.keys(markers).forEach(key => {
-        if (key.startsWith('aidant_') && markers[key]) {
-            map.removeLayer(markers[key]); delete markers[key];
+        if (key.startsWith("aidant_") && markers[key]) {
+            try {
+                map.removeLayer(markers[key]);
+            } catch (e) {}
+            delete markers[key];
         }
     });
+
     filtered.forEach(aidant => {
-        if (!aidant.last_position?.lat || !aidant.last_position?.lng) return;
-        const isInside = aidant.is_inside_geofence;
-        const icon = createCoordinatorIcon(isInside ? '#10B981' : '#F43F5E', 'user-nurse', true);
-        const marker = L.marker([aidant.last_position.lat, aidant.last_position.lng], { icon }).addTo(map);
+        const coords = safeLatLng(
+            aidant?.last_position?.lat,
+            aidant?.last_position?.lng
+        );
+
+        if (!coords) return;
+
+        const isInside = aidant.is_inside_geofence === true;
+        const isStale = !isFreshPosition(aidant, 10);
+
+        let color = "#10B981";
+        let label = "✅ Dans la zone";
+
+        if (!isInside) {
+            color = "#F43F5E";
+            label = "⚠️ Hors zone";
+        } else if (isStale) {
+            color = "#F59E0B";
+            label = "🟠 Position ancienne";
+        }
+
+        const icon = createCoordinatorIcon(color, "user-nurse", !isStale);
+        const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(map);
+
+        marker.bindPopup(`
+            <div class="text-center p-2 min-w-[200px]">
+                <p class="font-black text-slate-800">${escapeHtml(aidant.aidant?.nom || aidant.aidant_nom || "Aidant")}</p>
+                <p class="text-[10px] text-slate-500">
+                    Patient : ${escapeHtml(aidant.patient?.nom_complet || aidant.patient_nom || "?")}
+                </p>
+                <p class="text-[9px] font-bold mt-1" style="color:${color};">${label}</p>
+            </div>
+        `);
+
         markers[`aidant_${aidant.id}`] = marker;
     });
+
+    const bounds = [];
+
+    existingPatients.forEach(marker => {
+        if (marker?.getLatLng) bounds.push(marker.getLatLng());
+    });
+
+    Object.keys(markers).forEach(key => {
+        if (key.startsWith("aidant_") && markers[key]?.getLatLng) {
+            bounds.push(markers[key].getLatLng());
+        }
+    });
+
+    if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [50, 50] });
+    }
 }
 
 function centerAllMarkers() {
@@ -597,26 +922,254 @@ window.centerOnAidantFromAlert = async (aidantId) => {
     document.getElementById('info-panel')?.classList.add('hidden');
 };
 
+
+function normalizeArray(data) {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data?.results)) return data.results;
+    return [];
+}
+
+function getSavedPatientId() {
+    return (
+        AppState.currentPatient ||
+        localStorage.getItem("current_patient_id") ||
+        localStorage.getItem("active_patient_id")
+    );
+}
+
+function setActivePatient(patientId) {
+    AppState.currentPatient = patientId;
+    localStorage.setItem("current_patient_id", patientId);
+    localStorage.setItem("active_patient_id", patientId);
+}
+
+async function getFamilyPatientForRadar() {
+    let patients = normalizeArray(await secureFetch("/patients"));
+    const userId = localStorage.getItem("user_id");
+
+    // Sécurité côté front : une famille ne doit voir que ses patients.
+    if (userId) {
+        patients = patients.filter(p => !p.famille_user_id || String(p.famille_user_id) === String(userId));
+    }
+
+    if (!patients.length) {
+        return {
+            patient: null,
+            reason: "NO_PATIENT"
+        };
+    }
+
+    const savedPatientId = getSavedPatientId();
+
+    if (savedPatientId) {
+        const found = patients.find(p => String(p.id) === String(savedPatientId));
+
+        if (found) {
+            setActivePatient(found.id);
+            return {
+                patient: found,
+                reason: "FOUND"
+            };
+        }
+    }
+
+    if (patients.length === 1) {
+        setActivePatient(patients[0].id);
+        return {
+            patient: patients[0],
+            reason: "ONLY_ONE"
+        };
+    }
+
+    return {
+        patient: null,
+        reason: "MULTIPLE_PATIENTS"
+    };
+}
+
+function clearMapRuntime() {
+    if (activeInterval) {
+        clearInterval(activeInterval);
+        activeInterval = null;
+    }
+
+    if (watchId) {
+        try {
+            navigator.geolocation.clearWatch(watchId);
+        } catch (e) {}
+        watchId = null;
+    }
+
+    if (map) {
+        try {
+            map.remove();
+        } catch (e) {}
+    }
+
+    map = null;
+    markers = {};
+
+    if (routeLayer) {
+        routeLayer = null;
+    }
+
+    if (trajectoryLayer) {
+        trajectoryLayer = null;
+    }
+}
+
+function renderRadarMessage({ icon, title, text, buttonText, buttonAction, color = "slate" }) {
+    const container = document.getElementById("view-container");
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="flex flex-col items-center justify-center min-h-[55vh] p-8 text-center">
+            <div class="w-20 h-20 rounded-full bg-${color}-50 flex items-center justify-center mb-4">
+                <i class="fa-solid ${icon} text-3xl text-${color}-400"></i>
+            </div>
+            <h3 class="text-xl font-black text-slate-800">${title}</h3>
+            <p class="text-sm text-slate-500 mt-2 max-w-sm">${text}</p>
+            ${buttonText ? `
+                <button onclick="${buttonAction}" 
+                        class="mt-6 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
+                    ${buttonText}
+                </button>
+            ` : ""}
+        </div>
+    `;
+}
+
+function getVisitAidantLatLng(activeVisit) {
+    if (!activeVisit) return null;
+
+    const lat =
+        activeVisit.lat ||
+        activeVisit.last_position?.lat ||
+        activeVisit.position?.lat ||
+        activeVisit.aidant_position?.lat;
+
+    const lng =
+        activeVisit.lng ||
+        activeVisit.last_position?.lng ||
+        activeVisit.position?.lng ||
+        activeVisit.aidant_position?.lng;
+
+    if (!lat || !lng) return null;
+
+    return {
+        lat: Number(lat),
+        lng: Number(lng)
+    };
+}
+
+function getVisitLastUpdate(activeVisit) {
+    return (
+        activeVisit?.last_update ||
+        activeVisit?.last_position?.created_at ||
+        activeVisit?.updated_at ||
+        activeVisit?.heure_debut ||
+        null
+    );
+}
+
+async function initSansPatientRadar() {
+    const container = document.getElementById("view-container");
+
+    clearMapRuntime();
+
+    container.innerHTML = `
+        <div class="animate-fadeIn flex flex-col h-[calc(100vh-120px)] pb-0">
+            <div class="flex justify-between items-center mb-4 shrink-0 flex-wrap gap-3">
+                <div>
+                    <h3 class="text-xl font-black text-slate-800">📦 Radar Livraison</h3>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                        Suivi de vos commandes personnelles
+                    </p>
+                </div>
+                <button id="refresh-delivery-btn" class="bg-white p-2 rounded-xl shadow-md border border-slate-100">
+                    <i class="fa-solid fa-rotate-right text-slate-600"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center p-8 text-center">
+                <div class="w-20 h-20 rounded-full bg-emerald-50 flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-truck-fast text-3xl text-emerald-500"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-800">Aucune livraison active</h3>
+                <p class="text-sm text-slate-500 mt-2 max-w-sm">
+                    Vos commandes en cours de livraison apparaîtront ici dès qu’un livreur sera assigné.
+                </p>
+                <button onclick="window.switchView('commandes')" 
+                        class="mt-6 px-6 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
+                    Voir mes commandes
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById("refresh-delivery-btn")?.addEventListener("click", () => {
+        showToast("Aucune livraison active pour le moment", "info", 1500);
+    });
+}
 // ============================================================
 // 👨‍👩‍👧 VUE FAMILLE
 // ============================================================
 
 async function initFamilyMap() {
-    const container = document.getElementById('view-container');
-    
+    const container = document.getElementById("view-container");
+    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+    const isSansPatient = typeCompte === "SANS_PATIENT";
+
+    clearMapRuntime();
+
+    if (isSansPatient) {
+        await initSansPatientRadar();
+        return;
+    }
+
+    const result = await getFamilyPatientForRadar();
+
+    if (result.reason === "MULTIPLE_PATIENTS") {
+        renderRadarMessage({
+            icon: "fa-users",
+            title: "Choisissez un dossier",
+            text: "Vous avez plusieurs dossiers patients. Sélectionnez d’abord le patient concerné avant d’ouvrir le Radar.",
+            buttonText: "Choisir un dossier",
+            buttonAction: "window.switchView('patients')",
+            color: "amber"
+        });
+        return;
+    }
+
+    if (result.reason === "NO_PATIENT" || !result.patient) {
+        renderRadarMessage({
+            icon: "fa-user-slash",
+            title: "Aucun dossier patient",
+            text: "Le Radar médical s’active lorsqu’un dossier patient est associé au compte.",
+            buttonText: "Retour à l’accueil",
+            buttonAction: "window.switchView('home')",
+            color: "slate"
+        });
+        return;
+    }
+
+    currentPatient = result.patient;
+
     container.innerHTML = `
         <div class="animate-fadeIn flex flex-col h-[calc(100vh-120px)] pb-0">
             <div class="flex justify-between items-center mb-4 shrink-0 flex-wrap gap-3">
                 <div>
                     <h3 class="text-xl font-black text-slate-800">👨‍👩‍👧 Suivi de votre proche</h3>
-                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Localisation en temps réel</p>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                        ${escapeHtml(currentPatient.nom_complet || "Dossier patient")}
+                    </p>
                 </div>
                 <button id="refresh-family-btn" class="bg-white p-2 rounded-xl shadow-md border border-slate-100">
                     <i class="fa-solid fa-rotate-right text-slate-600"></i>
                 </button>
             </div>
-            
-            <!-- Carte -->
+
             <div id="live-map-container" class="flex-1 w-full rounded-xl border-2 border-white shadow-lg relative overflow-hidden bg-slate-100" style="min-height: 50vh; height: auto;">
                 <div id="map" class="absolute inset-0 z-10 w-full h-full"></div>
                 <div id="map-loading" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center">
@@ -624,207 +1177,345 @@ async function initFamilyMap() {
                         <div class="relative w-8 h-8 mx-auto mb-2">
                             <div class="absolute inset-0 border-3 border-slate-100 border-t-emerald-500 rounded-full animate-spin"></div>
                         </div>
-                        <p class="text-[9px] font-black text-slate-400">Chargement de la carte...</p>
+                        <p class="text-[9px] font-black text-slate-400">Chargement du Radar...</p>
                     </div>
                 </div>
             </div>
-            
-            <!-- Informations -->
+
             <div class="mt-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between gap-3">
                     <div>
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">STATUT DE L'INTERVENTION</p>
-                        <p id="family-status" class="font-black text-emerald-600 text-sm">---</p>
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">STATUT</p>
+                        <p id="family-status" class="font-black text-emerald-600 text-sm">Chargement...</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">DERNIÈRE MISE À JOUR</p>
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">MISE À JOUR</p>
                         <p id="family-last-update" class="text-[9px] text-slate-500">---</p>
                     </div>
                 </div>
+
                 <div id="family-distance" class="mt-3 pt-3 border-t border-slate-100 hidden">
-                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">DISTANCE DE L'AIDANT</p>
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">DISTANCE DE L’AIDANT</p>
                     <p id="family-distance-value" class="font-black text-lg text-emerald-600">---</p>
                 </div>
             </div>
-            
-            <!-- Légende -->
+
             <div class="mt-3 bg-white/90 backdrop-blur-sm p-2 rounded-xl border border-slate-100">
                 <div class="flex items-center justify-around text-[8px] font-bold">
-                    <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-blue-500"></div><span>Domicile</span></div>
-                    <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div><span>Aidant</span></div>
+                    <div class="flex items-center gap-1">
+                        <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                        <span>Domicile</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span>Aidant actif</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <div class="w-2 h-2 rounded-full bg-slate-300"></div>
+                        <span>Aucune intervention</span>
+                    </div>
                 </div>
             </div>
         </div>
     `;
 
-    setTimeout(async () => {
-        const mapElement = document.getElementById('map');
-        if (!mapElement) {
-            console.error("❌ Map element non trouvé");
-            return;
-        }
-        
-        if (map) {
-            map.remove();
-            map = null;
-            markers = {};
-        }
-        
-        // ✅ Initialisation de la carte AVEC centre par défaut
-        map = L.map('map', { 
-            zoomControl: false, 
-            attributionControl: false,
-            center: [6.368, 2.401],
-            zoom: 12
-        });
-        
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-        
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-        }).addTo(map);
-        
-        // ✅ Forcer la taille de la carte
-        setTimeout(() => {
-            if (map) {
-                map.invalidateSize(true);
-                setTimeout(() => {
-                    if (map) map.invalidateSize(true);
-                }, 500);
-            }
-        }, 300);
-        
-        // ✅ Cacher le loader (corrigé : suppression de la redéclaration)
-        const loaderElement = document.getElementById('map-loading');
-        if (loaderElement) {
-            setTimeout(() => {
-                loaderElement.style.opacity = '0';
-                setTimeout(() => loaderElement.style.display = 'none', 500);
-            }, 1000);
-        }
-        
-        // ✅ Bouton rafraîchissement
-        document.getElementById('refresh-family-btn')?.addEventListener('click', () => {
-            loadFamilyData();
-            showToast("Rafraîchissement...", "info", 1000);
-        });
-        
-        // ✅ Charger les données
+    await new Promise(r => setTimeout(r, 100));
+
+    const mapElement = document.getElementById("map");
+
+    if (!mapElement) {
+        console.error("❌ Élément map introuvable");
+        return;
+    }
+
+    if (mapElement._leaflet_id) {
+        mapElement._leaflet_id = null;
+    }
+
+    map = L.map("map", {
+        zoomControl: false,
+        attributionControl: false,
+        center: [6.368, 2.401],
+        zoom: 12
+    });
+
+    L.control.zoom({ position: "bottomright" }).addTo(map);
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+    }).addTo(map);
+
+    setTimeout(() => {
+        if (map) map.invalidateSize(true);
+    }, 300);
+
+    document.getElementById("refresh-family-btn")?.addEventListener("click", async () => {
         await loadFamilyData();
-        
-        // ✅ Rafraîchissement automatique toutes les 15 secondes
-        if (activeInterval) clearInterval(activeInterval);
-        activeInterval = setInterval(() => loadFamilyData(), 15000);
-        
-    }, 200);
+        showToast("Radar actualisé", "info", 1000);
+    });
+
+    await loadFamilyData();
+
+    if (activeInterval) clearInterval(activeInterval);
+    activeInterval = setInterval(() => loadFamilyData(), 15000);
 }
+
 
 
 async function loadFamilyData() {
     try {
-        console.log("📡 Chargement des données famille...");
-        
-        const patients = await secureFetch('/patients');
-        console.log("📋 Patients reçus:", patients);
-        
-        const patient = patients?.[0];
-        if (!patient) {
-            console.warn("Aucun patient trouvé pour cette famille");
-            // ✅ Vérifier que l'élément existe avant de modifier
-            const statusEl = document.getElementById('family-status');
-            if (statusEl) statusEl.innerHTML = '❌ Aucun patient associé';
-            return;
-        }
-        
-        // Afficher le domicile du patient
-        if (patient.lat && patient.lng) {
-            console.log("📍 Domicile patient:", patient.lat, patient.lng);
-            
-            if (markers['patient_home']) map.removeLayer(markers['patient_home']);
-            const homeIcon = createCustomIcon('#3B82F6', false, 'lg', 'home');
-            markers['patient_home'] = L.marker([patient.lat, patient.lng], { icon: homeIcon }).addTo(map);
-            markers['patient_home'].bindPopup(`
-                <div class="text-center p-2">
-                    <p class="font-black text-slate-800">🏠 ${escapeHtml(patient.nom_complet)}</p>
-                    <p class="text-[10px] text-slate-500">${escapeHtml(patient.adresse || 'Adresse non renseignée')}</p>
-                </div>
-            `);
-            
-            map.setView([patient.lat, patient.lng], 14);
-        } else {
-            console.warn("Patient sans coordonnées GPS");
-        }
-        
-        // Récupérer la position de l'aidant
-        try {
-            const activeVisit = await secureFetch(`/visites/active/${patient.id}`);
-            console.log("🩺 Visite active:", activeVisit);
-            
-            const statusEl = document.getElementById('family-status');
-            const lastUpdateEl = document.getElementById('family-last-update');
-            const distanceDiv = document.getElementById('family-distance');
-            const distanceValueEl = document.getElementById('family-distance-value');
-            
-            // ✅ Vérifier que les éléments existent
-            if (!statusEl || !lastUpdateEl) {
-                console.warn("Éléments HTML non trouvés");
+        if (!map) return;
+
+        const statusEl = document.getElementById("family-status");
+        const lastUpdateEl = document.getElementById("family-last-update");
+        const distanceDiv = document.getElementById("family-distance");
+        const distanceValueEl = document.getElementById("family-distance-value");
+
+        if (!currentPatient) {
+            const result = await getFamilyPatientForRadar();
+
+            if (!result.patient) {
+                if (statusEl) statusEl.innerHTML = "❌ Aucun patient actif";
                 return;
             }
-            
-            if (activeVisit && activeVisit.hasPosition === true && activeVisit.lat && activeVisit.lng) {
-                console.log("📍 Position aidant:", activeVisit.lat, activeVisit.lng);
-                
-                if (markers['aidant']) map.removeLayer(markers['aidant']);
-                const aidantIcon = createCustomIcon('#10B981', true, 'lg', 'user-nurse');
-                markers['aidant'] = L.marker([activeVisit.lat, activeVisit.lng], { icon: aidantIcon }).addTo(map);
-                markers['aidant'].bindPopup(`
-                    <div class="text-center p-2">
-                        <p class="font-black text-slate-800">👨‍⚕️ ${escapeHtml(activeVisit.aidant_nom || 'Aidant')}</p>
-                        <p class="text-[10px] text-emerald-600">🚶 En déplacement vers votre proche</p>
-                        <p class="text-[9px] text-slate-400">🕐 ${new Date(activeVisit.last_update).toLocaleTimeString()}</p>
-                    </div>
-                `);
-                
-                statusEl.innerHTML = '🟢 Intervention en cours';
-                lastUpdateEl.innerHTML = new Date(activeVisit.last_update).toLocaleTimeString();
-                
-                if (patient.lat && patient.lng && distanceDiv && distanceValueEl) {
-                    const distance = calculateDistance(activeVisit.lat, activeVisit.lng, patient.lat, patient.lng);
-                    distanceDiv.classList.remove('hidden');
-                    distanceValueEl.innerHTML = formatDistance(distance);
-                    
-                    const bounds = L.latLngBounds([patient.lat, patient.lng], [activeVisit.lat, activeVisit.lng]);
-                    map.fitBounds(bounds, { padding: [50, 50] });
-                }
-            } else {
-                console.log("Aucune visite active");
-                statusEl.innerHTML = '⚪ Aucune intervention en cours';
-                lastUpdateEl.innerHTML = '---';
-                if (distanceDiv) distanceDiv.classList.add('hidden');
-                
-                if (patient.lat && patient.lng) {
-                    map.setView([patient.lat, patient.lng], 14);
-                }
-            }
-        } catch (err) {
-            console.error("Erreur chargement visite active:", err);
-            const statusEl = document.getElementById('family-status');
-            if (statusEl) statusEl.innerHTML = '⚠️ Erreur de chargement';
+
+            currentPatient = result.patient;
         }
-        
+
+        Object.keys(markers).forEach(key => {
+            if (markers[key] && map) {
+                try {
+                    map.removeLayer(markers[key]);
+                } catch (e) {}
+                delete markers[key];
+            }
+        });
+
+        const patientLat = Number(currentPatient.lat);
+        const patientLng = Number(currentPatient.lng);
+
+        if (!patientLat || !patientLng) {
+            if (statusEl) statusEl.innerHTML = "⚠️ Adresse GPS non renseignée";
+            if (lastUpdateEl) lastUpdateEl.innerHTML = "---";
+            if (distanceDiv) distanceDiv.classList.add("hidden");
+
+            renderMapNoticeOnTop("Le domicile du patient n’a pas encore de position GPS enregistrée.");
+            map.setView([6.368, 2.401], 12);
+            return;
+        }
+
+        const homeIcon = createCustomIcon("#3B82F6", false, "lg", "home");
+
+        markers["patient_home"] = L.marker([patientLat, patientLng], { icon: homeIcon }).addTo(map);
+        markers["patient_home"].bindPopup(`
+            <div class="text-center p-2">
+                <p class="font-black text-slate-800">🏠 ${escapeHtml(currentPatient.nom_complet || "Patient")}</p>
+                <p class="text-[10px] text-slate-500">${escapeHtml(currentPatient.adresse || "Adresse non renseignée")}</p>
+            </div>
+        `);
+
+        let activeVisit = null;
+
+        try {
+            activeVisit = await secureFetch(`/visites/active/${currentPatient.id}`);
+        } catch (err) {
+            console.warn("Aucune visite active ou erreur endpoint:", err.message);
+            activeVisit = null;
+        }
+
+        const aidantPosition = getVisitAidantLatLng(activeVisit);
+
+        if (!activeVisit || activeVisit.hasActiveVisit === false || activeVisit.active === false) {
+            if (statusEl) statusEl.innerHTML = "⚪ Aucune intervention en cours";
+            if (lastUpdateEl) lastUpdateEl.innerHTML = "---";
+            if (distanceDiv) distanceDiv.classList.add("hidden");
+
+            map.setView([patientLat, patientLng], 15);
+            hideMapLoading();
+            return;
+        }
+
+        if (!aidantPosition) {
+            if (statusEl) statusEl.innerHTML = "🟡 Intervention active, position aidant indisponible";
+            if (lastUpdateEl) lastUpdateEl.innerHTML = getVisitLastUpdate(activeVisit)
+                ? new Date(getVisitLastUpdate(activeVisit)).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+                : "---";
+
+            if (distanceDiv) distanceDiv.classList.add("hidden");
+
+            map.setView([patientLat, patientLng], 15);
+            hideMapLoading();
+            return;
+        }
+
+        const aidantIcon = createCustomIcon("#10B981", true, "lg", "user-nurse");
+
+        markers["aidant_active"] = L.marker([aidantPosition.lat, aidantPosition.lng], { icon: aidantIcon }).addTo(map);
+        markers["aidant_active"].bindPopup(`
+            <div class="text-center p-2">
+                <p class="font-black text-slate-800">👩‍⚕️ ${escapeHtml(activeVisit.aidant_nom || activeVisit.aidant?.nom || "Intervenant")}</p>
+                <p class="text-[10px] text-emerald-600 font-bold">Intervention en cours</p>
+            </div>
+        `);
+
+        const distance = calculateDistance(
+            aidantPosition.lat,
+            aidantPosition.lng,
+            patientLat,
+            patientLng
+        );
+
+        if (statusEl) statusEl.innerHTML = "🟢 Intervention en cours";
+        if (lastUpdateEl) {
+            const lastUpdate = getVisitLastUpdate(activeVisit);
+            lastUpdateEl.innerHTML = lastUpdate
+                ? new Date(lastUpdate).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+                : "À l’instant";
+        }
+
+        if (distanceDiv) distanceDiv.classList.remove("hidden");
+        if (distanceValueEl) distanceValueEl.innerHTML = formatDistance(distance);
+
+        const bounds = L.latLngBounds(
+            [patientLat, patientLng],
+            [aidantPosition.lat, aidantPosition.lng]
+        );
+
+        map.fitBounds(bounds, { padding: [60, 60] });
+
+        hideMapLoading();
+
     } catch (err) {
         console.error("❌ Erreur loadFamilyData:", err);
-        const statusEl = document.getElementById('family-status');
-        if (statusEl) statusEl.innerHTML = '❌ Erreur de chargement';
-        showToast("Erreur de chargement des données", "error");
+
+        const statusEl = document.getElementById("family-status");
+        if (statusEl) statusEl.innerHTML = "❌ Erreur de chargement";
+
+        hideMapLoading();
+        showToast("Erreur de chargement du Radar", "error");
     }
 }
+
+function hideMapLoading() {
+    const loaderElement = document.getElementById("map-loading");
+
+    if (loaderElement) {
+        loaderElement.style.opacity = "0";
+        setTimeout(() => {
+            loaderElement.style.display = "none";
+        }, 300);
+    }
+}
+
+function renderMapNoticeOnTop(message) {
+    const container = document.getElementById("live-map-container");
+
+    if (!container || document.getElementById("map-notice")) return;
+
+    const notice = document.createElement("div");
+    notice.id = "map-notice";
+    notice.className = "absolute top-4 left-4 right-4 z-30 bg-white/95 backdrop-blur-sm border border-amber-100 rounded-2xl p-3 shadow-lg text-center";
+    notice.innerHTML = `
+        <p class="text-[10px] font-black text-amber-600 uppercase tracking-wider">Information Radar</p>
+        <p class="text-xs text-slate-600 mt-1">${escapeHtml(message)}</p>
+    `;
+
+    container.appendChild(notice);
+}
+
+
+
+async function getAidantActiveMission() {
+    try {
+        const visits = normalizeArray(await secureFetch("/visites"));
+        const active = visits.find(v =>
+            v.statut === "En cours" ||
+            v.statut === "Démarrée" ||
+            v.statut === "En route"
+        );
+
+        if (!active) {
+            return null;
+        }
+
+        return active;
+    } catch (err) {
+        console.warn("Impossible de charger la mission active aidant:", err.message);
+        return null;
+    }
+}
+
+function getPatientFromVisit(visit) {
+    if (!visit) return null;
+
+    return (
+        visit.patient ||
+        visit.patients ||
+        {
+            id: visit.patient_id,
+            nom_complet: visit.patient_nom || visit.nom_patient || "Patient",
+            adresse: visit.patient_adresse || visit.adresse || "",
+            lat: visit.patient_lat || visit.lat_patient || visit.lat,
+            lng: visit.patient_lng || visit.lng_patient || visit.lng
+        }
+    );
+}
+
+function getPatientLatLng(patient) {
+    if (!patient) return null;
+
+    const lat = patient.lat || patient.latitude || patient.gps_lat;
+    const lng = patient.lng || patient.longitude || patient.gps_lng;
+
+    if (!lat || !lng) return null;
+
+    return {
+        lat: Number(lat),
+        lng: Number(lng)
+    };
+}
+
+function renderAidantNoMission() {
+    renderRadarMessage({
+        icon: "fa-route",
+        title: "Aucune mission active",
+        text: "Le Radar s’active lorsqu’une visite ou une mission vous est assignée. Vous pouvez consulter vos patients ou attendre une nouvelle intervention.",
+        buttonText: "Voir mes patients",
+        buttonAction: "window.switchView('patients')",
+        color: "slate"
+    });
+}
+
+
 // ============================================================
 // 🧭 VUE AIDANT
 // ============================================================
 async function initAidantMap() {
     const container = document.getElementById('view-container');
+
+        clearMapRuntime();
+
+    const activeMission = await getAidantActiveMission();
+
+    if (!activeMission) {
+        renderAidantNoMission();
+        return;
+    }
+
+    const activePatient = getPatientFromVisit(activeMission);
+
+    if (!activePatient || !activePatient.id) {
+        renderRadarMessage({
+            icon: "fa-triangle-exclamation",
+            title: "Mission incomplète",
+            text: "Une mission semble active, mais le patient associé est introuvable.",
+            buttonText: "Voir mes visites",
+            buttonAction: "window.switchView('visits')",
+            color: "amber"
+        });
+        return;
+    }
     
     // ✅ Utiliser toute la hauteur disponible
     container.innerHTML = `
@@ -866,14 +1557,19 @@ async function initAidantMap() {
                 </div>
             </div>
             
-            <!-- Sélecteur patient compact -->
             <div class="mb-3 bg-white p-3 rounded-xl shadow-sm border border-slate-100">
                 <label class="text-[8px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                    <i class="fa-solid fa-hospital-user mr-1"></i> Destination
+                    <i class="fa-solid fa-hospital-user mr-1"></i> Mission active
                 </label>
-                <select id="patient-selector" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium">
-                    <option value="">-- Choisir un patient --</option>
-                </select>
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="font-black text-slate-800 text-sm">${escapeHtml(activePatient.nom_complet || "Patient")}</p>
+                        <p class="text-[9px] text-slate-400">${escapeHtml(activePatient.adresse || "Adresse non renseignée")}</p>
+                    </div>
+                    <span class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[8px] font-black uppercase">
+                        En cours
+                    </span>
+                </div>
             </div>
             
             <!-- Panneau de navigation compact -->
@@ -1043,18 +1739,11 @@ async function initAidantMap() {
         // Arrêter navigation
         document.getElementById('stop-navigation-btn')?.addEventListener('click', () => stopNavigation());
         
-        // Charger patients assignés
-        await loadAssignedPatients();
+        AppState.currentPatient = activePatient.id;
+        localStorage.setItem("current_patient_id", activePatient.id);
+        localStorage.setItem("active_patient_id", activePatient.id);
         
-        // Sélection patient
-        document.getElementById('patient-selector')?.addEventListener('change', async (e) => {
-            const patientId = e.target.value;
-            if (patientId) { 
-                await startNavigation(patientId); 
-            } else { 
-                stopNavigation(); 
-            }
-        });
+        await startNavigation(activePatient.id, activePatient);
         
         // Cacher loader
         const mapLoading = document.getElementById('map-loading');
@@ -1323,18 +2012,32 @@ async function loadAssignedPatients() {
     } catch (err) { console.error(err); }
 }
 
-async function startNavigation(patientId) {
+async function startNavigation(patientId, fallbackPatient = null) {
     try {
-        const patient = await secureFetch(`/patients/${patientId}`);
-        if (!patient.lat || !patient.lng) {
-            UI.warning("Ce patient n'a pas de position GPS");
-            document.getElementById('fix-patient-gps').classList.remove('hidden');
+        let patient = fallbackPatient;
+
+        if (!patient) {
+            patient = await secureFetch(`/patients/${patientId}`);
+        }
+
+        const patientCoords = getPatientLatLng(patient);
+
+        if (!patientCoords) {
+            UI.warning("Le domicile du patient n’a pas encore de position GPS.");
+            document.getElementById('fix-patient-gps')?.classList.remove('hidden');
+        
+            const navPanel = document.getElementById("navigation-panel");
+            if (navPanel) navPanel.classList.add("hidden");
+        
+            map.setView([6.368, 2.401], 12);
             return;
         }
+
+        
         document.getElementById('fix-patient-gps').classList.add('hidden');
         
         currentPatient = patient;
-        currentPatientCoords = { lat: patient.lat, lng: patient.lng };
+        currentPatientCoords = patientCoords;
         isNavigating = true;  // ← Vérifie que cette ligne est bien là
         
         console.log("🚗 Navigation démarrée vers:", currentPatientCoords);
@@ -1347,8 +2050,7 @@ async function startNavigation(patientId) {
         // Ajouter marqueur patient
         if (markers['patient']) map.removeLayer(markers['patient']);
         const patientIcon = createCustomIcon('#3B82F6', false, 'lg', 'home');
-        markers['patient'] = L.marker([patient.lat, patient.lng], { icon: patientIcon }).addTo(map);
-        
+        markers['patient'] = L.marker([patientCoords.lat, patientCoords.lng], { icon: patientIcon }).addTo(map);        
         // Calculer l'itinéraire initial
         await calculateAndDisplayRoute();
         
