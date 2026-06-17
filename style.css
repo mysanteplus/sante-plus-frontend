@@ -5209,3 +5209,155 @@ body.senior-mode .nav-btn.active { color: #059669 !important; }
         border-radius: 22px !important;
     }
 }
+
+
+/* ============================================
+   AUTH — BOUTONS DANS LES ANGLES INFÉRIEURS
+   ============================================ */
+
+.auth-free-page {
+    min-height: 100dvh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+/* On donne assez d’espace en bas pour que le formulaire ne soit jamais caché */
+.auth-free-content {
+    padding-bottom: 150px !important;
+}
+
+/* Le footer ne devient plus une barre centrale */
+.auth-free-page .auth-step-footer {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 300 !important;
+
+    width: 100% !important;
+    max-width: none !important;
+    transform: none !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+
+    padding: 18px 24px 22px 24px !important;
+    margin: 0 !important;
+
+    background: linear-gradient(
+        to top,
+        rgba(248, 250, 252, 1) 0%,
+        rgba(248, 250, 252, 0.96) 48%,
+        rgba(248, 250, 252, 0) 100%
+    ) !important;
+
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    pointer-events: none !important;
+}
+
+/* Le bouton retour est vraiment dans l’angle bas gauche */
+.auth-free-page .auth-back-btn {
+    pointer-events: auto !important;
+
+    width: 54px !important;
+    height: 54px !important;
+    flex: 0 0 54px !important;
+
+    border-radius: 19px !important;
+    background: rgba(255, 255, 255, 0.94) !important;
+    border: 1px solid rgba(226, 232, 240, 0.95) !important;
+    color: #64748B !important;
+
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12) !important;
+}
+
+/* Le bouton continuer est dans l’angle bas droit */
+.auth-free-page .auth-primary-btn {
+    pointer-events: auto !important;
+
+    width: auto !important;
+    min-width: 178px !important;
+    max-width: 245px !important;
+    flex: 0 0 auto !important;
+
+    height: 54px !important;
+    border-radius: 19px !important;
+
+    padding: 0 28px !important;
+
+    background: linear-gradient(135deg, #059669, #10B981) !important;
+    color: #ffffff !important;
+
+    box-shadow: 0 16px 34px rgba(5, 150, 105, 0.25) !important;
+}
+
+/* Quand le bouton est désactivé, il reste visible mais non cliquable */
+.auth-free-page .auth-primary-btn:disabled {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+}
+
+/* Le formulaire ne doit jamais être caché par le bas */
+.auth-free-page .auth-pack-note,
+.auth-free-page .auth-checkbox-card,
+.auth-free-page .auth-review-box {
+    margin-bottom: 12px !important;
+}
+
+/* Sur ordinateur, on garde les boutons dans les angles de la zone app, pas collés au navigateur */
+@media (min-width: 768px) {
+    .auth-free-page .auth-step-footer {
+        width: min(574px, 100vw) !important;
+        left: 0 !important;
+        right: auto !important;
+        padding-left: 72px !important;
+        padding-right: 90px !important;
+    }
+}
+
+/* Mobile */
+@media (max-width: 420px) {
+    .auth-free-content {
+        padding-bottom: 145px !important;
+    }
+
+    .auth-free-page .auth-step-footer {
+        padding: 16px 18px 20px 18px !important;
+    }
+
+    .auth-free-page .auth-back-btn {
+        width: 52px !important;
+        height: 52px !important;
+        flex-basis: 52px !important;
+    }
+
+    .auth-free-page .auth-primary-btn {
+        min-width: 165px !important;
+        height: 52px !important;
+        padding: 0 22px !important;
+    }
+}
+
+
+.auth-pack-card {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    font-family: inherit !important;
+    text-align: left !important;
+    width: 100% !important;
+    cursor: pointer !important;
+}
+
+.auth-pack-card * {
+    pointer-events: none;
+}
+
+.auth-pack-card[aria-selected="true"],
+.auth-pack-card.selected {
+    border-color: rgba(5, 150, 105, 0.55) !important;
+    background: rgba(236, 253, 245, 0.88) !important;
+}
