@@ -1949,39 +1949,47 @@ window.selectPackConfort = (packId, price, duration) => {
         return;
     }
     
-       if (currentStep === 1) {
-        registrationData.nom_famille = document.getElementById('f-nom')?.value?.trim();
-        registrationData.email = document.getElementById('f-email')?.value?.trim().toLowerCase();
-        registrationData.password = document.getElementById('f-pass')?.value;
-        registrationData.tel_famille = document.getElementById('f-tel')?.value?.trim() || "";
-        registrationData.lien_parente = document.getElementById('f-lien')?.value || "";
-    
-        if (!registrationData.nom_famille || !registrationData.email || !registrationData.password) {
-            UI.vibrate('error');
-            Swal.fire({
-                icon: "warning",
-                title: "Informations incomplètes",
-                text: "Veuillez renseigner votre nom, votre email et votre mot de passe.",
-                confirmButtonText: "Compris",
-                confirmButtonColor: "#059669",
-                customClass: { popup: "rounded-2xl" }
-            });
-            return;
+        if (currentStep === 1) {
+            registrationData.nom_famille = document.getElementById('f-nom')?.value?.trim();
+            registrationData.email = document.getElementById('f-email')?.value?.trim().toLowerCase();
+            registrationData.password = document.getElementById('f-pass')?.value;
+            registrationData.tel_famille = document.getElementById('f-tel')?.value?.trim() || "";
+            registrationData.lien_parente = document.getElementById('f-lien')?.value || "";
+        
+            if (!registrationData.nom_famille || !registrationData.email || !registrationData.password) {
+                UI.vibrate('error');
+                Swal.fire({
+                    icon: "warning",
+                    title: "Informations incomplètes",
+                    text: "Veuillez renseigner votre nom, votre email et votre mot de passe.",
+                    confirmButtonText: "Compris",
+                    confirmButtonColor: "#059669",
+                    customClass: { popup: "rounded-2xl" }
+                });
+                return;
+            }
+        
+            if (registrationData.password.length < 6) {
+                UI.vibrate('error');
+                Swal.fire({
+                    icon: "warning",
+                    title: "Mot de passe trop court",
+                    text: "Choisissez un mot de passe d’au moins 6 caractères.",
+                    confirmButtonText: "Compris",
+                    confirmButtonColor: "#059669",
+                    customClass: { popup: "rounded-2xl" }
+                });
+                return;
+            }
+        
+            // ✅ COMPTE PERSONNEL SANS PATIENT
+            // On saute les étapes Patient et Santé
+            if (registrationData.type_compte === "SANS_PATIENT") {
+                currentStep = 4;
+                renderAuthView("register", currentStep);
+                return;
+            }
         }
-    
-        if (registrationData.password.length < 6) {
-            UI.vibrate('error');
-            Swal.fire({
-                icon: "warning",
-                title: "Mot de passe trop court",
-                text: "Choisissez un mot de passe d’au moins 6 caractères.",
-                confirmButtonText: "Compris",
-                confirmButtonColor: "#059669",
-                customClass: { popup: "rounded-2xl" }
-            });
-            return;
-        }
-    }
     
      if (currentStep === 2) {
       registrationData.nom_patient = document.getElementById('p-nom')?.value?.trim();
@@ -2050,10 +2058,18 @@ window.selectPackConfort = (packId, price, duration) => {
 
 
 window.prevAuthStep = () => {
-    if (currentStep > 1) {
-        currentStep--;
-        renderAuthView('register', currentStep);
+    if (currentStep <= 0) {
+        return;
     }
+
+    if (registrationData.type_compte === "SANS_PATIENT" && currentStep === 4) {
+        currentStep = 1;
+        renderAuthView("register", currentStep);
+        return;
+    }
+
+    currentStep--;
+    renderAuthView("register", currentStep);
 };
 
 
