@@ -4771,3 +4771,359 @@ body.senior-mode .nav-btn.active { color: #059669 !important; }
         font-size: 10.5px !important;
     }
 }
+
+
+
+/* ============================================
+   AUTH — PAGE LIBRE PREMIUM
+   ============================================ */
+
+.auth-free-page {
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 28px 22px 24px 22px;
+    background:
+        radial-gradient(circle at 12% 0%, rgba(16, 185, 129, 0.16), transparent 34%),
+        radial-gradient(circle at 95% 95%, rgba(212, 175, 55, 0.08), transparent 32%),
+        linear-gradient(145deg, #f7fbf9 0%, #ffffff 55%, #f8fafc 100%);
+}
+
+.auth-free-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(15, 23, 42, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15, 23, 42, 0.025) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.35), transparent 78%);
+}
+
+.auth-free-header {
+    position: relative;
+    max-width: 390px;
+    margin: 0 auto;
+    text-align: center;
+    padding-top: 10px;
+}
+
+.auth-free-logo {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
+    margin: 0 auto 12px auto;
+    background: rgba(255,255,255,0.86);
+    border: 1px solid rgba(226,232,240,0.82);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.055);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-free-logo img {
+    width: 33px;
+    height: 33px;
+    object-fit: contain;
+}
+
+.auth-free-tabs {
+    max-width: 390px;
+    margin: 22px auto 0 auto !important;
+}
+
+.auth-free-progress {
+    max-width: 390px;
+    margin: 12px auto 0 auto;
+    padding: 0 !important;
+}
+
+.auth-free-content {
+    position: relative;
+    max-width: 390px;
+    margin: 22px auto 0 auto;
+    padding: 0 0 26px 0 !important;
+    overflow: visible !important;
+}
+
+.auth-free-content form {
+    width: 100%;
+}
+
+/* Retirer l'effet grosse carte dans l'auth */
+.auth-free-page .auth-form-heading {
+    margin-bottom: 16px !important;
+}
+
+.auth-free-page .auth-form-heading h3 {
+    font-size: 18px !important;
+    line-height: 1.18 !important;
+}
+
+.auth-free-page .auth-form-heading p {
+    font-size: 11px !important;
+    line-height: 1.5 !important;
+}
+
+/* Champs plus élégants */
+.auth-free-page .auth-input,
+.auth-free-page .auth-select {
+    height: 48px !important;
+    border-radius: 17px !important;
+    background: rgba(255,255,255,0.76) !important;
+    border: 1px solid rgba(226,232,240,0.95) !important;
+    box-shadow: 0 8px 22px rgba(15,23,42,0.035);
+}
+
+.auth-free-page .auth-textarea {
+    background: rgba(255,255,255,0.76) !important;
+    border: 1px solid rgba(226,232,240,0.95) !important;
+    box-shadow: 0 8px 22px rgba(15,23,42,0.035);
+}
+
+/* Notes moins lourdes */
+.auth-free-page .auth-step-note,
+.auth-free-page .auth-pack-note,
+.auth-free-page .auth-review-box,
+.auth-free-page .auth-legal-card,
+.auth-free-page .auth-checkbox-card {
+    background: rgba(255,255,255,0.72) !important;
+    border: 1px solid rgba(226,232,240,0.9) !important;
+    box-shadow: 0 8px 22px rgba(15,23,42,0.035);
+}
+
+/* Boutons plus app, moins bloc énorme */
+.auth-free-page .auth-primary-btn {
+    height: 48px !important;
+    border-radius: 17px !important;
+    background: linear-gradient(135deg, #059669, #10B981) !important;
+    box-shadow: 0 12px 24px rgba(5,150,105,0.18) !important;
+}
+
+.auth-free-page .auth-back-btn {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 17px !important;
+    background: rgba(255,255,255,0.78) !important;
+    border: 1px solid rgba(226,232,240,0.9) !important;
+}
+
+/* Footer d'étape plus naturel */
+.auth-free-page .auth-step-footer {
+    position: sticky;
+    bottom: 14px;
+    z-index: 20;
+    padding-top: 14px;
+    margin-top: 18px !important;
+    background: linear-gradient(to top, rgba(248,250,252,0.96), rgba(248,250,252,0));
+}
+
+/* Cartes pack moins grosses */
+.auth-free-page .auth-pack-card,
+.auth-free-page .auth-choice-card {
+    background: rgba(255,255,255,0.78) !important;
+    border: 1px solid rgba(226,232,240,0.9) !important;
+    box-shadow: 0 8px 22px rgba(15,23,42,0.035) !important;
+}
+
+.auth-free-page .auth-pack-card.selected {
+    background: rgba(236,253,245,0.78) !important;
+    border-color: rgba(5,150,105,0.45) !important;
+}
+
+/* Mobile : vraie app plein écran */
+@media (max-width: 420px) {
+    .auth-free-page {
+        padding: 24px 18px 18px 18px;
+    }
+
+    .auth-free-header,
+    .auth-free-tabs,
+    .auth-free-progress,
+    .auth-free-content {
+        max-width: none;
+    }
+
+    .auth-free-content {
+        margin-top: 20px;
+    }
+
+    .auth-title {
+        font-size: 20px !important;
+    }
+
+    .auth-subtitle {
+        max-width: 310px !important;
+    }
+}
+
+
+/* ============================================
+   AUTH — CHOIX DU PARCOURS PLUS SÉDUISANT
+   ============================================ */
+
+.auth-path-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.auth-path-card {
+    width: 100%;
+    text-align: left;
+    border: 1px solid rgba(226, 232, 240, 0.92);
+    background:
+        linear-gradient(145deg, rgba(255,255,255,0.92), rgba(236,253,245,0.62));
+    border-radius: 24px;
+    padding: 16px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.055);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-path-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, rgba(16,185,129,0.16), transparent 42%);
+    pointer-events: none;
+}
+
+.auth-path-card:active {
+    transform: scale(0.985);
+}
+
+.auth-path-card:hover {
+    border-color: rgba(16, 185, 129, 0.35);
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.075);
+}
+
+.auth-path-card-soft {
+    background:
+        linear-gradient(145deg, rgba(255,255,255,0.92), rgba(248,250,252,0.78));
+}
+
+.auth-path-top {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.auth-path-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 16px;
+    background: rgba(236, 253, 245, 0.92);
+    color: #059669;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.auth-path-label {
+    padding: 6px 9px;
+    border-radius: 999px;
+    background: #0F172A;
+    color: #FFFFFF;
+    font-size: 7px;
+    font-weight: 950;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+}
+
+.auth-path-label.soft {
+    background: rgba(15, 23, 42, 0.07);
+    color: #475569;
+}
+
+.auth-path-content {
+    position: relative;
+}
+
+.auth-path-content h4 {
+    font-size: 15px;
+    font-weight: 900;
+    color: #0F172A;
+    letter-spacing: -0.03em;
+    margin-bottom: 5px;
+}
+
+.auth-path-content p {
+    font-size: 10.5px;
+    line-height: 1.48;
+    color: #64748B;
+}
+
+.auth-path-list {
+    position: relative;
+    display: grid;
+    gap: 6px;
+    margin-top: 13px;
+}
+
+.auth-path-list span {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 9.5px;
+    font-weight: 750;
+    color: #475569;
+}
+
+.auth-path-list i {
+    color: #10B981;
+    font-size: 9px;
+}
+
+.auth-path-action {
+    position: relative;
+    margin-top: 15px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(226, 232, 240, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #059669;
+    font-size: 9px;
+    font-weight: 950;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.auth-subtle-note {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    color: #94A3B8;
+    font-size: 9.5px;
+    line-height: 1.35;
+    text-align: center;
+}
+
+.auth-subtle-note i {
+    color: #10B981;
+    font-size: 10px;
+}
+
+@media (max-width: 420px) {
+    .auth-path-card {
+        padding: 15px;
+        border-radius: 22px;
+    }
+
+    .auth-path-content h4 {
+        font-size: 14px;
+    }
+
+    .auth-path-content p {
+        font-size: 10px;
+    }
+}
