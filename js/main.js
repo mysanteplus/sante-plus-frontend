@@ -987,67 +987,77 @@ window.selectServiceType = (type) => {
 // ÉTAPE 0 : CHOIX DU TYPE DE COMPTE (AVEC ou SANS PATIENT)
 // ============================================================
 function getTypeCompteChoiceHTML() {
-    const isMamanFlow = registrationData.categorie === "MAMAN_BEBE";
-
     return `
         <div class="auth-form-heading text-center">
-            <h3>Comment souhaitez-vous utiliser Santé Plus ?</h3>
+            <h3>Quel espace voulez-vous créer ?</h3>
             <p>
-                Choisissez le type de compte. Vous pourrez compléter les informations étape par étape.
+                Choisissez simplement le parcours qui correspond à votre besoin du moment.
             </p>
         </div>
 
-        <div class="auth-choice-grid">
-            <div onclick="window.selectTypeCompte('AVEC_PATIENT')" class="auth-choice-card">
-                <div class="auth-choice-icon">
-                    <i class="fa-solid fa-user-doctor"></i>
+        <div class="auth-path-grid">
+            <button type="button" onclick="window.selectTypeCompte('AVEC_PATIENT')" class="auth-path-card">
+                <div class="auth-path-top">
+                    <div class="auth-path-icon">
+                        <i class="fa-solid fa-hand-holding-medical"></i>
+                    </div>
+
+                    <div class="auth-path-label">
+                        Recommandé pour le suivi
+                    </div>
                 </div>
 
-                <div class="auth-choice-content">
-                    <h4>Avec un patient</h4>
-                    <div class="tag">Suivi médical complet</div>
+                <div class="auth-path-content">
+                    <h4>Accompagner un proche</h4>
                     <p>
-                        Pour suivre un proche, organiser les visites, consulter les rapports et gérer les demandes.
+                        Pour suivre une personne à domicile : visites, rapports, messages, commandes et coordination.
                     </p>
                 </div>
 
-                <div class="auth-choice-arrow">
-                    <i class="fa-solid fa-chevron-right"></i>
-                </div>
-            </div>
-
-            <div onclick="window.selectTypeCompte('SANS_PATIENT')" class="auth-choice-card">
-                <div class="auth-choice-icon">
-                    <i class="fa-solid fa-user"></i>
+                <div class="auth-path-list">
+                    <span><i class="fa-solid fa-check"></i> Dossier patient</span>
+                    <span><i class="fa-solid fa-check"></i> Suivi des visites</span>
+                    <span><i class="fa-solid fa-check"></i> Échanges avec l’équipe</span>
                 </div>
 
-                <div class="auth-choice-content">
-                    <h4>Sans patient</h4>
-                    <div class="tag">Compte personnel</div>
+                <div class="auth-path-action">
+                    Commencer ce parcours <i class="fa-solid fa-arrow-right"></i>
+                </div>
+            </button>
+
+            <button type="button" onclick="window.selectTypeCompte('SANS_PATIENT')" class="auth-path-card auth-path-card-soft">
+                <div class="auth-path-top">
+                    <div class="auth-path-icon">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+
+                    <div class="auth-path-label soft">
+                        Accès personnel
+                    </div>
+                </div>
+
+                <div class="auth-path-content">
+                    <h4>Créer mon compte personnel</h4>
                     <p>
-                        Pour utiliser les commandes personnelles, le Pack Confort et ajouter un patient plus tard.
+                        Pour profiter du Pack Confort, faire des demandes ou gérer des commandes sans ajouter de patient maintenant.
                     </p>
                 </div>
 
-                <div class="auth-choice-arrow">
-                    <i class="fa-solid fa-chevron-right"></i>
+                <div class="auth-path-list">
+                    <span><i class="fa-solid fa-check"></i> Pack Confort</span>
+                    <span><i class="fa-solid fa-check"></i> Commandes personnelles</span>
+                    <span><i class="fa-solid fa-check"></i> Patient ajoutable plus tard</span>
                 </div>
-            </div>
+
+                <div class="auth-path-action">
+                    Choisir cet accès <i class="fa-solid fa-arrow-right"></i>
+                </div>
+            </button>
         </div>
 
-        <div class="auth-trust-row">
-            <div class="auth-trust-pill">
-                <i class="fa-solid fa-file-medical"></i>
-                <span>Dossier clair</span>
-            </div>
-            <div class="auth-trust-pill">
-                <i class="fa-solid fa-user-shield"></i>
-                <span>Accès sécurisé</span>
-            </div>
-            <div class="auth-trust-pill">
-                <i class="fa-solid fa-headset"></i>
-                <span>Support humain</span>
-            </div>
+        <div class="auth-subtle-note">
+            <i class="fa-solid fa-lock"></i>
+            <span>Vous pourrez compléter les informations importantes étape par étape.</span>
         </div>
     `;
 }
@@ -1095,16 +1105,16 @@ function getStepHTML() {
         case 1:
             return `
                 <div class="auth-form-heading">
-                    <h3>Qui fait la demande ?</h3>
+                    <h3>Commençons par vous.</h3>
                     <p>
-                        Ces informations permettent au coordinateur de vous identifier et de vous recontacter rapidement.
+                        Créez votre accès pour suivre vos demandes, vos échanges et l’accompagnement depuis un seul espace.
                     </p>
                 </div>
 
                 <div class="auth-step-note">
                     <i class="fa-solid fa-shield-heart"></i>
                     <p>
-                        Votre compte sera utilisé pour suivre les demandes, les visites, les commandes et les échanges avec Santé Plus.
+                        Ces informations restent liées à votre compte. Elles permettent à Santé Plus de vous identifier rapidement.
                     </p>
                 </div>
 
@@ -1166,11 +1176,11 @@ function getStepHTML() {
                 </div>
 
                 <div class="auth-step-footer">
-                    <button onclick="window.renderAuthView('register', 0)" class="auth-back-btn">
+                    <button type="button" onclick="window.renderAuthView('register', 0)" class="auth-back-btn">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
 
-                    <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                    <button type="button" onclick="window.nextAuthStep()" class="auth-primary-btn">
                         Continuer <i class="fa-solid fa-arrow-right"></i>
                     </button>
                 </div>
@@ -1192,22 +1202,22 @@ function getStepHTML() {
 
             return `
                 <div class="auth-form-heading">
-                    <h3>Qui souhaitez-vous accompagner ?</h3>
+                    <h3>La personne à accompagner.</h3>
                     <p>
-                        Ces informations permettent de créer le dossier de la personne suivie et d’organiser les visites à domicile.
+                        Ajoutez les informations essentielles pour préparer un suivi clair, simple et rassurant.
                     </p>
                 </div>
 
                 <div class="auth-step-note">
                     <i class="fa-solid fa-house-medical"></i>
                     <p>
-                        Indiquez les informations les plus utiles. Vous pourrez compléter ou corriger le dossier plus tard .
+                        Renseignez ce que vous savez déjà. Les détails pourront être complétés plus tard avec l’équipe.
                     </p>
                 </div>
 
                 <div class="auth-form-grid">
                     <div>
-                        <label class="auth-mini-label">Nom complet du patient</label>
+                        <label class="auth-mini-label">Nom complet</label>
                         <div class="auth-field">
                             <i class="fa-solid fa-user-circle"></i>
                             <input 
@@ -1288,11 +1298,11 @@ function getStepHTML() {
                 </div>
 
                 <div class="auth-step-footer">
-                    <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                    <button type="button" onclick="window.prevAuthStep()" class="auth-back-btn">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
 
-                    <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                    <button type="button" onclick="window.nextAuthStep()" class="auth-primary-btn">
                         Continuer <i class="fa-solid fa-arrow-right"></i>
                     </button>
                 </div>
@@ -1315,16 +1325,16 @@ function getStepHTML() {
             if (isMamanFlow) {
                 return `
                     <div class="auth-form-heading">
-                        <h3>Quelques informations utiles.</h3>
+                        <h3>Quelques repères utiles.</h3>
                         <p>
-                            Elles permettent d’adapter l’accompagnement à votre situation après la naissance ou pendant le suivi bébé.
+                            Ces détails aident l’équipe à mieux comprendre votre situation et à adapter l’accompagnement.
                         </p>
                     </div>
 
                     <div class="auth-step-note">
                         <i class="fa-solid fa-heart-pulse"></i>
                         <p>
-                            Ces informations ne remplacent pas un avis médical. Elles aident simplement l’équipe à mieux organiser l’accompagnement.
+                            Rien d’obligatoire ici. Vous pouvez simplement indiquer ce qui vous semble important.
                         </p>
                     </div>
 
@@ -1367,11 +1377,11 @@ function getStepHTML() {
                     </div>
 
                     <div class="auth-step-footer">
-                        <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                        <button type="button" onclick="window.prevAuthStep()" class="auth-back-btn">
                             <i class="fa-solid fa-arrow-left"></i>
                         </button>
 
-                        <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                        <button type="button" onclick="window.nextAuthStep()" class="auth-primary-btn">
                             Continuer <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </div>
@@ -1380,16 +1390,16 @@ function getStepHTML() {
 
             return `
                 <div class="auth-form-heading">
-                    <h3>Informations de santé.</h3>
+                    <h3>Quelques repères utiles.</h3>
                     <p>
-                        Ces éléments aident l’équipe à préparer un accompagnement plus sûr, plus clair et plus adapté.
+                        Indiquez les éléments importants pour aider l’équipe à préparer un accompagnement plus sûr.
                     </p>
                 </div>
 
                 <div class="auth-step-note">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                     <p>
-                        Santé Plus organise un accompagnement humain et logistique. Ces informations servent au suivi, pas à poser un diagnostic.
+                        Ces informations ne remplacent pas un diagnostic médical. Elles servent seulement à mieux organiser le suivi.
                     </p>
                 </div>
 
@@ -1453,11 +1463,11 @@ function getStepHTML() {
                 </div>
 
                 <div class="auth-step-footer">
-                    <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                    <button type="button" onclick="window.prevAuthStep()" class="auth-back-btn">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
 
-                    <button onclick="window.nextAuthStep()" class="auth-primary-btn">
+                    <button type="button" onclick="window.nextAuthStep()" class="auth-primary-btn">
                         Continuer <i class="fa-solid fa-arrow-right"></i>
                     </button>
                 </div>
@@ -1471,31 +1481,31 @@ function getStepHTML() {
                 const confortPacks = [
                     {
                         id: "CONFORT_247_MENSUEL",
-                        name: "Pack Confort Mensuel",
+                        name: "Confort mensuel",
                         desc: "Pour commencer simplement",
                         price: "25.000",
                         duration: 1,
                         period: "1 mois",
                         badge: "",
                         icon: "fa-headset",
-                        features: ["Commandes personnelles", "Support prioritaire", "Historique de commandes"]
+                        features: ["Commandes personnelles", "Support prioritaire", "Historique"]
                     },
                     {
                         id: "CONFORT_247_TRIMESTRIEL",
-                        name: "Pack Confort 3 mois",
-                        desc: "Plus pratique et plus économique",
+                        name: "Confort 3 mois",
+                        desc: "Plus pratique au quotidien",
                         price: "71.250",
                         originalPrice: "75.000",
                         duration: 3,
                         period: "3 mois",
                         badge: "Économie 5%",
                         icon: "fa-shield-heart",
-                        features: ["Commandes personnelles", "Support prioritaire", "Suivi plus confortable"]
+                        features: ["Commandes personnelles", "Support prioritaire", "Suivi confortable"]
                     },
                     {
                         id: "CONFORT_247_ANNUEL",
-                        name: "Pack Confort 1 an",
-                        desc: "Le plus avantageux sur la durée",
+                        name: "Confort annuel",
+                        desc: "Le plus avantageux",
                         price: "255.000",
                         originalPrice: "300.000",
                         duration: 12,
@@ -1508,16 +1518,9 @@ function getStepHTML() {
 
                 return `
                     <div class="auth-form-heading">
-                        <h3>Activez votre Pack Confort.</h3>
+                        <h3>Choisissez votre accès Confort.</h3>
                         <p>
-                            Un accès simple pour gérer vos commandes personnelles, vos demandes et votre suivi sans dossier patient.
-                        </p>
-                    </div>
-
-                    <div class="auth-step-note">
-                        <i class="fa-solid fa-circle-info"></i>
-                        <p>
-                            Le Pack Confort est lié à votre compte personnel. Vous pourrez ajouter un patient plus tard si nécessaire.
+                            Un accès personnel pour gérer vos commandes, vos demandes et votre suivi sans créer de dossier patient.
                         </p>
                     </div>
 
@@ -1563,16 +1566,17 @@ function getStepHTML() {
                     <div class="auth-pack-note">
                         <i class="fa-solid fa-lock"></i>
                         <p>
-                            Le paiement sera lancé après validation. Votre accès sera activé automatiquement après confirmation du paiement.
+                            Le paiement sera lancé après validation. Votre accès sera activé automatiquement après confirmation.
                         </p>
                     </div>
 
                     <div class="auth-step-footer">
-                        <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                        <button type="button" onclick="window.prevAuthStep()" class="auth-back-btn">
                             <i class="fa-solid fa-arrow-left"></i>
                         </button>
 
                         <button 
+                            type="button"
                             onclick="window.nextAuthStep()" 
                             id="pack-continue-btn"
                             class="auth-primary-btn"
@@ -1589,42 +1593,42 @@ function getStepHTML() {
                 {
                     id: "ESSENTIEL_MAMAN",
                     name: "Essentiel",
-                    desc: "Pour un accompagnement court et ciblé",
+                    desc: "Un accompagnement court et ciblé",
                     price: "65.000",
                     period: "2 semaines",
                     icon: "fa-seedling",
                     badge: "",
-                    features: ["Suivi post-partum", "2 semaines", "Accompagnement de base"]
+                    features: ["Post-partum", "2 semaines", "Base"]
                 },
                 {
                     id: "CONFORT_MAMAN",
                     name: "Confort",
-                    desc: "Pour une présence plus régulière",
+                    desc: "Une présence plus régulière",
                     price: "100.000",
                     period: "3 semaines",
                     icon: "fa-heart",
                     badge: "Populaire",
-                    features: ["Accompagnement standard", "3 semaines", "Suivi maman & bébé"]
+                    features: ["Standard", "3 semaines", "Maman & bébé"]
                 },
                 {
                     id: "SERENITE_MAMAN",
                     name: "Sérénité",
-                    desc: "Pour être accompagnée plus longtemps",
+                    desc: "Plus de temps, plus de suivi",
                     price: "140.000",
                     period: "4 semaines",
                     icon: "fa-shield-heart",
                     badge: "",
-                    features: ["Suivi rapproché", "4 semaines", "Conseils adaptés"]
+                    features: ["Suivi rapproché", "4 semaines", "Conseils"]
                 },
                 {
                     id: "PRIVILEGE_MAMAN",
                     name: "Privilège",
-                    desc: "Pour un accompagnement plus complet",
+                    desc: "L’accompagnement le plus complet",
                     price: "200.000",
                     period: "5 semaines",
                     icon: "fa-crown",
                     badge: "Premium",
-                    features: ["Coaching complet", "5 semaines", "Priorité coordination"]
+                    features: ["Complet", "5 semaines", "Priorité"]
                 }
             ] : [
                 {
@@ -1635,52 +1639,45 @@ function getStepHTML() {
                     period: "par mois",
                     icon: "fa-seedling",
                     badge: "",
-                    features: ["4 visites/mois", "Suivi léger", "Rapports simples"]
+                    features: ["4 visites/mois", "Suivi léger", "Rapports"]
                 },
                 {
                     id: "ACCOMPAGNEMENT_SENIOR",
                     name: "Accompagnement",
-                    desc: "Pour un proche qui a besoin d’un suivi régulier",
+                    desc: "Pour un suivi plus régulier",
                     price: "80.000",
                     period: "par mois",
                     icon: "fa-hand-holding-heart",
                     badge: "Populaire",
-                    features: ["8 visites/mois", "Convalescence", "Suivi renforcé"]
+                    features: ["8 visites/mois", "Convalescence", "Renforcé"]
                 },
                 {
                     id: "SERENITE_SENIOR",
                     name: "Sérénité",
-                    desc: "Pour plus de présence et de tranquillité",
+                    desc: "Plus de présence à domicile",
                     price: "100.000",
                     period: "par mois",
                     icon: "fa-shield-heart",
                     badge: "",
-                    features: ["12 visites/mois", "Suivi régulier", "Coordination"]
+                    features: ["12 visites/mois", "Régulier", "Coordination"]
                 },
                 {
                     id: "PRIVILEGE_SENIOR",
                     name: "Privilège",
-                    desc: "Pour une prise en charge plus complète",
+                    desc: "Pour un accompagnement complet",
                     price: "200.000",
                     period: "par mois",
                     icon: "fa-crown",
                     badge: "Premium",
-                    features: ["Visites illimitées", "Coordination totale", "Priorité"]
+                    features: ["Illimité", "Coordination", "Priorité"]
                 }
             ];
 
             return `
                 <div class="auth-form-heading">
-                    <h3>Choisissez la formule adaptée.</h3>
+                    <h3>Choisissez le niveau d’accompagnement.</h3>
                     <p>
-                        Sélectionnez l’offre qui correspond au niveau d’accompagnement souhaité.
-                    </p>
-                </div>
-
-                <div class="auth-step-note">
-                    <i class="fa-solid fa-hand-holding-medical"></i>
-                    <p>
-                        Le coordinateur pourra confirmer avec vous la formule la plus adaptée avant le démarrage effectif du suivi.
+                        Sélectionnez la formule qui correspond le mieux au besoin du moment.
                     </p>
                 </div>
 
@@ -1723,11 +1720,12 @@ function getStepHTML() {
                 </div>
 
                 <div class="auth-step-footer">
-                    <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                    <button type="button" onclick="window.prevAuthStep()" class="auth-back-btn">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
 
                     <button 
+                        type="button"
                         onclick="window.nextAuthStep()" 
                         id="pack-continue-btn"
                         class="auth-primary-btn"
@@ -1745,14 +1743,14 @@ function getStepHTML() {
         case 5:
             return `
                 <div class="auth-form-heading">
-                    <h3>Vérifiez puis validez.</h3>
+                    <h3>Dernière vérification.</h3>
                     <p>
-                        Dernière étape avant l’envoi de votre demande à l’équipe Santé Plus.
+                        Relisez rapidement votre demande avant de l’envoyer à l’équipe Santé Plus.
                     </p>
                 </div>
 
                 <div class="auth-review-box mb-3">
-                    <h4>Résumé de votre demande</h4>
+                    <h4>Résumé</h4>
                     <p>
                         <b>Compte :</b> ${registrationData.type_compte === "SANS_PATIENT" ? "Sans patient — Pack Confort" : "Avec patient — Suivi à domicile"}<br>
                         <b>Demandeur :</b> ${registrationData.nom_famille || "Non renseigné"}<br>
@@ -1763,29 +1761,21 @@ function getStepHTML() {
                     </p>
                 </div>
 
-                <div class="auth-legal-card">
-                    <i class="fa-solid fa-circle-info"></i>
-                    <p>
-                        Santé Plus Services propose un accompagnement humain, logistique et de suivi à domicile.
-                        Ce service ne remplace pas une consultation médicale, un diagnostic ou une urgence hospitalière.
-                    </p>
-                </div>
-
                 <label class="auth-checkbox-card">
                     <input type="checkbox" id="legal-check">
                     <span>
-                        Je confirme avoir compris que Santé Plus Services propose un accompagnement non médical,
-                        et j’accepte l’envoi de ma demande pour validation.
+                        Je confirme avoir compris que Santé Plus Services propose un accompagnement humain et logistique,
+                        sans remplacer une consultation médicale ou une urgence hospitalière.
                     </span>
                 </label>
 
                 <div class="auth-step-footer">
-                    <button onclick="window.prevAuthStep()" class="auth-back-btn">
+                    <button type="button" onclick="window.prevAuthStep()" class="auth-back-btn">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
 
-                    <button onclick="window.nextAuthStep()" class="auth-primary-btn">
-                        Envoyer ma demande <i class="fa-solid fa-paper-plane"></i>
+                    <button type="button" onclick="window.nextAuthStep()" class="auth-primary-btn">
+                        Envoyer <i class="fa-solid fa-paper-plane"></i>
                     </button>
                 </div>
             `;
@@ -2265,7 +2255,7 @@ function renderAuthView(mode = 'login', stepSource = 1) {
 
     if (existingCard) {
          // Mettre à jour le conteneur parent pour qu'il utilise flex
-     const cardDiv = document.querySelector(".auth-shell-card");
+     const cardDiv = document.querySelector(".auth-free-page");
      if (cardDiv) {
          cardDiv.classList.toggle("auth-card--register", mode === "register");
          cardDiv.classList.toggle("auth-card--login", mode === "login");
@@ -2344,50 +2334,49 @@ function renderAuthView(mode = 'login', stepSource = 1) {
       const progressPercent = Math.min(100, Math.max(0, (currentStep / 5) * 100));
 
 app.innerHTML = `
-    <div class="auth-container">
-        <div class="auth-shell-card relative w-full max-w-md ${authCardModeClass}">
-            
-            <div class="auth-brand-zone">
-                <div class="auth-logo-mark">
-                    <img id="auth-logo-img" src="${logoSrc}" alt="Santé Plus Services">
-                </div>
+    <div class="auth-free-page">
+        <div class="auth-free-bg"></div>
 
-                <div class="auth-kicker">Santé Plus Services</div>
-
-                <h1 class="auth-title">
-                    ${mode === "login" 
-                        ? "Votre espace de suivi santé." 
-                        : "Créer un accès rassurant."}
-                </h1>
-
-                <p class="auth-subtitle">
-                    ${mode === "login"
-                        ? "Suivez les visites, les commandes et l’accompagnement de vos proches depuis un seul espace sécurisé."
-                        : "Choisissez le type de compte adapté, puis complétez les informations nécessaires à l’accompagnement."}
-                </p>
+        <div class="auth-free-header">
+            <div class="auth-free-logo">
+                <img id="auth-logo-img" src="${logoSrc}" alt="Santé Plus Services">
             </div>
 
-            <div id="auth-tabs" class="auth-switch" style="display: ${mode !== "otp" ? "flex" : "none"}">
-                <button onclick="window.renderAuthView('login')" class="${mode === "login" ? "active" : ""}">
-                    Connexion
-                </button>
-                <button onclick="window.renderAuthView('register', 0)" class="${mode === "register" ? "active" : ""}">
-                    Inscription
-                </button>
-            </div>
+            <div class="auth-kicker">Santé Plus Services</div>
 
-            <div id="auth-progress" class="auth-progress-wrap" style="display: ${mode === "register" ? "block" : "none"}">
-                <div class="auth-progress-track">
-                    <div class="auth-progress-fill" style="width: ${progressPercent}%"></div>
-                </div>
-            </div>
+            <h1 class="auth-title">
+                ${mode === "login" 
+                    ? "Votre espace de suivi santé." 
+                    : "Créons votre espace Santé Plus."}
+            </h1>
 
-           <div id="auth-card-content">
-               <form id="auth-form" autocomplete="on" onsubmit="event.preventDefault();">
-                   ${dynamicContent}
-               </form>
-           </div>
+            <p class="auth-subtitle">
+                ${mode === "login"
+                    ? "Connectez-vous pour suivre les visites, les commandes et l’accompagnement de vos proches."
+                    : "Quelques étapes simples pour préparer un accompagnement clair et rassurant."}
+            </p>
         </div>
+
+        <div id="auth-tabs" class="auth-switch auth-free-tabs" style="display: ${mode !== "otp" ? "flex" : "none"}">
+            <button type="button" onclick="window.renderAuthView('login')" class="${mode === "login" ? "active" : ""}">
+                Connexion
+            </button>
+            <button type="button" onclick="window.renderAuthView('register', 0)" class="${mode === "register" ? "active" : ""}">
+                Inscription
+            </button>
+        </div>
+
+        <div id="auth-progress" class="auth-progress-wrap auth-free-progress" style="display: ${mode === "register" ? "block" : "none"}">
+            <div class="auth-progress-track">
+                <div class="auth-progress-fill" style="width: ${progressPercent}%"></div>
+            </div>
+        </div>
+
+        <main id="auth-card-content" class="auth-free-content">
+            <form id="auth-form" autocomplete="on" onsubmit="event.preventDefault();">
+                ${dynamicContent}
+            </form>
+        </main>
     </div>
 `;
      
