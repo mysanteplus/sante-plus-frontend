@@ -1068,17 +1068,30 @@ function getTypeCompteChoiceHTML() {
 // ============================================================
 window.selectTypeCompte = (type) => {
     registrationData.type_compte = type;
-    UI.vibrate('success');
-    
-    // Passer à l'étape suivante
-    if (type === 'AVEC_PATIENT') {
-        currentStep = 1;  // Formulaire complet (payeur → patient → santé → pack)
+
+    if (type === "SANS_PATIENT") {
+        // ✅ Compte personnel neutre
+        // Il n'est ni Senior ni Maman tant qu'aucun patient n'est ajouté.
+        registrationData.categorie = "PERSONNEL";
+        registrationData.user_is_maman = false;
+        registrationData.has_patient_profile = false;
+        registrationData.patient_category = null;
     } else {
-        currentStep = 1;  // Compte SANS_PATIENT : on passe directement à l'étape payeur
-        // Note : on n'affichera pas les étapes patient et santé
+        // ✅ Compte avec patient
+        // Par défaut Senior si aucune catégorie n'a été choisie avant.
+        if (!registrationData.categorie || registrationData.categorie === "PERSONNEL") {
+            registrationData.categorie = "SENIOR";
+        }
+
+        registrationData.user_is_maman = registrationData.categorie === "MAMAN_BEBE";
+        registrationData.has_patient_profile = true;
+        registrationData.patient_category = registrationData.categorie;
     }
-    
-    renderAuthView('register', currentStep);
+
+    UI.vibrate("success");
+
+    currentStep = 1;
+    renderAuthView("register", currentStep);
 };
 
 // ============================================================
@@ -1526,41 +1539,43 @@ function getStepHTML() {
 
                     <div id="pack-selector" class="auth-pack-list">
                         ${confortPacks.map(pack => `
-                            <div 
-                                onclick="window.selectPackConfort('${pack.id}', '${pack.price}', ${pack.duration})"
-                                class="auth-pack-card pack-card ${registrationData.type_pack === pack.id ? "selected" : ""}"
-                                data-pack-id="${pack.id}"
-                            >
+                           <button 
+                               type="button"
+                               onclick="window.selectPackConfort('${pack.id}', '${pack.price}', ${pack.duration})"
+                               class="auth-pack-card pack-card ${registrationData.type_pack === pack.id ? "selected" : ""}"
+                               data-pack-id="${pack.id}"
+                               aria-selected="${registrationData.type_pack === pack.id ? "true" : "false"}"
+                           >
                                 ${pack.badge ? `
                                     <div class="auth-pack-badge">
                                         <i class="fa-solid fa-star"></i> ${pack.badge}
                                     </div>
                                 ` : ""}
 
-                                <div class="auth-pack-top">
-                                    <div class="auth-pack-icon">
-                                        <i class="fa-solid ${pack.icon}"></i>
-                                    </div>
+                                                        <div class="auth-pack-top">
+                                                            <div class="auth-pack-icon">
+                                                                <i class="fa-solid ${pack.icon}"></i>
+                                                            </div>
+                        
+                                                            <div class="auth-pack-info">
+                                                                <h4>${pack.name}</h4>
+                                                                <p>${pack.desc}</p>
+                                                            </div>
 
-                                    <div class="auth-pack-info">
-                                        <h4>${pack.name}</h4>
-                                        <p>${pack.desc}</p>
-                                    </div>
+                                                             <div class="auth-pack-price">
+                                                                 ${pack.originalPrice ? `<span class="old">${pack.originalPrice} F</span>` : ""}
+                                                                 <span class="price">${pack.price} F</span>
+                                                                 <span class="period">${pack.period}</span>
+                                                             </div>
+                                                          </div>
 
-                                    <div class="auth-pack-price">
-                                        ${pack.originalPrice ? `<span class="old">${pack.originalPrice} F</span>` : ""}
-                                        <span class="price">${pack.price} F</span>
-                                        <span class="period">${pack.period}</span>
-                                    </div>
-                                </div>
-
-                                <div class="auth-pack-features">
-                                    ${pack.features.map(f => `
-                                        <span class="auth-pack-feature">✓ ${f}</span>
-                                    `).join("")}
-                                </div>
-                            </div>
-                        `).join("")}
+                                                       <div class="auth-pack-features">
+                                                           ${pack.features.map(f => `
+                                                               <span class="auth-pack-feature">✓ ${f}</span>
+                                                           `).join("")}
+                                                       </div>
+</button>
+`).join("")}
                     </div>
 
                     <div class="auth-pack-note">
@@ -1683,11 +1698,13 @@ function getStepHTML() {
 
                 <div id="pack-selector" class="auth-pack-list">
                     ${packs.map(pack => `
-                        <div 
-                            onclick="window.selectPack('${pack.id}', '${pack.price}')"
-                            class="auth-pack-card pack-card ${registrationData.type_pack === pack.id ? "selected" : ""}"
-                            data-pack-id="${pack.id}"
-                        >
+<button 
+    type="button"
+    onclick="window.selectPack('${pack.id}', '${pack.price}')"
+    class="auth-pack-card pack-card ${registrationData.type_pack === pack.id ? "selected" : ""}"
+    data-pack-id="${pack.id}"
+    aria-selected="${registrationData.type_pack === pack.id ? "true" : "false"}"
+>
                             ${pack.badge ? `
                                 <div class="auth-pack-badge">
                                     <i class="fa-solid fa-star"></i> ${pack.badge}
@@ -1715,8 +1732,9 @@ function getStepHTML() {
                                     <span class="auth-pack-feature">✓ ${f}</span>
                                 `).join("")}
                             </div>
-                        </div>
-                    `).join("")}
+                            
+</button>
+`).join("")}
                 </div>
 
                 <div class="auth-step-footer">
@@ -1887,19 +1905,25 @@ window.clearCategorySelection = () => {
 // GESTION DES PACKS (ABONNEMENTS)
 // ============================================================
 window.selectPack = (packId, price) => {
+    console.log("✅ Pack sélectionné:", packId, price);
+
     registrationData.type_pack = packId;
     registrationData.montant_prevu = price;
 
     document.querySelectorAll(".pack-card").forEach(card => {
-        card.classList.toggle("selected", card.dataset.packId === packId);
+        const isSelected = card.dataset.packId === packId;
+        card.classList.toggle("selected", isSelected);
+        card.setAttribute("aria-selected", isSelected ? "true" : "false");
     });
 
     const continueBtn = document.getElementById("pack-continue-btn");
 
     if (continueBtn) {
         continueBtn.disabled = false;
+        continueBtn.removeAttribute("disabled");
         continueBtn.style.opacity = "1";
         continueBtn.style.pointerEvents = "auto";
+        continueBtn.classList.remove("opacity-40", "cursor-not-allowed");
     }
 
     UI.vibrate("success");
@@ -1907,25 +1931,30 @@ window.selectPack = (packId, price) => {
 
 
 window.selectPackConfort = (packId, price, duration) => {
+    console.log("✅ Pack Confort sélectionné:", packId, price, duration);
+
     registrationData.type_pack = packId;
     registrationData.montant_prevu = price;
     registrationData.pack_duration = duration;
 
     document.querySelectorAll(".pack-card").forEach(card => {
-        card.classList.toggle("selected", card.dataset.packId === packId);
+        const isSelected = card.dataset.packId === packId;
+        card.classList.toggle("selected", isSelected);
+        card.setAttribute("aria-selected", isSelected ? "true" : "false");
     });
 
     const continueBtn = document.getElementById("pack-continue-btn");
 
     if (continueBtn) {
         continueBtn.disabled = false;
+        continueBtn.removeAttribute("disabled");
         continueBtn.style.opacity = "1";
         continueBtn.style.pointerEvents = "auto";
+        continueBtn.classList.remove("opacity-40", "cursor-not-allowed");
     }
 
     UI.vibrate("success");
 };
-
 // ============================================================
 // LOGIQUE DU FORMULAIRE D'ADMISSION (STEPPER)
 // ============================================================
@@ -2074,62 +2103,174 @@ window.prevAuthStep = () => {
 
 
 async function submitRegistration() {
-    if(!registrationData.type_pack) return Swal.fire("Erreur", "Veuillez choisir une formule", "warning");
-    
-    registrationData.formule = registrationData.type_pack;
-    registrationData.email = registrationData.email.trim().toLowerCase();
+    const isSansPatient = registrationData.type_compte === "SANS_PATIENT";
 
-    // ✅ Assure-toi que pathologies est bien un tableau
-    if (registrationData.pathologies && !Array.isArray(registrationData.pathologies)) {
-        registrationData.pathologies = registrationData.pathologies.split(',').map(s => s.trim());
+    if (!registrationData.type_pack) {
+        UI.vibrate?.("error");
+        return Swal.fire({
+            icon: "warning",
+            title: "Formule requise",
+            text: "Veuillez choisir une formule avant de continuer.",
+            confirmButtonText: "Compris",
+            confirmButtonColor: "#059669",
+            customClass: { popup: "rounded-2xl" }
+        });
     }
-    
-    // ✅ Ne pas stringifier manuellement, laisse fetch le faire
+
+    if (!registrationData.email) {
+        UI.vibrate?.("error");
+        return Swal.fire({
+            icon: "warning",
+            title: "Email manquant",
+            text: "Veuillez renseigner votre adresse email.",
+            confirmButtonText: "Compris",
+            confirmButtonColor: "#059669",
+            customClass: { popup: "rounded-2xl" }
+        });
+    }
+
+    registrationData.email = registrationData.email.trim().toLowerCase();
+    registrationData.formule = registrationData.type_pack;
+
+    // ✅ Normaliser pathologies
+    let cleanPathologies = [];
+
+    if (Array.isArray(registrationData.pathologies)) {
+        cleanPathologies = registrationData.pathologies;
+    } else if (typeof registrationData.pathologies === "string") {
+        cleanPathologies = registrationData.pathologies
+            .split(",")
+            .map(item => item.trim())
+            .filter(Boolean);
+    }
+
+    // ✅ Payload propre selon le type de compte
     const payload = {
         ...registrationData,
-        pathologies: registrationData.pathologies || [],
-        categorie: registrationData.categorie,
-        type_compte: registrationData.type_compte || 'AVEC_PATIENT'  // ← AJOUTÉ
+
+        email: registrationData.email,
+        formule: registrationData.type_pack,
+
+        type_compte: isSansPatient ? "SANS_PATIENT" : "AVEC_PATIENT",
+
+        // ✅ Compte personnel = neutre, pas Senior/Maman tant qu’aucun patient n’est ajouté
+        categorie: isSansPatient
+            ? "PERSONNEL"
+            : (registrationData.categorie || "SENIOR"),
+
+        user_is_maman: isSansPatient
+            ? false
+            : registrationData.categorie === "MAMAN_BEBE",
+
+        has_patient_profile: !isSansPatient,
+        patient_category: isSansPatient ? null : (registrationData.categorie || "SENIOR"),
+
+        // ✅ Patient uniquement si compte AVEC_PATIENT
+        nom_patient: isSansPatient ? null : (registrationData.nom_patient || null),
+        adresse_patient: isSansPatient ? null : (registrationData.adresse_patient || null),
+        age_patient: isSansPatient ? null : (registrationData.age_patient || null),
+        sexe_patient: isSansPatient ? null : (registrationData.sexe_patient || null),
+        tel_patient: isSansPatient ? null : (registrationData.tel_patient || null),
+        contact_urgence: isSansPatient ? null : (registrationData.contact_urgence || null),
+        contact_urgence_tel: isSansPatient ? null : (registrationData.contact_urgence_tel || null),
+
+        // ✅ Santé uniquement si compte AVEC_PATIENT
+        pathologies: isSansPatient ? [] : cleanPathologies,
+        traitements: isSansPatient ? "" : (registrationData.traitements || ""),
+        allergies: isSansPatient ? "" : (registrationData.allergies || ""),
+        notes_medicales: isSansPatient ? "" : (registrationData.notes_medicales || ""),
+
+        // ✅ Données Maman uniquement si MAMAN_BEBE
+        type_accouchement: (!isSansPatient && registrationData.categorie === "MAMAN_BEBE")
+            ? (registrationData.type_accouchement || "")
+            : "",
+
+        allaitement: (!isSansPatient && registrationData.categorie === "MAMAN_BEBE")
+            ? (registrationData.allaitement || "")
+            : "",
+
+        // ✅ Pack Confort / abonnement
+        type_pack: registrationData.type_pack,
+        montant_prevu: registrationData.montant_prevu || null,
+        pack_duration: registrationData.pack_duration || null,
+
+        // ✅ Engagement légal
+        engagement_non_medical: registrationData.engagement_non_medical === true
     };
 
     console.log("📤 Envoi inscription - Type compte:", payload.type_compte);
+    console.log("📤 Catégorie envoyée:", payload.categorie);
     console.log("📤 Payload complet:", payload);
-    
-    Swal.fire({ title: 'Création du dossier...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+
+    Swal.fire({
+        title: isSansPatient ? "Création du compte..." : "Création du dossier...",
+        html: `
+            <p style="font-size:13px;color:#64748B;margin-top:6px;">
+                Merci de patienter quelques secondes.
+            </p>
+        `,
+        didOpen: () => Swal.showLoading(),
+        allowOutsideClick: false,
+        customClass: { popup: "rounded-2xl" }
+    });
 
     try {
         const res = await fetch(`${CONFIG.API_URL}/auth/register-family-patient`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)  // ← fetch stringifie automatiquement
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
         });
 
-        const data = await res.json();
-        
-        if (res.ok) {
-            localStorage.setItem("user_categorie", registrationData.categorie);
-            localStorage.setItem("user_is_maman", registrationData.categorie === 'MAMAN_BEBE');
-            
-          const isSansPatient = registrationData.type_compte === "SANS_PATIENT";
-          
-          Swal.fire({
-              icon: "success",
-              title: isSansPatient ? "Compte transmis !" : "Dossier transmis !",
-              text: isSansPatient
-                  ? "Votre compte personnel a été créé. Vous pourrez activer votre Pack Confort après validation."
-                  : "Un coordinateur va valider vos informations sous 24h.",
-              confirmButtonText: "RETOUR À L'ACCUEIL",
-              confirmButtonColor: "#059669",
-              customClass: { popup: "rounded-2xl" }
-          }).then(() => window.location.reload());
-        } else {
-            throw new Error(data.error || "Erreur lors de l'inscription");
+        let data = {};
+
+        try {
+            data = await res.json();
+        } catch (_) {
+            data = {};
         }
+
+        if (!res.ok) {
+            throw new Error(data.error || data.message || "Erreur lors de l'inscription");
+        }
+
+        // ✅ Stockage local propre
+        localStorage.setItem("user_type_compte", payload.type_compte);
+        localStorage.setItem("user_categorie", payload.categorie);
+        localStorage.setItem("user_is_maman", payload.user_is_maman ? "true" : "false");
+
+        if (payload.type_pack) {
+            localStorage.setItem("subscription_type_pack", payload.type_pack);
+        }
+
+        Swal.fire({
+            icon: "success",
+            title: isSansPatient ? "Compte créé !" : "Dossier transmis !",
+            text: isSansPatient
+                ? "Votre compte personnel a été créé. Vous pourrez utiliser le Pack Confort et ajouter un patient plus tard si nécessaire."
+                : "Votre demande a été transmise. Un coordinateur va valider vos informations.",
+            confirmButtonText: "RETOUR À L'ACCUEIL",
+            confirmButtonColor: "#059669",
+            customClass: { popup: "rounded-2xl" }
+        }).then(() => {
+            window.location.reload();
+        });
+
     } catch (e) {
-        console.error("Erreur inscription:", e);
-        Swal.fire("Erreur", e.message, "error");
+        console.error("❌ Erreur inscription:", e);
+
+        Swal.fire({
+            icon: "error",
+            title: "Erreur",
+            text: e.message || "Une erreur est survenue pendant l'inscription.",
+            confirmButtonText: "Compris",
+            confirmButtonColor: "#059669",
+            customClass: { popup: "rounded-2xl" }
+        });
     }
 }
+
 // ============================================================
 // VUE AUTHENTIFICATION (LOGIN / REGISTER / OTP)
 // ============================================================
