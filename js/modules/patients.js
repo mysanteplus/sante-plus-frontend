@@ -785,15 +785,3 @@ window.viewVisitHistory = async (patientId) => {
     }
 };
 
-// ============================================================
-// EXPORTS
-// ============================================================
-
-export { 
-    loadPatients, 
-    renderPatients, 
-    renderAddPatientView, 
-    renderPatientDetailsView, 
-    renderLinkFamilyView,
-     updatePatientBadges
-};
