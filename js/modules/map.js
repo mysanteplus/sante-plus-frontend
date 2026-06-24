@@ -2443,4 +2443,216 @@ async function getCurrentLocation() {
     });
 }
 
+
+/**
+ * 🏠 VUE FAMILLE - SUIVI DE L'AIDANT
+ */
+export async function initFamilyMap() {
+    const container = document.getElementById("view-container");
+    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+    const isSansPatient = typeCompte === "SANS_PATIENT";
+
+    clearMapRuntime();
+
+    if (isSansPatient) {
+        await initSansPatientRadar();
+        return;
+    }
+
+    const result = await getFamilyPatientForRadar();
+
+    if (result.reason === "MULTIPLE_PATIENTS") {
+        renderRadarMessage({
+            icon: "fa-users",
+            title: "Choisissez un dossier",
+            text: "Vous avez plusieurs dossiers patients. Sélectionnez d'abord le patient concerné.",
+            buttonText: "Choisir un dossier",
+            buttonAction: "window.switchView('patients')",
+            color: "amber"
+        });
+        return;
+    }
+
+    if (result.reason === "NO_PATIENT" || !result.patient) {
+        renderRadarMessage({
+            icon: "fa-user-slash",
+            title: "Aucun dossier patient",
+            text: "Le Radar s'active lorsqu'un dossier patient est associé à votre compte.",
+            buttonText: "Retour à l'accueil",
+            buttonAction: "window.switchView('home')",
+            color: "slate"
+        });
+        return;
+    }
+
+    currentPatient = result.patient;
+
+    container.innerHTML = `
+        <div class="animate-fadeIn flex flex-col h-[calc(100vh-120px)] pb-0">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-4 shrink-0 flex-wrap gap-3">
+                <div>
+                    <h3 class="text-xl font-black text-slate-800">👨‍👩‍👧 Suivi de votre proche</h3>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                        ${escapeHtml(currentPatient.nom_complet || "Dossier patient")}
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="refresh-family-btn" class="bg-white p-2 rounded-xl shadow-md border border-slate-100">
+                        <i class="fa-solid fa-rotate-right text-slate-600"></i>
+                    </button>
+                    <button id="history-family-btn" class="bg-indigo-500 text-white px-3 py-2 rounded-xl shadow-md text-[9px] font-black uppercase">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Historique
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statut de la visite -->
+            <div id="family-status-bar" class="mb-3 bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">STATUT</p>
+                        <p id="family-status" class="font-black text-emerald-600 text-sm">Chargement...</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">MISE À JOUR</p>
+                        <p id="family-last-update" class="text-[9px] text-slate-500">---</p>
+                    </div>
+                </div>
+                <div id="family-distance" class="mt-2 pt-2 border-t border-slate-100 hidden">
+                    <div class="flex justify-between items-center">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">DISTANCE DE L'AIDANT</p>
+                        <p id="family-distance-value" class="font-black text-lg text-emerald-600">---</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carte -->
+            <div id="live-map-container" class="flex-1 w-full rounded-xl border-2 border-white shadow-lg relative overflow-hidden bg-slate-100" style="min-height: 50vh; height: auto;">
+                <div id="map" class="absolute inset-0 z-10 w-full h-full"></div>
+                <div id="map-loading" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="relative w-8 h-8 mx-auto mb-2">
+                            <div class="absolute inset-0 border-3 border-slate-100 border-t-emerald-500 rounded-full animate-spin"></div>
+                        </div>
+                        <p class="text-[9px] font-black text-slate-400">Chargement du Radar...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Légende -->
+            <div class="mt-3 bg-white/90 backdrop-blur-sm p-2 rounded-xl border border-slate-100">
+                <div class="flex items-center justify-around text-[8px] font-bold">
+                    <div class="flex items-center gap-1">
+                        <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                        <span>Domicile</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span>Aidant actif</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <div class="w-2 h-2 rounded-full bg-rose-500"></div>
+                        <span>Hors zone</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <div class="w-2 h-2 rounded-full bg-slate-300"></div>
+                        <span>Inactif</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    await new Promise(r => setTimeout(r, 100));
+
+    const mapElement = document.getElementById("map");
+    if (!mapElement) return;
+
+    if (mapElement._leaflet_id) {
+        mapElement._leaflet_id = null;
+    }
+
+    map = L.map("map", {
+        zoomControl: false,
+        attributionControl: false,
+        center: [6.368, 2.401],
+        zoom: 12
+    });
+
+    L.control.zoom({ position: "bottomright" }).addTo(map);
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+    }).addTo(map);
+
+    setTimeout(() => {
+        if (map) map.invalidateSize(true);
+    }, 300);
+
+    document.getElementById("refresh-family-btn")?.addEventListener("click", async () => {
+        await loadFamilyData();
+        showToast("Radar actualisé", "info", 1000);
+    });
+
+    document.getElementById("history-family-btn")?.addEventListener("click", () => {
+        window.viewVisitHistory(currentPatient.id);
+    });
+
+    await loadFamilyData();
+
+    if (activeInterval) clearInterval(activeInterval);
+    activeInterval = setInterval(() => loadFamilyData(), 15000);
+}
+
+/**
+ * 📜 VOIR L'HISTORIQUE DES VISITES (FAMILLE)
+ */
+window.viewVisitHistory = async (patientId) => {
+    try {
+        const history = await secureFetch(`/visites/history/${patientId}?limit=30`);
+        
+        if (!history || history.length === 0) {
+            Swal.fire({
+                title: "Aucun historique",
+                text: "Aucune visite enregistrée pour le moment.",
+                icon: "info",
+                confirmButtonColor: "#10B981"
+            });
+            return;
+        }
+
+        const html = history.map(v => `
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <div>
+                    <p class="font-bold text-slate-800 text-xs">${v.patient?.nom_complet || 'Patient'}</p>
+                    <p class="text-[9px] text-slate-400">${v.heure_debut_formatted || 'Date inconnue'}</p>
+                    <p class="text-[9px] font-bold ${v.statut === 'Validé' ? 'text-emerald-600' : v.statut === 'En attente' ? 'text-amber-600' : 'text-slate-400'}">
+                        ${v.statut}
+                    </p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[9px] text-slate-400">${v.aidant?.nom || 'Aidant inconnu'}</p>
+                    ${v.photo_url ? `<button onclick="window.open('${v.photo_url}')" class="text-[8px] text-blue-500">📸 Voir photo</button>` : ''}
+                </div>
+            </div>
+        `).join('');
+
+        Swal.fire({
+            title: "📋 Historique des visites",
+            html: `<div class="space-y-2 max-h-96 overflow-y-auto">${html}</div>`,
+            confirmButtonText: "Fermer",
+            confirmButtonColor: "#10B981",
+            width: '90%',
+            maxWidth: '500px',
+            customClass: { popup: 'rounded-2xl p-4' }
+        });
+
+    } catch (err) {
+        console.error(err);
+        UI.error("Impossible de charger l'historique");
+    }
+};
+                                                     
 export { initCoordinatorMap, initFamilyMap, initAidantMap };
