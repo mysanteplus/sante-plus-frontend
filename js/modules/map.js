@@ -1,7 +1,7 @@
 // ============================================================
 // js/modules/map.js - MODULE CARTE COMPLET
 // Version: 2.0
-// Description: Gestion de la carte pour les 3 rôles
+// Description: Gestion de la carte pour les 3 rôles (COORDINATEUR, AIDANT, FAMILLE)
 // ============================================================
 
 import { secureFetch } from "../core/api.js";
@@ -81,6 +81,76 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
               Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
+}
+
+function normalizeArray(data) {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data?.results)) return data.results;
+    return [];
+}
+
+function getSavedPatientId() {
+    return (
+        AppState.currentPatient ||
+        localStorage.getItem("current_patient_id") ||
+        localStorage.getItem("active_patient_id")
+    );
+}
+
+function setActivePatient(patientId) {
+    AppState.currentPatient = patientId;
+    localStorage.setItem("current_patient_id", patientId);
+    localStorage.setItem("active_patient_id", patientId);
+}
+
+function safeLatLng(lat, lng) {
+    const nLat = Number(lat);
+    const nLng = Number(lng);
+
+    if (!Number.isFinite(nLat) || !Number.isFinite(nLng)) return null;
+    if (nLat === 0 || nLng === 0) return null;
+
+    return {
+        lat: nLat,
+        lng: nLng
+    };
+}
+
+function isFreshPosition(item, maxMinutes = 10) {
+    const date =
+        item?.last_position?.created_at ||
+        item?.last_position?.updated_at ||
+        item?.updated_at ||
+        item?.created_at ||
+        null;
+
+    if (!date) return false;
+
+    const diffMs = Date.now() - new Date(date).getTime();
+    const diffMinutes = diffMs / 60000;
+
+    return diffMinutes <= maxMinutes;
+}
+
+function getPositionAgeText(item) {
+    const date =
+        item?.last_position?.created_at ||
+        item?.last_position?.updated_at ||
+        item?.updated_at ||
+        item?.created_at ||
+        null;
+
+    if (!date) return "Position inconnue";
+
+    const diffMs = Date.now() - new Date(date).getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+
+    if (diffMinutes < 1) return "À l’instant";
+    if (diffMinutes < 60) return `Il y a ${diffMinutes} min`;
+
+    const hours = Math.floor(diffMinutes / 60);
+    return `Il y a ${hours}h`;
 }
 
 // ============================================================
@@ -210,94 +280,6 @@ export async function initLiveMap() {
     }
 }
 
-
-
-function isFreshPosition(item, maxMinutes = 10) {
-    const date =
-        item?.last_position?.created_at ||
-        item?.last_position?.updated_at ||
-        item?.updated_at ||
-        item?.created_at ||
-        null;
-
-    if (!date) return false;
-
-    const diffMs = Date.now() - new Date(date).getTime();
-    const diffMinutes = diffMs / 60000;
-
-    return diffMinutes <= maxMinutes;
-}
-
-function getPositionAgeText(item) {
-    const date =
-        item?.last_position?.created_at ||
-        item?.last_position?.updated_at ||
-        item?.updated_at ||
-        item?.created_at ||
-        null;
-
-    if (!date) return "Position inconnue";
-
-    const diffMs = Date.now() - new Date(date).getTime();
-    const diffMinutes = Math.floor(diffMs / 60000);
-
-    if (diffMinutes < 1) return "À l’instant";
-    if (diffMinutes < 60) return `Il y a ${diffMinutes} min`;
-
-    const hours = Math.floor(diffMinutes / 60);
-    return `Il y a ${hours}h`;
-}
-
-function renderCoordinatorEmptyNotice(message) {
-    const container = document.getElementById("live-map-container");
-
-    if (!container) return;
-
-    let notice = document.getElementById("coordinator-empty-notice");
-
-    if (!notice) {
-        notice = document.createElement("div");
-        notice.id = "coordinator-empty-notice";
-        notice.className = "absolute top-4 left-4 right-4 z-30 bg-white/95 backdrop-blur-sm border border-slate-100 rounded-2xl p-4 shadow-lg text-center";
-        container.appendChild(notice);
-    }
-
-    notice.innerHTML = `
-        <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">État du terrain</p>
-        <p class="text-sm font-bold text-slate-700 mt-1">${escapeHtml(message)}</p>
-    `;
-}
-
-function hideCoordinatorEmptyNotice() {
-    const notice = document.getElementById("coordinator-empty-notice");
-    if (notice) notice.remove();
-}
-
-function updateCoordinatorCounters({ aidants = [], patients = [], outside = 0, stale = 0 }) {
-    const liveEl = document.getElementById("admin-live-count");
-    const patientEl = document.getElementById("admin-patient-count");
-    const alertEl = document.getElementById("admin-alert-count");
-    const staleEl = document.getElementById("admin-stale-count");
-
-    if (liveEl) liveEl.innerHTML = String(aidants.length);
-    if (patientEl) patientEl.innerHTML = String(patients.length);
-    if (alertEl) alertEl.innerHTML = String(outside);
-    if (staleEl) staleEl.innerHTML = String(stale);
-}
-
-function safeLatLng(lat, lng) {
-    const nLat = Number(lat);
-    const nLng = Number(lng);
-
-    if (!Number.isFinite(nLat) || !Number.isFinite(nLng)) return null;
-    if (nLat === 0 || nLng === 0) return null;
-
-    return {
-        lat: nLat,
-        lng: nLng
-    };
-}
-
 // ============================================================
 // 🗺️ VUE COORDINATEUR
 // ============================================================
@@ -415,7 +397,6 @@ async function initCoordinatorMap() {
         </div>
     `;
 
-    // ✅ Attendre que le DOM soit prêt
     await new Promise(r => setTimeout(r, 100));
     
     const mapElement = document.getElementById('map');
@@ -424,7 +405,6 @@ async function initCoordinatorMap() {
         return;
     }
     
-    // ✅ Nettoyer l'ancienne carte
     if (map) {
         map.remove();
         map = null;
@@ -432,18 +412,16 @@ async function initCoordinatorMap() {
     }
 
     const existingMapElement = document.getElementById("map");
-
     if (existingMapElement && existingMapElement._leaflet_id) {
         existingMapElement._leaflet_id = null;
     }
     
-    // ✅ Initialiser la carte AVEC un centre par défaut
     map = L.map('map', { 
         zoomControl: false, 
         attributionControl: false, 
         zoomSnap: 0.5,
-        center: [6.368, 2.401],  // ← Centre par défaut (Cotonou)
-        zoom: 12                  // ← Zoom par défaut
+        center: [6.368, 2.401],
+        zoom: 12
     });
     
     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -453,13 +431,10 @@ async function initCoordinatorMap() {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
     }).addTo(map);
     
-    // ✅ Forcer l'invalidation de la taille
     setTimeout(() => {
         if (map) map.invalidateSize(true);
     }, 200);
     
- 
-    // ✅ Événements
     document.getElementById('refresh-map-btn')?.addEventListener('click', () => loadCoordinatorData());
     document.getElementById('center-all-btn')?.addEventListener('click', () => centerAllMarkers());
     document.getElementById('show-alerts-btn')?.addEventListener('click', () => showAlertsPanel());
@@ -471,11 +446,9 @@ async function initCoordinatorMap() {
     document.getElementById('filter-patient')?.addEventListener('change', () => applyFilters());
     document.getElementById('filter-status')?.addEventListener('change', () => applyFilters());
     
-    // ✅ Charger les données
     await loadCoordinatorData();
     await loadFiltersData();
     
-    // ✅ Rafraîchissement automatique
     if (activeInterval) clearInterval(activeInterval);
     activeInterval = setInterval(() => loadCoordinatorData(), 10000);
 }
@@ -515,10 +488,8 @@ async function loadCoordinatorData() {
 
     } catch (err) {
         console.error("❌ Erreur chargement données:", err);
-
         renderCoordinatorEmptyNotice("Impossible de charger les données terrain. Vérifiez la connexion ou le backend.");
         hideMapLoading();
-
         showToast("Erreur de chargement Radar Admin", "error");
     }
 }
@@ -537,7 +508,6 @@ function updateCoordinatorMarkers(aidants, patients) {
 
     const bounds = [];
 
-    // Patients
     if (Array.isArray(patients) && patients.length) {
         patients.forEach(patient => {
             const coords = safeLatLng(patient?.lat, patient?.lng);
@@ -545,7 +515,6 @@ function updateCoordinatorMarkers(aidants, patients) {
 
             try {
                 const icon = createCoordinatorIcon("#3B82F6", "home", false);
-
                 const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(map);
 
                 marker.bindPopup(`
@@ -568,7 +537,6 @@ function updateCoordinatorMarkers(aidants, patients) {
         });
     }
 
-    // Aidants
     if (Array.isArray(aidants) && aidants.length) {
         aidants.forEach(aidant => {
             const coords = safeLatLng(
@@ -595,7 +563,6 @@ function updateCoordinatorMarkers(aidants, patients) {
                 }
 
                 const icon = createCoordinatorIcon(color, iconName, !isStale);
-
                 const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(map);
 
                 marker.bindPopup(`
@@ -643,7 +610,40 @@ function updateCoordinatorMarkers(aidants, patients) {
     }
 }
 
+function renderCoordinatorEmptyNotice(message) {
+    const container = document.getElementById("live-map-container");
+    if (!container) return;
 
+    let notice = document.getElementById("coordinator-empty-notice");
+    if (!notice) {
+        notice = document.createElement("div");
+        notice.id = "coordinator-empty-notice";
+        notice.className = "absolute top-4 left-4 right-4 z-30 bg-white/95 backdrop-blur-sm border border-slate-100 rounded-2xl p-4 shadow-lg text-center";
+        container.appendChild(notice);
+    }
+
+    notice.innerHTML = `
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">État du terrain</p>
+        <p class="text-sm font-bold text-slate-700 mt-1">${escapeHtml(message)}</p>
+    `;
+}
+
+function hideCoordinatorEmptyNotice() {
+    const notice = document.getElementById("coordinator-empty-notice");
+    if (notice) notice.remove();
+}
+
+function updateCoordinatorCounters({ aidants = [], patients = [], outside = 0, stale = 0 }) {
+    const liveEl = document.getElementById("admin-live-count");
+    const patientEl = document.getElementById("admin-patient-count");
+    const alertEl = document.getElementById("admin-alert-count");
+    const staleEl = document.getElementById("admin-stale-count");
+
+    if (liveEl) liveEl.innerHTML = String(aidants.length);
+    if (patientEl) patientEl.innerHTML = String(patients.length);
+    if (alertEl) alertEl.innerHTML = String(outside);
+    if (staleEl) staleEl.innerHTML = String(stale);
+}
 
 let lastOutsideAlertCount = 0;
 
@@ -652,7 +652,6 @@ function updateCoordinatorStats(aidants) {
     const outside = aidants.filter(a => a.is_inside_geofence === false).length;
 
     const badge = document.getElementById("active-count-badge");
-
     if (badge) {
         badge.innerHTML = `${total} AIDANT${total > 1 ? "S" : ""} LIVE`;
         badge.classList.toggle("bg-amber-500", outside > 0);
@@ -820,7 +819,6 @@ function centerAllMarkers() {
     if (bounds.length > 0) {
         map.fitBounds(bounds, { padding: [50, 50] });
     } else {
-        // ✅ Centre par défaut si aucun marqueur
         map.setView([6.368, 2.401], 12);
     }
 }
@@ -922,33 +920,14 @@ window.centerOnAidantFromAlert = async (aidantId) => {
     document.getElementById('info-panel')?.classList.add('hidden');
 };
 
-
-function normalizeArray(data) {
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data?.data)) return data.data;
-    if (Array.isArray(data?.results)) return data.results;
-    return [];
-}
-
-function getSavedPatientId() {
-    return (
-        AppState.currentPatient ||
-        localStorage.getItem("current_patient_id") ||
-        localStorage.getItem("active_patient_id")
-    );
-}
-
-function setActivePatient(patientId) {
-    AppState.currentPatient = patientId;
-    localStorage.setItem("current_patient_id", patientId);
-    localStorage.setItem("active_patient_id", patientId);
-}
+// ============================================================
+// 🏠 VUE FAMILLE - SUIVI DE L'AIDANT
+// ============================================================
 
 async function getFamilyPatientForRadar() {
     let patients = normalizeArray(await secureFetch("/patients"));
     const userId = localStorage.getItem("user_id");
 
-    // Sécurité côté front : une famille ne doit voir que ses patients.
     if (userId) {
         patients = patients.filter(p => !p.famille_user_id || String(p.famille_user_id) === String(userId));
     }
@@ -964,7 +943,6 @@ async function getFamilyPatientForRadar() {
 
     if (savedPatientId) {
         const found = patients.find(p => String(p.id) === String(savedPatientId));
-
         if (found) {
             setActivePatient(found.id);
             return {
@@ -986,37 +964,6 @@ async function getFamilyPatientForRadar() {
         patient: null,
         reason: "MULTIPLE_PATIENTS"
     };
-}
-
-function clearMapRuntime() {
-    if (activeInterval) {
-        clearInterval(activeInterval);
-        activeInterval = null;
-    }
-
-    if (watchId) {
-        try {
-            navigator.geolocation.clearWatch(watchId);
-        } catch (e) {}
-        watchId = null;
-    }
-
-    if (map) {
-        try {
-            map.remove();
-        } catch (e) {}
-    }
-
-    map = null;
-    markers = {};
-
-    if (routeLayer) {
-        routeLayer = null;
-    }
-
-    if (trajectoryLayer) {
-        trajectoryLayer = null;
-    }
 }
 
 function renderRadarMessage({ icon, title, text, buttonText, buttonAction, color = "slate" }) {
@@ -1073,9 +1020,64 @@ function getVisitLastUpdate(activeVisit) {
     );
 }
 
+function clearMapRuntime() {
+    if (activeInterval) {
+        clearInterval(activeInterval);
+        activeInterval = null;
+    }
+
+    if (watchId) {
+        try {
+            navigator.geolocation.clearWatch(watchId);
+        } catch (e) {}
+        watchId = null;
+    }
+
+    if (map) {
+        try {
+            map.remove();
+        } catch (e) {}
+    }
+
+    map = null;
+    markers = {};
+
+    if (routeLayer) {
+        routeLayer = null;
+    }
+
+    if (trajectoryLayer) {
+        trajectoryLayer = null;
+    }
+}
+
+function hideMapLoading() {
+    const loaderElement = document.getElementById("map-loading");
+    if (loaderElement) {
+        loaderElement.style.opacity = "0";
+        setTimeout(() => {
+            loaderElement.style.display = "none";
+        }, 300);
+    }
+}
+
+function renderMapNoticeOnTop(message) {
+    const container = document.getElementById("live-map-container");
+    if (!container || document.getElementById("map-notice")) return;
+
+    const notice = document.createElement("div");
+    notice.id = "map-notice";
+    notice.className = "absolute top-4 left-4 right-4 z-30 bg-white/95 backdrop-blur-sm border border-amber-100 rounded-2xl p-3 shadow-lg text-center";
+    notice.innerHTML = `
+        <p class="text-[10px] font-black text-amber-600 uppercase tracking-wider">Information Radar</p>
+        <p class="text-xs text-slate-600 mt-1">${escapeHtml(message)}</p>
+    `;
+
+    container.appendChild(notice);
+}
+
 async function initSansPatientRadar() {
     const container = document.getElementById("view-container");
-
     clearMapRuntime();
 
     container.innerHTML = `
@@ -1112,1341 +1114,7 @@ async function initSansPatientRadar() {
         showToast("Aucune livraison active pour le moment", "info", 1500);
     });
 }
-// ============================================================
-// 👨‍👩‍👧 VUE FAMILLE
-// ============================================================
 
-async function initFamilyMap() {
-    const container = document.getElementById("view-container");
-    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
-    const isSansPatient = typeCompte === "SANS_PATIENT";
-
-    clearMapRuntime();
-
-    if (isSansPatient) {
-        await initSansPatientRadar();
-        return;
-    }
-
-    const result = await getFamilyPatientForRadar();
-
-    if (result.reason === "MULTIPLE_PATIENTS") {
-        renderRadarMessage({
-            icon: "fa-users",
-            title: "Choisissez un dossier",
-            text: "Vous avez plusieurs dossiers patients. Sélectionnez d’abord le patient concerné avant d’ouvrir le Radar.",
-            buttonText: "Choisir un dossier",
-            buttonAction: "window.switchView('patients')",
-            color: "amber"
-        });
-        return;
-    }
-
-    if (result.reason === "NO_PATIENT" || !result.patient) {
-        renderRadarMessage({
-            icon: "fa-user-slash",
-            title: "Aucun dossier patient",
-            text: "Le Radar médical s’active lorsqu’un dossier patient est associé au compte.",
-            buttonText: "Retour à l’accueil",
-            buttonAction: "window.switchView('home')",
-            color: "slate"
-        });
-        return;
-    }
-
-    currentPatient = result.patient;
-
-    container.innerHTML = `
-        <div class="animate-fadeIn flex flex-col h-[calc(100vh-120px)] pb-0">
-            <div class="flex justify-between items-center mb-4 shrink-0 flex-wrap gap-3">
-                <div>
-                    <h3 class="text-xl font-black text-slate-800">👨‍👩‍👧 Suivi de votre proche</h3>
-                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
-                        ${escapeHtml(currentPatient.nom_complet || "Dossier patient")}
-                    </p>
-                </div>
-                <button id="refresh-family-btn" class="bg-white p-2 rounded-xl shadow-md border border-slate-100">
-                    <i class="fa-solid fa-rotate-right text-slate-600"></i>
-                </button>
-            </div>
-
-            <div id="live-map-container" class="flex-1 w-full rounded-xl border-2 border-white shadow-lg relative overflow-hidden bg-slate-100" style="min-height: 50vh; height: auto;">
-                <div id="map" class="absolute inset-0 z-10 w-full h-full"></div>
-                <div id="map-loading" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center">
-                    <div class="text-center">
-                        <div class="relative w-8 h-8 mx-auto mb-2">
-                            <div class="absolute inset-0 border-3 border-slate-100 border-t-emerald-500 rounded-full animate-spin"></div>
-                        </div>
-                        <p class="text-[9px] font-black text-slate-400">Chargement du Radar...</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                <div class="flex items-center justify-between gap-3">
-                    <div>
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">STATUT</p>
-                        <p id="family-status" class="font-black text-emerald-600 text-sm">Chargement...</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">MISE À JOUR</p>
-                        <p id="family-last-update" class="text-[9px] text-slate-500">---</p>
-                    </div>
-                </div>
-
-                <div id="family-distance" class="mt-3 pt-3 border-t border-slate-100 hidden">
-                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">DISTANCE DE L’AIDANT</p>
-                    <p id="family-distance-value" class="font-black text-lg text-emerald-600">---</p>
-                </div>
-            </div>
-
-            <div class="mt-3 bg-white/90 backdrop-blur-sm p-2 rounded-xl border border-slate-100">
-                <div class="flex items-center justify-around text-[8px] font-bold">
-                    <div class="flex items-center gap-1">
-                        <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-                        <span>Domicile</span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span>Aidant actif</span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <div class="w-2 h-2 rounded-full bg-slate-300"></div>
-                        <span>Aucune intervention</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    await new Promise(r => setTimeout(r, 100));
-
-    const mapElement = document.getElementById("map");
-
-    if (!mapElement) {
-        console.error("❌ Élément map introuvable");
-        return;
-    }
-
-    if (mapElement._leaflet_id) {
-        mapElement._leaflet_id = null;
-    }
-
-    map = L.map("map", {
-        zoomControl: false,
-        attributionControl: false,
-        center: [6.368, 2.401],
-        zoom: 12
-    });
-
-    L.control.zoom({ position: "bottomright" }).addTo(map);
-
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-    }).addTo(map);
-
-    setTimeout(() => {
-        if (map) map.invalidateSize(true);
-    }, 300);
-
-    document.getElementById("refresh-family-btn")?.addEventListener("click", async () => {
-        await loadFamilyData();
-        showToast("Radar actualisé", "info", 1000);
-    });
-
-    await loadFamilyData();
-
-    if (activeInterval) clearInterval(activeInterval);
-    activeInterval = setInterval(() => loadFamilyData(), 15000);
-}
-
-
-
-async function loadFamilyData() {
-    try {
-        if (!map) return;
-
-        const statusEl = document.getElementById("family-status");
-        const lastUpdateEl = document.getElementById("family-last-update");
-        const distanceDiv = document.getElementById("family-distance");
-        const distanceValueEl = document.getElementById("family-distance-value");
-
-        if (!currentPatient) {
-            const result = await getFamilyPatientForRadar();
-
-            if (!result.patient) {
-                if (statusEl) statusEl.innerHTML = "❌ Aucun patient actif";
-                return;
-            }
-
-            currentPatient = result.patient;
-        }
-
-        Object.keys(markers).forEach(key => {
-            if (markers[key] && map) {
-                try {
-                    map.removeLayer(markers[key]);
-                } catch (e) {}
-                delete markers[key];
-            }
-        });
-
-        const patientLat = Number(currentPatient.lat);
-        const patientLng = Number(currentPatient.lng);
-
-        if (!patientLat || !patientLng) {
-            if (statusEl) statusEl.innerHTML = "⚠️ Adresse GPS non renseignée";
-            if (lastUpdateEl) lastUpdateEl.innerHTML = "---";
-            if (distanceDiv) distanceDiv.classList.add("hidden");
-
-            renderMapNoticeOnTop("Le domicile du patient n’a pas encore de position GPS enregistrée.");
-            map.setView([6.368, 2.401], 12);
-            return;
-        }
-
-        const homeIcon = createCustomIcon("#3B82F6", false, "lg", "home");
-
-        markers["patient_home"] = L.marker([patientLat, patientLng], { icon: homeIcon }).addTo(map);
-        markers["patient_home"].bindPopup(`
-            <div class="text-center p-2">
-                <p class="font-black text-slate-800">🏠 ${escapeHtml(currentPatient.nom_complet || "Patient")}</p>
-                <p class="text-[10px] text-slate-500">${escapeHtml(currentPatient.adresse || "Adresse non renseignée")}</p>
-            </div>
-        `);
-
-        let activeVisit = null;
-
-        try {
-            activeVisit = await secureFetch(`/visites/active/${currentPatient.id}`);
-        } catch (err) {
-            console.warn("Aucune visite active ou erreur endpoint:", err.message);
-            activeVisit = null;
-        }
-
-        const aidantPosition = getVisitAidantLatLng(activeVisit);
-
-        if (!activeVisit || activeVisit.hasActiveVisit === false || activeVisit.active === false) {
-            if (statusEl) statusEl.innerHTML = "⚪ Aucune intervention en cours";
-            if (lastUpdateEl) lastUpdateEl.innerHTML = "---";
-            if (distanceDiv) distanceDiv.classList.add("hidden");
-
-            map.setView([patientLat, patientLng], 15);
-            hideMapLoading();
-            return;
-        }
-
-        if (!aidantPosition) {
-            if (statusEl) statusEl.innerHTML = "🟡 Intervention active, position aidant indisponible";
-            if (lastUpdateEl) lastUpdateEl.innerHTML = getVisitLastUpdate(activeVisit)
-                ? new Date(getVisitLastUpdate(activeVisit)).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
-                : "---";
-
-            if (distanceDiv) distanceDiv.classList.add("hidden");
-
-            map.setView([patientLat, patientLng], 15);
-            hideMapLoading();
-            return;
-        }
-
-        const aidantIcon = createCustomIcon("#10B981", true, "lg", "user-nurse");
-
-        markers["aidant_active"] = L.marker([aidantPosition.lat, aidantPosition.lng], { icon: aidantIcon }).addTo(map);
-        markers["aidant_active"].bindPopup(`
-            <div class="text-center p-2">
-                <p class="font-black text-slate-800">👩‍⚕️ ${escapeHtml(activeVisit.aidant_nom || activeVisit.aidant?.nom || "Intervenant")}</p>
-                <p class="text-[10px] text-emerald-600 font-bold">Intervention en cours</p>
-            </div>
-        `);
-
-        const distance = calculateDistance(
-            aidantPosition.lat,
-            aidantPosition.lng,
-            patientLat,
-            patientLng
-        );
-
-        if (statusEl) statusEl.innerHTML = "🟢 Intervention en cours";
-        if (lastUpdateEl) {
-            const lastUpdate = getVisitLastUpdate(activeVisit);
-            lastUpdateEl.innerHTML = lastUpdate
-                ? new Date(lastUpdate).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
-                : "À l’instant";
-        }
-
-        if (distanceDiv) distanceDiv.classList.remove("hidden");
-        if (distanceValueEl) distanceValueEl.innerHTML = formatDistance(distance);
-
-        const bounds = L.latLngBounds(
-            [patientLat, patientLng],
-            [aidantPosition.lat, aidantPosition.lng]
-        );
-
-        map.fitBounds(bounds, { padding: [60, 60] });
-
-        hideMapLoading();
-
-    } catch (err) {
-        console.error("❌ Erreur loadFamilyData:", err);
-
-        const statusEl = document.getElementById("family-status");
-        if (statusEl) statusEl.innerHTML = "❌ Erreur de chargement";
-
-        hideMapLoading();
-        showToast("Erreur de chargement du Radar", "error");
-    }
-}
-
-function hideMapLoading() {
-    const loaderElement = document.getElementById("map-loading");
-
-    if (loaderElement) {
-        loaderElement.style.opacity = "0";
-        setTimeout(() => {
-            loaderElement.style.display = "none";
-        }, 300);
-    }
-}
-
-function renderMapNoticeOnTop(message) {
-    const container = document.getElementById("live-map-container");
-
-    if (!container || document.getElementById("map-notice")) return;
-
-    const notice = document.createElement("div");
-    notice.id = "map-notice";
-    notice.className = "absolute top-4 left-4 right-4 z-30 bg-white/95 backdrop-blur-sm border border-amber-100 rounded-2xl p-3 shadow-lg text-center";
-    notice.innerHTML = `
-        <p class="text-[10px] font-black text-amber-600 uppercase tracking-wider">Information Radar</p>
-        <p class="text-xs text-slate-600 mt-1">${escapeHtml(message)}</p>
-    `;
-
-    container.appendChild(notice);
-}
-
-
-
-async function getAidantActiveMission() {
-    try {
-        const visits = normalizeArray(await secureFetch("/visites"));
-        const active = visits.find(v =>
-            v.statut === "En cours" ||
-            v.statut === "Démarrée" ||
-            v.statut === "En route"
-        );
-
-        if (!active) {
-            return null;
-        }
-
-        return active;
-    } catch (err) {
-        console.warn("Impossible de charger la mission active aidant:", err.message);
-        return null;
-    }
-}
-
-function getPatientFromVisit(visit) {
-    if (!visit) return null;
-
-    return (
-        visit.patient ||
-        visit.patients ||
-        {
-            id: visit.patient_id,
-            nom_complet: visit.patient_nom || visit.nom_patient || "Patient",
-            adresse: visit.patient_adresse || visit.adresse || "",
-            lat: visit.patient_lat || visit.lat_patient || visit.lat,
-            lng: visit.patient_lng || visit.lng_patient || visit.lng
-        }
-    );
-}
-
-function getPatientLatLng(patient) {
-    if (!patient) return null;
-
-    const lat = patient.lat || patient.latitude || patient.gps_lat;
-    const lng = patient.lng || patient.longitude || patient.gps_lng;
-
-    if (!lat || !lng) return null;
-
-    return {
-        lat: Number(lat),
-        lng: Number(lng)
-    };
-}
-
-function renderAidantNoMission() {
-    renderRadarMessage({
-        icon: "fa-route",
-        title: "Aucune mission active",
-        text: "Le Radar s’active lorsqu’une visite ou une mission vous est assignée. Vous pouvez consulter vos patients ou attendre une nouvelle intervention.",
-        buttonText: "Voir mes patients",
-        buttonAction: "window.switchView('patients')",
-        color: "slate"
-    });
-}
-
-
-// ============================================================
-// 🧭 VUE AIDANT
-// ============================================================
-async function initAidantMap() {
-    const container = document.getElementById('view-container');
-
-        clearMapRuntime();
-
-    const activeMission = await getAidantActiveMission();
-
-    if (!activeMission) {
-        renderAidantNoMission();
-        return;
-    }
-
-    const activePatient = getPatientFromVisit(activeMission);
-
-    if (!activePatient || !activePatient.id) {
-        renderRadarMessage({
-            icon: "fa-triangle-exclamation",
-            title: "Mission incomplète",
-            text: "Une mission semble active, mais le patient associé est introuvable.",
-            buttonText: "Voir mes visites",
-            buttonAction: "window.switchView('visits')",
-            color: "amber"
-        });
-        return;
-    }
-    
-    // ✅ Utiliser toute la hauteur disponible
-    container.innerHTML = `
-        <div class="animate-fadeIn flex flex-col h-[calc(100vh-120px)] pb-0">
-            <div class="flex justify-between items-center mb-4 shrink-0 flex-wrap gap-3">
-                <div>
-                    <h3 class="text-xl font-black text-slate-800">🧭 Navigation GPS</h3>
-                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Guidage vers le domicile du patient</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button id="center-map-btn" class="bg-white p-2 rounded-xl shadow-md border border-slate-100">
-                        <i class="fa-solid fa-location-crosshairs text-slate-600"></i>
-                    </button>
-                    <button id="improve-gps-btn" 
-                            class="bg-blue-500 text-white p-2 rounded-xl shadow-md border border-slate-100 active:scale-95 transition-all"
-                            title="Améliorer la précision GPS">
-                        <i class="fa-solid fa-satellite-dish text-sm"></i>
-                    </button>
-                    <button id="clear-trajectory-btn" class="bg-slate-100 p-2 rounded-xl shadow-md border border-slate-100">
-                        <i class="fa-solid fa-eraser text-slate-600"></i>
-                    </button>
-                    <button id="stop-navigation-btn" class="bg-rose-500 text-white px-3 py-2 rounded-xl shadow-md text-[9px] font-black uppercase hidden">
-                        <i class="fa-solid fa-stop"></i> Arrêter
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Bandeau GPS -->
-            <div id="gps-warning" class="mb-3 bg-amber-50 border border-amber-200 p-3 rounded-xl hidden">
-                <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-location-dot text-amber-500 text-lg"></i>
-                    <div class="flex-1">
-                        <p class="text-sm font-black text-amber-800">GPS non activé</p>
-                        <p class="text-[9px] text-amber-700">Activez votre position pour utiliser la navigation</p>
-                    </div>
-                    <button id="enable-gps-btn" class="bg-amber-500 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase">
-                        Activer GPS
-                    </button>
-                </div>
-            </div>
-            
-            <div class="mb-3 bg-white p-3 rounded-xl shadow-sm border border-slate-100">
-                <label class="text-[8px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                    <i class="fa-solid fa-hospital-user mr-1"></i> Mission active
-                </label>
-                <div class="flex items-center justify-between gap-3">
-                    <div>
-                        <p class="font-black text-slate-800 text-sm">${escapeHtml(activePatient.nom_complet || "Patient")}</p>
-                        <p class="text-[9px] text-slate-400">${escapeHtml(activePatient.adresse || "Adresse non renseignée")}</p>
-                    </div>
-                    <span class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[8px] font-black uppercase">
-                        En cours
-                    </span>
-                </div>
-            </div>
-            
-            <!-- Panneau de navigation compact -->
-            <div id="navigation-panel" class="mb-3 bg-emerald-500 text-white p-3 rounded-xl shadow-lg hidden">
-                <div class="flex items-center justify-between">
-                    <div><p class="text-[7px] font-black uppercase opacity-80">DESTINATION</p><p id="dest-name" class="font-black text-sm">---</p></div>
-                    <i class="fa-solid fa-route text-xl opacity-80"></i>
-                </div>
-                <div class="grid grid-cols-2 gap-3 mt-2 pt-2 border-t border-white/20">
-                    <div><p class="text-[7px] font-black uppercase opacity-80">DISTANCE</p><p id="distance-display" class="font-black text-base">---</p></div>
-                    <div><p class="text-[7px] font-black uppercase opacity-80">TEMPS</p><p id="time-display" class="font-black text-base">---</p></div>
-                </div>
-                <div id="direction-arrow" class="mt-2 text-center text-[9px]">
-                    <i class="fa-solid fa-location-arrow text-lg animate-pulse"></i>
-                    <span id="direction-text" class="ml-1">Suivez l'itinéraire</span>
-                </div>
-            </div>
-            
-            <!-- ✅ CARTE PLEIN ÉCRAN -->
-            <div id="live-map-container" class="flex-1 w-full rounded-xl border-2 border-white shadow-lg relative overflow-hidden bg-slate-100" style="min-height: 50vh; height: auto;">
-                <div id="map" class="absolute inset-0 z-10 w-full h-full"></div>
-                <div id="map-loading" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center">
-                    <div class="text-center">
-                        <div class="relative w-8 h-8 mx-auto mb-2">
-                            <div class="absolute inset-0 border-3 border-slate-100 border-t-emerald-500 rounded-full animate-spin"></div>
-                        </div>
-                        <p class="text-[9px] font-black text-slate-400">Chargement...</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Légende compacte -->
-            <div class="mt-3 bg-white/90 backdrop-blur-sm p-2 rounded-xl border border-slate-100">
-                <div class="flex items-center justify-around text-[8px] font-bold">
-                    <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div><span>Ma position</span></div>
-                    <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-blue-500"></div><span>Patient</span></div>
-                    <div class="flex items-center gap-1"><div class="w-2 h-2 bg-emerald-400"></div><span>Itinéraire</span></div>
-                    <div class="flex items-center gap-1"><div class="w-2 h-2 bg-amber-500 rounded-full"></div><span>Trajectoire</span></div>
-                </div>
-            </div>
-            
-            <button id="fix-patient-gps" class="mt-2 w-full py-2 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase hidden">
-                📍 Fixer ce lieu comme domicile du patient
-            </button>
-        </div>
-    `;
-    
-    setTimeout(async () => {
-        const mapElement = document.getElementById('map');
-        if (!mapElement) return;
-        if (map) { map.remove(); map = null; markers = {}; }
-        
-        // ============================================
-        // ✅ CRÉATION DE LA CARTE
-        // ============================================
-        map = L.map('map', { zoomControl: false, attributionControl: false, zoomSnap: 0.5 });
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-        
-        // Option 1 : OpenStreetMap classique (précis, gratuit)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-            maxZoom: 20,
-            subdomains: ['a', 'b', 'c']
-        }).addTo(map);
-        
-        // Option 2 : Satellite (très précis pour les repères visuels)
-        // L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        //     attribution: 'Tiles &copy; Esri',
-        //     maxZoom: 19
-        // }).addTo(map);
-        
-        // Option 3 : Google Maps-like (gratuit, bonne précision)
-        // L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-        //     attribution: 'Google',
-        //     maxZoom: 20,
-        //     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        // }).addTo(map);        
-        // ============================================
-        // ✅ FORCER LA TAILLE DE LA CARTE (AJOUTÉ ICI)
-        // ============================================
-        setTimeout(() => {
-            if (map) {
-                map.invalidateSize(true);
-                setTimeout(() => {
-                    if (map) map.invalidateSize(true);
-                }, 500);
-            }
-        }, 300);
-        
-        // ============================================
-        // ✅ BOUTONS ET ÉVÉNEMENTS
-        // ============================================
-        const enableGpsBtn = document.getElementById('enable-gps-btn');
-        const gpsWarning = document.getElementById('gps-warning');
-        
-        // ✅ 3. FONCTION POUR DEMANDER LA POSITION
-        const requestLocation = () => {
-            if (!navigator.geolocation) {
-                showToast("GPS non supporté par votre navigateur", "error");
-                gpsWarning?.classList.remove('hidden');
-                return false;
-            }
-            
-            showToast("📍 Recherche de votre position...", "info", 2000);
-            
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    console.log("✅ Position obtenue:", position.coords);
-                    gpsWarning?.classList.add('hidden');
-                    showToast("GPS activé !", "success");
-                    
-                    const aidantIcon = createCustomIcon('#10B981', true, 'lg', 'user-nurse');
-                    if (markers['aidant']) map.removeLayer(markers['aidant']);
-                    markers['aidant'] = L.marker([position.coords.latitude, position.coords.longitude], { icon: aidantIcon }).addTo(map);
-                    map.setView([position.coords.latitude, position.coords.longitude], 16);
-                    
-                    startAidantTracking();
-                    return true;
-                },
-                (error) => {
-                    console.error("Erreur GPS:", error);
-                    let message = "Impossible d'obtenir votre position";
-                    if (error.code === 1) {
-                        message = "❌ Vous devez autoriser l'accès à votre position";
-                        if (error.message && error.message.includes("denied")) {
-                            message = "❌ Accès refusé. Autorisez dans les paramètres puis rafraîchissez.";
-                        }
-                    }
-                    if (error.code === 2) message = "📍 Position indisponible, réessayez";
-                    if (error.code === 3) message = "⏱️ Délai dépassé, vérifiez votre connexion";
-                    
-                    showToast(message, "error", 5000);
-                    gpsWarning?.classList.remove('hidden');
-                    
-                    const warningText = document.querySelector('#gps-warning .text-amber-700');
-                    if (warningText) warningText.innerHTML = message;
-                    
-                    return false;
-                },
-                { 
-                    enableHighAccuracy: true, 
-                    timeout: 15000,
-                    maximumAge: 0
-                }
-            );
-        };
-        
-        // Centrage sur position actuelle
-        document.getElementById('center-map-btn')?.addEventListener('click', () => {
-            requestLocation();
-        });
-        
-        // Effacer trajectoire
-        document.getElementById('clear-trajectory-btn')?.addEventListener('click', () => { 
-            clearTrajectory(); 
-            showToast("Trajectoire effacée", "info"); 
-        });
-        
-        // Activer GPS
-        enableGpsBtn?.addEventListener('click', () => {
-            requestLocation();
-        });
-        
-        // Fixer domicile patient
-        document.getElementById('fix-patient-gps')?.addEventListener('click', () => fixCurrentLocationAsPatientHome());
-        
-        // Arrêter navigation
-        document.getElementById('stop-navigation-btn')?.addEventListener('click', () => stopNavigation());
-        
-        AppState.currentPatient = activePatient.id;
-        localStorage.setItem("current_patient_id", activePatient.id);
-        localStorage.setItem("active_patient_id", activePatient.id);
-        
-        await startNavigation(activePatient.id, activePatient);
-        
-        // Cacher loader
-        const mapLoading = document.getElementById('map-loading');
-        if (mapLoading) {
-            setTimeout(() => {
-                mapLoading.style.opacity = '0';
-                setTimeout(() => mapLoading.style.display = 'none', 300);
-            }, 500);
-        }
-
-
-// ✅ Ajoute l'écouteur du bouton "Améliorer la précision" ICI
-const improveGpsBtn = document.getElementById('improve-gps-btn');
-if (improveGpsBtn) {
-    improveGpsBtn.addEventListener('click', async () => {
-        try {
-            const result = await improveGPSAccuracy();
-            if (result && result.position) {
-                const { latitude, longitude } = result.position.coords;
-                if (markers['aidant']) {
-                    markers['aidant'].setLatLng([latitude, longitude]);
-                    map.setView([latitude, longitude], 18);
-                }
-                showToast(`🎯 Précision optimisée à ${Math.round(result.accuracy)} mètres`, "success");
-            }
-        } catch (err) {
-            showToast("Impossible d'améliorer la précision", "error");
-        }
-    });
-}
-
-// Démarrer la demande GPS
-requestLocation();
-
-        
-    }, 100);
-}
-
-
-
-
-
-
-/**
- * 📍 AJOUTER UN CERCLE DE PRÉCISION SUR LA CARTE
- */
-function addAccuracyCircle(lat, lng, accuracy, color = '#3B82F6') {
-    // Supprimer l'ancien cercle s'il existe
-    if (window._accuracyCircle) {
-        map.removeLayer(window._accuracyCircle);
-    }
-    
-    // Créer le cercle de précision
-    const circle = L.circle([lat, lng], {
-        radius: accuracy,
-        color: color,
-        fillColor: color,
-        fillOpacity: 0.15,
-        weight: 2,
-        opacity: 0.6
-    }).addTo(map);
-    
-    window._accuracyCircle = circle;
-    return circle;
-}
-
-/**
- * 📍 AJOUTER UN MARQUEUR DE POSITION AVEC CERCLE DE PRÉCISION
- */
-function addPositionMarkerWithAccuracy(lat, lng, accuracy, label = "Ma position") {
-    // Supprimer l'ancien marqueur
-    if (window._positionMarker) {
-        map.removeLayer(window._positionMarker);
-    }
-    if (window._positionCircle) {
-        map.removeLayer(window._positionCircle);
-    }
-    
-    // Icône personnalisée
-    const icon = L.divIcon({
-        className: 'position-marker',
-        html: `
-            <div class="relative">
-                <div class="w-5 h-5 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
-                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-blue-500 rounded-full opacity-30 animate-ping"></div>
-            </div>
-        `,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10]
-    });
-    
-    window._positionMarker = L.marker([lat, lng], { icon }).addTo(map);
-    window._positionCircle = L.circle([lat, lng], {
-        radius: accuracy,
-        color: '#3B82F6',
-        fillColor: '#60A5FA',
-        fillOpacity: 0.15,
-        weight: 2
-    }).addTo(map);
-    
-    // Popup avec infos
-    window._positionMarker.bindPopup(`
-        <div class="text-center p-1">
-            <p class="font-black text-xs">${label}</p>
-            <p class="text-[9px] text-slate-500">Précision: ${Math.round(accuracy)} mètres</p>
-        </div>
-    `);
-}
-
-
-/**
- * 🎯 AMÉLIORER LA PRÉCISION GPS (mode dédié)
- */
-async function improveGPSAccuracy() {
-    return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-            Swal.fire("Erreur", "GPS non supporté", "error");
-            reject();
-            return;
-        }
-        
-        let bestAccuracy = Infinity;
-        let bestPosition = null;
-        let attempts = 0;
-        let watchId = null;
-        
-        Swal.fire({
-            title: "📍 Amélioration de la précision",
-            html: `
-                <div class="text-center">
-                    <div class="relative w-20 h-20 mx-auto mb-4">
-                        <div class="absolute inset-0 border-4 border-slate-100 border-t-emerald-500 rounded-full animate-spin"></div>
-                        <i class="fa-solid fa-satellite-dish absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-500 text-2xl"></i>
-                    </div>
-                    <p class="text-sm font-bold">Recherche du signal GPS...</p>
-                    <p class="text-xs text-slate-500 mt-2">Déplacez-vous lentement</p>
-                    <div class="mt-4 w-full bg-slate-200 rounded-full h-2">
-                        <div id="gps-accuracy-bar" class="bg-emerald-500 h-2 rounded-full transition-all" style="width: 0%"></div>
-                    </div>
-                    <p id="gps-accuracy-value" class="text-[10px] text-slate-400 mt-2">En attente...</p>
-                    <p id="gps-advice" class="text-[9px] text-amber-500 mt-3">⚡ Déplacez-vous vers un espace dégagé</p>
-                </div>
-            `,
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            didOpen: () => {
-                watchId = navigator.geolocation.watchPosition(
-                    (position) => {
-                        const accuracy = position.coords.accuracy;
-                        attempts++;
-                        
-                        // Mettre à jour l'affichage
-                        const percent = Math.min(100, (100 - accuracy) * 1.5);
-                        document.getElementById('gps-accuracy-bar').style.width = `${Math.max(0, percent)}%`;
-                        document.getElementById('gps-accuracy-value').innerHTML = `Précision: ${Math.round(accuracy)} mètres`;
-                        
-                        // Conseils selon la précision
-                        const adviceEl = document.getElementById('gps-advice');
-                        if (accuracy > 100) {
-                            adviceEl.innerHTML = '⚠️ Précision faible - Déplacez-vous vers un espace dégagé';
-                            adviceEl.className = 'text-[9px] text-amber-500 mt-3';
-                        } else if (accuracy > 50) {
-                            adviceEl.innerHTML = '👍 Précision moyenne - Encore un peu...';
-                            adviceEl.className = 'text-[9px] text-blue-500 mt-3';
-                        } else if (accuracy > 20) {
-                            adviceEl.innerHTML = '✅ Bonne précision - Attendez la stabilisation';
-                            adviceEl.className = 'text-[9px] text-emerald-500 mt-3';
-                        } else {
-                            adviceEl.innerHTML = '🎯 Précision excellente ! Position prête';
-                            adviceEl.className = 'text-[9px] text-emerald-600 font-bold mt-3';
-                        }
-                        
-                        if (accuracy < bestAccuracy) {
-                            bestAccuracy = accuracy;
-                            bestPosition = position;
-                        }
-                        
-                        // Condition d'arrêt
-                        if (accuracy < 20 && attempts > 5) {
-                            navigator.geolocation.clearWatch(watchId);
-                            Swal.close();
-                            resolve({ position: bestPosition, accuracy: bestAccuracy });
-                        } else if (attempts > 30) {
-                            navigator.geolocation.clearWatch(watchId);
-                            Swal.close();
-                            if (bestPosition) {
-                                resolve({ position: bestPosition, accuracy: bestAccuracy });
-                            } else {
-                                reject();
-                            }
-                        }
-                    },
-                    (error) => {
-                        console.error("Erreur GPS:", error);
-                        navigator.geolocation.clearWatch(watchId);
-                        Swal.close();
-                        reject();
-                    },
-                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-                );
-            }
-        }).then(() => {
-            if (bestPosition) {
-                Swal.fire({
-                    title: "✅ Précision optimisée !",
-                    html: `Précision finale: <b>${Math.round(bestAccuracy)} mètres</b>`,
-                    icon: bestAccuracy < 50 ? "success" : "warning",
-                    confirmButtonText: "OK"
-                });
-            }
-        });
-    });
-}
-
-/**
- * 📍 LISSAGE DES POSITIONS GPS (filtre des positions aberrantes)
- */
-let positionHistory = [];
-let lastValidPosition = null;
-
-function smoothPosition(lat, lng, accuracy, maxHistory = 5) {
-    // Ignorer les positions trop imprécises
-    if (accuracy > 100) {
-        console.log(`📍 Position ignorée (précision: ${Math.round(accuracy)}m)`);
-        return lastValidPosition || { lat, lng };
-    }
-    
-    // Ignorer les sauts trop grands (> 50m)
-    if (lastValidPosition) {
-        const distance = calculateDistance(
-            lat, lng, 
-            lastValidPosition.lat, lastValidPosition.lng
-        );
-        if (distance > 50) {
-            console.log(`📍 Saut de position détecté (${Math.round(distance)}m), ignoré`);
-            return lastValidPosition;
-        }
-    }
-    
-    // Ajouter à l'historique
-    positionHistory.push({ lat, lng, accuracy, timestamp: Date.now() });
-    if (positionHistory.length > maxHistory) positionHistory.shift();
-    
-    // Calculer la moyenne des positions récentes
-    if (positionHistory.length >= 3) {
-        const recent = positionHistory.slice(-3);
-        const avgLat = recent.reduce((sum, p) => sum + p.lat, 0) / 3;
-        const avgLng = recent.reduce((sum, p) => sum + p.lng, 0) / 3;
-        lastValidPosition = { lat: avgLat, lng: avgLng };
-        return lastValidPosition;
-    }
-    
-    lastValidPosition = { lat, lng };
-    return lastValidPosition;
-}
-
-
-async function loadAssignedPatients() {
-    try {
-        const patients = await secureFetch('/patients');
-        const selector = document.getElementById('patient-selector');
-        if (selector && patients?.length) {
-            selector.innerHTML = '<option value="">-- Choisir un patient --</option>' +
-                patients.map(p => `<option value="${p.id}" data-lat="${p.lat || ''}" data-lng="${p.lng || ''}">🏠 ${p.nom_complet} - ${p.adresse?.substring(0, 40) || 'Adresse non renseignée'}</option>`).join('');
-        }
-    } catch (err) { console.error(err); }
-}
-
-async function startNavigation(patientId, fallbackPatient = null) {
-    try {
-        let patient = fallbackPatient;
-
-        if (!patient) {
-            patient = await secureFetch(`/patients/${patientId}`);
-        }
-
-        const patientCoords = getPatientLatLng(patient);
-
-        if (!patientCoords) {
-            UI.warning("Le domicile du patient n’a pas encore de position GPS.");
-            document.getElementById('fix-patient-gps')?.classList.remove('hidden');
-        
-            const navPanel = document.getElementById("navigation-panel");
-            if (navPanel) navPanel.classList.add("hidden");
-        
-            map.setView([6.368, 2.401], 12);
-            return;
-        }
-
-        
-        document.getElementById('fix-patient-gps').classList.add('hidden');
-        
-        currentPatient = patient;
-        currentPatientCoords = patientCoords;
-        isNavigating = true;  // ← Vérifie que cette ligne est bien là
-        
-        console.log("🚗 Navigation démarrée vers:", currentPatientCoords);
-        
-        // Afficher le panneau
-        document.getElementById('navigation-panel').classList.remove('hidden');
-        document.getElementById('stop-navigation-btn').classList.remove('hidden');
-        document.getElementById('dest-name').innerText = patient.nom_complet;
-        
-        // Ajouter marqueur patient
-        if (markers['patient']) map.removeLayer(markers['patient']);
-        const patientIcon = createCustomIcon('#3B82F6', false, 'lg', 'home');
-        markers['patient'] = L.marker([patientCoords.lat, patientCoords.lng], { icon: patientIcon }).addTo(map);        
-        // Calculer l'itinéraire initial
-        await calculateAndDisplayRoute();
-        
-        // Vérifier si déjà arrivé
-        checkIfArrived();
-        
-    } catch (err) { 
-        console.error("Erreur startNavigation:", err);
-        UI.error("Impossible de démarrer la navigation"); 
-    }
-}
-
-function stopNavigation() {
-    isNavigating = false;
-    currentPatient = null;
-    currentPatientCoords = null;
-    offRouteAlertShown = false;
-    document.getElementById('navigation-panel').classList.add('hidden');
-    document.getElementById('stop-navigation-btn').classList.add('hidden');
-    if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
-    if (markers['patient']) { map.removeLayer(markers['patient']); delete markers['patient']; }
-}
-
-async function calculateAndDisplayRoute() {
-    if (!isNavigating || !currentPatientCoords) return;
-    if (!navigator.geolocation) return;
-    
-    navigator.geolocation.getCurrentPosition(async (position) => {
-        const startLat = position.coords.latitude;
-        const startLng = position.coords.longitude;
-        const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${currentPatientCoords.lng},${currentPatientCoords.lat}?overview=full&geometries=geojson&steps=true`;
-        
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
-            if (data.routes?.length) {
-                const route = data.routes[0];
-                const distance = route.distance;
-                const duration = route.duration;
-                
-                // ✅ Mettre à jour l'affichage
-                const distanceDisplay = document.getElementById('distance-display');
-                const timeDisplay = document.getElementById('time-display');
-                
-                if (distanceDisplay) distanceDisplay.innerHTML = formatDistance(distance);
-                if (timeDisplay) timeDisplay.innerHTML = formatDuration(duration);
-                
-                console.log(`📍 Distance: ${formatDistance(distance)}, Temps: ${formatDuration(duration)}`);
-                
-                // Dessiner la route
-                if (routeLayer) map.removeLayer(routeLayer);
-                routeLayer = L.geoJSON(route.geometry, { 
-                    style: { color: '#10B981', weight: 5, opacity: 0.9 } 
-                }).addTo(map);
-                
-                lastRouteCalculation = Date.now();
-            } else {
-                console.warn("Aucun itinéraire trouvé");
-            }
-        } catch (err) { 
-            console.error("Erreur calcul itinéraire:", err);
-        }
-    }, (err) => { 
-        console.warn("Erreur GPS:", err.message);
-    });
-}
-
-
-
-function checkIfOffRoute(currentLat, currentLng, route) {
-    if (!route?.geometry?.coordinates) return;
-    let minDistance = Infinity;
-    for (const point of route.geometry.coordinates) {
-        const distance = calculateDistance(currentLat, currentLng, point[1], point[0]);
-        if (distance < minDistance) minDistance = distance;
-    }
-    const directionText = document.getElementById('direction-text');
-    if (minDistance > OFF_ROUTE_THRESHOLD && !offRouteAlertShown) {
-        offRouteAlertShown = true;
-        directionText.innerHTML = '⚠️ Vous vous êtes écarté de l\'itinéraire ! Recalcul...';
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-        showToast("⚠️ Vous vous êtes écarté de l'itinéraire", "warning", 5000);
-        setTimeout(() => { offRouteAlertShown = false; calculateAndDisplayRoute(); setTimeout(() => directionText.innerHTML = 'Suivez l\'itinéraire tracé', 3000); }, 3000);
-    } else if (minDistance <= OFF_ROUTE_THRESHOLD) {
-        offRouteAlertShown = false;
-        directionText.innerHTML = '✅ Suivez l\'itinéraire tracé';
-    }
-}
-
-function checkIfArrived() {
-    if (!isNavigating || !currentPatientCoords) return;
-    navigator.geolocation.getCurrentPosition((position) => {
-        const distance = calculateDistance(position.coords.latitude, position.coords.longitude, currentPatientCoords.lat, currentPatientCoords.lng);
-        if (distance < 50) {
-            if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
-            showToast("🎉 Vous êtes arrivé à destination !", "success", 5000);
-            Swal.fire({ icon: "success", title: "Arrivé à destination !", text: `Vous êtes au domicile de ${currentPatient.nom_complet}`, confirmButtonText: "Démarrer la visite", confirmButtonColor: "#10B981", showCancelButton: true, cancelButtonText: "Plus tard" }).then((result) => { if (result.isConfirmed) window.startVisit(currentPatient.id); });
-        }
-    });
-}
-
-
-
-
-async function fixCurrentLocationAsPatientHome() {
-    const selector = document.getElementById('patient-selector');
-    const patientId = selector?.value;
-    const patientName = selector?.options[selector.selectedIndex]?.text?.split(' -')[0];
-    
-    if (!patientId) {
-        UI.warning("Sélectionnez d'abord un patient");
-        return;
-    }
-
-    if (!navigator.geolocation) {
-        return Swal.fire({
-            title: "GPS non supporté",
-            text: "Votre navigateur ne supporte pas la géolocalisation.",
-            icon: "error"
-        });
-    }
-
-    // Vérifier la permission
-    let permissionStatus = null;
-    if (navigator.permissions && navigator.permissions.query) {
-        try {
-            permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-            console.log("État permission GPS :", permissionStatus.state);
-        } catch (e) {
-            console.warn("Erreur permission", e);
-        }
-    }
-
-    if (permissionStatus && permissionStatus.state === 'denied') {
-        Swal.fire({
-            title: "📍 Accès GPS refusé",
-            html: `
-                <div class="text-left">
-                    <p class="mb-2">Vous avez refusé l'accès à votre position.</p>
-                    <p class="text-xs text-slate-500">Pour réactiver :</p>
-                    <ul class="text-xs text-left mt-2 space-y-1">
-                        <li>• <strong>Android (Chrome)</strong> : 🔒 Cadenas → Autorisations → Position → Autoriser</li>
-                        <li>• <strong>iPhone (Safari)</strong> : ⚙️ Réglages → Confidentialité → Localisation → Safari → Autoriser</li>
-                    </ul>
-                </div>
-            `,
-            icon: "warning",
-            confirmButtonText: "OK"
-        });
-        return;
-    }
-
-    const confirm = await Swal.fire({
-        title: "📍 Enregistrer le domicile",
-        text: `Voulez-vous utiliser votre position actuelle comme domicile de ${patientName} ?`,
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonText: "OUI, ENREGISTRER",
-        confirmButtonColor: "#10B981",
-        cancelButtonText: "Annuler"
-    });
-    
-    if (!confirm.isConfirmed) return;
-
-    Swal.fire({
-        title: "Recherche GPS...",
-        html: `
-            <div class="text-center">
-                <div class="relative w-12 h-12 mx-auto mb-3">
-                    <div class="absolute inset-0 border-3 border-slate-100 border-t-emerald-500 rounded-full animate-spin"></div>
-                    <i class="fa-solid fa-location-dot absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-500"></i>
-                </div>
-                <p class="text-xs text-slate-600">Recherche du signal GPS...</p>
-                <p class="text-[9px] text-slate-400 mt-2">Déplacez-vous dans un espace dégagé</p>
-            </div>
-        `,
-        allowOutsideClick: false,
-        showConfirmButton: false
-    });
-
-    const options = {
-        enableHighAccuracy: true,
-        timeout: 30000,
-        maximumAge: 0
-    };
-
-    navigator.geolocation.getCurrentPosition(
-        async (position) => {
-            const accuracy = position.coords.accuracy;
-            console.log(`✅ Position: ${position.coords.latitude}, ${position.coords.longitude} (précision: ${Math.round(accuracy)}m)`);
-            
-            // Message selon la précision
-            let precisionText = "";
-            let precisionColor = "";
-            
-            if (accuracy < 20) {
-                precisionText = "Précision excellente ! 🎯";
-                precisionColor = "text-emerald-600";
-            } else if (accuracy < 50) {
-                precisionText = "Bonne précision 👍";
-                precisionColor = "text-blue-600";
-            } else if (accuracy < 100) {
-                precisionText = "Précision moyenne ⚠️";
-                precisionColor = "text-amber-600";
-            } else {
-                precisionText = "Précision faible 📡";
-                precisionColor = "text-rose-600";
-            }
-            
-            // Si précision faible, proposer de réessayer
-            if (accuracy > 100) {
-                const retry = await Swal.fire({
-                    title: "📍 Signal GPS faible",
-                    html: `
-                        <div class="text-center">
-                            <p class="text-sm font-bold ${precisionColor}">${precisionText}</p>
-                            <p class="text-xs text-slate-500 mt-2">Précision: ${Math.round(accuracy)} mètres</p>
-                            <p class="text-[10px] text-slate-400 mt-3">Déplacez-vous dans un espace dégagé.</p>
-                        </div>
-                    `,
-                    icon: "warning",
-                    showCancelButton: true,
-                    confirmButtonText: "🔄 Réessayer",
-                    cancelButtonText: "✅ Enregistrer quand même",
-                    confirmButtonColor: "#F59E0B",
-                    cancelButtonColor: "#10B981"
-                });
-                
-                if (retry.isConfirmed) {
-                    Swal.fire({ title: "Nouvelle recherche...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
-                    return fixCurrentLocationAsPatientHome();
-                }
-            }
-            
-            await Swal.fire({
-                title: "📍 Position capturée",
-                html: `<div class="text-center"><p class="text-sm font-bold ${precisionColor}">${precisionText}</p><p class="text-xs text-slate-500">Précision: ${Math.round(accuracy)} mètres</p></div>`,
-                icon: accuracy < 100 ? "success" : "warning",
-                timer: 1500,
-                showConfirmButton: false
-            });
-            
-            try {
-                await secureFetch('/patients/update-gps', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        patient_id: patientId,
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    })
-                });
-                
-                Swal.fire({ icon: "success", title: "✅ Domicile enregistré !", timer: 2000, showConfirmButton: false });
-                await loadPatientLocation(patientId);
-                await calculateAndDisplayRoute();
-                
-            } catch (err) {
-                console.error(err);
-                Swal.fire("Erreur", err.message, "error");
-            }
-        },
-        (error) => {
-            console.error("Erreur GPS:", error);
-            let message = "Impossible d'obtenir votre position";
-            let title = "Erreur GPS";
-            switch(error.code) {
-                case 1: title = "❌ Accès refusé"; message = "Autorisez l'accès à votre position.";
-                    break;
-                case 2: title = "📍 Position indisponible"; message = "Activez votre GPS.";
-                    break;
-                case 3: title = "⏱️ Délai dépassé"; message = "Vérifiez votre connexion.";
-                    break;
-            }
-            Swal.fire({ title: title, text: message, icon: "error" });
-        },
-        options
-    );
-}
-
-async function loadPatientLocation(patientId) {
-    try {
-        const patient = await secureFetch(`/patients/${patientId}`);
-        if (patient?.lat && patient?.lng) {
-            if (markers['patient']) map.removeLayer(markers['patient']);
-            const patientIcon = createCustomIcon('#3B82F6', false, 'lg', 'home');
-            markers['patient'] = L.marker([patient.lat, patient.lng], { icon: patientIcon }).addTo(map);
-            return { lat: patient.lat, lng: patient.lng };
-        } else { UI.warning("Ce patient n'a pas de position GPS enregistrée"); return null; }
-    } catch (err) { return null; }
-}
-
-function startAidantTracking() {
-    if (!navigator.geolocation) return;
-    const aidantIcon = createCustomIcon('#10B981', true, 'lg', 'user-nurse');
-    
-    // Options haute précision
-    const options = {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 10000
-    };
-    
-    watchId = navigator.geolocation.watchPosition(
-        (position) => {
-            const rawLat = position.coords.latitude;
-            const rawLng = position.coords.longitude;
-            const accuracy = position.coords.accuracy;
-            
-            // ✅ Lissage de la position
-            const smoothed = smoothPosition(rawLat, rawLng, accuracy);
-            
-            // ✅ Ajouter le cercle de précision
-            addPositionMarkerWithAccuracy(smoothed.lat, smoothed.lng, accuracy, "Votre position");
-            
-            if (markers['aidant']) {
-                markers['aidant'].setLatLng([smoothed.lat, smoothed.lng]);
-            } else {
-                markers['aidant'] = L.marker([smoothed.lat, smoothed.lng], { icon: aidantIcon }).addTo(map);
-            }
-            
-            trajectoryPoints.push([smoothed.lat, smoothed.lng]);
-            updateTrajectoryLine();
-            
-            const selector = document.getElementById('patient-selector');
-            if (selector && selector.value && isNavigating) {
-                calculateAndDisplayRoute();
-            }
-        },
-        (error) => console.warn("Erreur tracking:", error.message),
-        options
-    );
-}
-
-function updateTrajectoryLine() {
-    if (trajectoryPoints.length < 2) return;
-    if (trajectoryLayer) map.removeLayer(trajectoryLayer);
-    trajectoryLayer = L.polyline(trajectoryPoints, { color: '#F59E0B', weight: 3, opacity: 0.6 }).addTo(map);
-}
-
-function clearTrajectory() {
-    trajectoryPoints = [];
-    if (trajectoryLayer) { map.removeLayer(trajectoryLayer); trajectoryLayer = null; }
-}
-
-function clearRoute() {
-    if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
-    document.getElementById('distance-display').innerHTML = '---';
-    document.getElementById('time-display').innerHTML = '---';
-}
-
-// Fonctions globales supplémentaires
-window.copyAddressToClipboard = (address) => { if (address) { navigator.clipboard.writeText(address); showToast("Adresse copiée !", "success"); } };
-window.zoomToLocation = (lat, lng) => map?.setView([lat, lng], 16);
-window.openGoogleMaps = (lat, lng) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`, '_blank');
-
-
-async function getCurrentLocation() {
-    return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-            reject(new Error("GPS non supporté par ce téléphone"));
-            return;
-        }
-
-        const options = {
-            enableHighAccuracy: true,
-            timeout: 30000,
-            maximumAge: 0
-        };
-
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const accuracy = pos.coords.accuracy;
-                console.log(`📍 Position obtenue avec précision: ${Math.round(accuracy)}m`);
-                resolve({ 
-                    lat: pos.coords.latitude, 
-                    lon: pos.coords.longitude,
-                    accuracy: accuracy 
-                });
-            },
-            (err) => {
-                console.error("❌ Erreur GPS:", err);
-                let msg = "Impossible d'obtenir votre position";
-                if (err.code === 1) msg = "📍 Autorisez l'accès à votre position";
-                if (err.code === 2) msg = "📍 Position indisponible - Activez le GPS";
-                if (err.code === 3) msg = "⏱️ Délai dépassé - Vérifiez votre connexion GPS";
-                reject(new Error(msg));
-            },
-            options
-        );
-    });
-}
-
-
-/**
- * 🏠 VUE FAMILLE - SUIVI DE L'AIDANT
- */
 export async function initFamilyMap() {
     const container = document.getElementById("view-container");
     const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
@@ -2606,6 +1274,134 @@ export async function initFamilyMap() {
     activeInterval = setInterval(() => loadFamilyData(), 15000);
 }
 
+async function loadFamilyData() {
+    try {
+        if (!map) return;
+
+        const statusEl = document.getElementById("family-status");
+        const lastUpdateEl = document.getElementById("family-last-update");
+        const distanceDiv = document.getElementById("family-distance");
+        const distanceValueEl = document.getElementById("family-distance-value");
+
+        if (!currentPatient) {
+            const result = await getFamilyPatientForRadar();
+            if (!result.patient) {
+                if (statusEl) statusEl.innerHTML = "❌ Aucun patient actif";
+                return;
+            }
+            currentPatient = result.patient;
+        }
+
+        Object.keys(markers).forEach(key => {
+            if (markers[key] && map) {
+                try {
+                    map.removeLayer(markers[key]);
+                } catch (e) {}
+                delete markers[key];
+            }
+        });
+
+        const patientLat = Number(currentPatient.lat);
+        const patientLng = Number(currentPatient.lng);
+
+        if (!patientLat || !patientLng) {
+            if (statusEl) statusEl.innerHTML = "⚠️ Adresse GPS non renseignée";
+            if (lastUpdateEl) lastUpdateEl.innerHTML = "---";
+            if (distanceDiv) distanceDiv.classList.add("hidden");
+            renderMapNoticeOnTop("Le domicile du patient n’a pas encore de position GPS enregistrée.");
+            map.setView([6.368, 2.401], 12);
+            return;
+        }
+
+        const homeIcon = createCustomIcon("#3B82F6", false, "lg", "home");
+        markers["patient_home"] = L.marker([patientLat, patientLng], { icon: homeIcon }).addTo(map);
+        markers["patient_home"].bindPopup(`
+            <div class="text-center p-2">
+                <p class="font-black text-slate-800">🏠 ${escapeHtml(currentPatient.nom_complet || "Patient")}</p>
+                <p class="text-[10px] text-slate-500">${escapeHtml(currentPatient.adresse || "Adresse non renseignée")}</p>
+            </div>
+        `);
+
+        let activeVisit = null;
+        try {
+            activeVisit = await secureFetch(`/visites/active/${currentPatient.id}`);
+        } catch (err) {
+            console.warn("Aucune visite active:", err.message);
+            activeVisit = null;
+        }
+
+        const aidantPosition = getVisitAidantLatLng(activeVisit);
+
+        if (!activeVisit || activeVisit.hasActiveVisit === false || activeVisit.active === false) {
+            if (statusEl) statusEl.innerHTML = "⚪ Aucune intervention en cours";
+            if (lastUpdateEl) lastUpdateEl.innerHTML = "---";
+            if (distanceDiv) distanceDiv.classList.add("hidden");
+            map.setView([patientLat, patientLng], 15);
+            hideMapLoading();
+            return;
+        }
+
+        if (!aidantPosition) {
+            if (statusEl) statusEl.innerHTML = "🟡 Intervention active, position aidant indisponible";
+            if (lastUpdateEl) {
+                lastUpdateEl.innerHTML = getVisitLastUpdate(activeVisit)
+                    ? new Date(getVisitLastUpdate(activeVisit)).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+                    : "---";
+            }
+            if (distanceDiv) distanceDiv.classList.add("hidden");
+            map.setView([patientLat, patientLng], 15);
+            hideMapLoading();
+            return;
+        }
+
+        const aidantIcon = createCustomIcon("#10B981", true, "lg", "user-nurse");
+        markers["aidant_active"] = L.marker([aidantPosition.lat, aidantPosition.lng], { icon: aidantIcon }).addTo(map);
+        markers["aidant_active"].bindPopup(`
+            <div class="text-center p-2">
+                <p class="font-black text-slate-800">👩‍⚕️ ${escapeHtml(activeVisit.aidant_nom || activeVisit.aidant?.nom || "Intervenant")}</p>
+                <p class="text-[10px] text-emerald-600 font-bold">Intervention en cours</p>
+            </div>
+        `);
+
+        const distance = calculateDistance(
+            aidantPosition.lat,
+            aidantPosition.lng,
+            patientLat,
+            patientLng
+        );
+
+        if (statusEl) statusEl.innerHTML = "🟢 Intervention en cours";
+        if (lastUpdateEl) {
+            const lastUpdate = getVisitLastUpdate(activeVisit);
+            lastUpdateEl.innerHTML = lastUpdate
+                ? new Date(lastUpdate).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+                : "À l'instant";
+        }
+
+        if (distanceDiv) {
+            distanceDiv.classList.remove("hidden");
+            if (distanceValueEl) {
+                distanceValueEl.innerHTML = formatDistance(distance);
+            }
+        }
+
+        const bounds = L.latLngBounds(
+            [patientLat, patientLng],
+            [aidantPosition.lat, aidantPosition.lng]
+        );
+        map.fitBounds(bounds, { padding: [60, 60] });
+
+        hideMapLoading();
+
+    } catch (err) {
+        console.error("❌ Erreur loadFamilyData:", err);
+        const statusEl = document.getElementById("family-status");
+        if (statusEl) statusEl.innerHTML = "❌ Erreur de chargement";
+        hideMapLoading();
+        showToast("Erreur de chargement du Radar", "error");
+    }
+}
+
 /**
  * 📜 VOIR L'HISTORIQUE DES VISITES (FAMILLE)
  */
@@ -2654,5 +1450,956 @@ window.viewVisitHistory = async (patientId) => {
         UI.error("Impossible de charger l'historique");
     }
 };
-                                                     
+
+// ============================================================
+// 🧭 VUE AIDANT
+// ============================================================
+
+async function getAidantActiveMission() {
+    try {
+        const visits = normalizeArray(await secureFetch("/visites"));
+        const active = visits.find(v =>
+            v.statut === "En cours" ||
+            v.statut === "Démarrée" ||
+            v.statut === "En route"
+        );
+
+        if (!active) {
+            return null;
+        }
+
+        return active;
+    } catch (err) {
+        console.warn("Impossible de charger la mission active aidant:", err.message);
+        return null;
+    }
+}
+
+function getPatientFromVisit(visit) {
+    if (!visit) return null;
+
+    return (
+        visit.patient ||
+        visit.patients ||
+        {
+            id: visit.patient_id,
+            nom_complet: visit.patient_nom || visit.nom_patient || "Patient",
+            adresse: visit.patient_adresse || visit.adresse || "",
+            lat: visit.patient_lat || visit.lat_patient || visit.lat,
+            lng: visit.patient_lng || visit.lng_patient || visit.lng
+        }
+    );
+}
+
+function getPatientLatLng(patient) {
+    if (!patient) return null;
+
+    const lat = patient.lat || patient.latitude || patient.gps_lat;
+    const lng = patient.lng || patient.longitude || patient.gps_lng;
+
+    if (!lat || !lng) return null;
+
+    return {
+        lat: Number(lat),
+        lng: Number(lng)
+    };
+}
+
+function renderAidantNoMission() {
+    renderRadarMessage({
+        icon: "fa-route",
+        title: "Aucune mission active",
+        text: "Le Radar s’active lorsqu’une visite ou une mission vous est assignée. Vous pouvez consulter vos patients ou attendre une nouvelle intervention.",
+        buttonText: "Voir mes patients",
+        buttonAction: "window.switchView('patients')",
+        color: "slate"
+    });
+}
+
+async function initAidantMap() {
+    const container = document.getElementById('view-container');
+    clearMapRuntime();
+
+    const activeMission = await getAidantActiveMission();
+
+    if (!activeMission) {
+        renderAidantNoMission();
+        return;
+    }
+
+    const activePatient = getPatientFromVisit(activeMission);
+
+    if (!activePatient || !activePatient.id) {
+        renderRadarMessage({
+            icon: "fa-triangle-exclamation",
+            title: "Mission incomplète",
+            text: "Une mission semble active, mais le patient associé est introuvable.",
+            buttonText: "Voir mes visites",
+            buttonAction: "window.switchView('visits')",
+            color: "amber"
+        });
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="animate-fadeIn flex flex-col h-[calc(100vh-120px)] pb-0">
+            <div class="flex justify-between items-center mb-4 shrink-0 flex-wrap gap-3">
+                <div>
+                    <h3 class="text-xl font-black text-slate-800">🧭 Navigation GPS</h3>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Guidage vers le domicile du patient</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="center-map-btn" class="bg-white p-2 rounded-xl shadow-md border border-slate-100">
+                        <i class="fa-solid fa-location-crosshairs text-slate-600"></i>
+                    </button>
+                    <button id="improve-gps-btn" 
+                            class="bg-blue-500 text-white p-2 rounded-xl shadow-md border border-slate-100 active:scale-95 transition-all"
+                            title="Améliorer la précision GPS">
+                        <i class="fa-solid fa-satellite-dish text-sm"></i>
+                    </button>
+                    <button id="clear-trajectory-btn" class="bg-slate-100 p-2 rounded-xl shadow-md border border-slate-100">
+                        <i class="fa-solid fa-eraser text-slate-600"></i>
+                    </button>
+                    <button id="stop-navigation-btn" class="bg-rose-500 text-white px-3 py-2 rounded-xl shadow-md text-[9px] font-black uppercase hidden">
+                        <i class="fa-solid fa-stop"></i> Arrêter
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Bandeau GPS -->
+            <div id="gps-warning" class="mb-3 bg-amber-50 border border-amber-200 p-3 rounded-xl hidden">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-location-dot text-amber-500 text-lg"></i>
+                    <div class="flex-1">
+                        <p class="text-sm font-black text-amber-800">GPS non activé</p>
+                        <p class="text-[9px] text-amber-700">Activez votre position pour utiliser la navigation</p>
+                    </div>
+                    <button id="enable-gps-btn" class="bg-amber-500 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase">
+                        Activer GPS
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mb-3 bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+                <label class="text-[8px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                    <i class="fa-solid fa-hospital-user mr-1"></i> Mission active
+                </label>
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="font-black text-slate-800 text-sm">${escapeHtml(activePatient.nom_complet || "Patient")}</p>
+                        <p class="text-[9px] text-slate-400">${escapeHtml(activePatient.adresse || "Adresse non renseignée")}</p>
+                    </div>
+                    <span class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[8px] font-black uppercase">
+                        En cours
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Panneau de navigation compact -->
+            <div id="navigation-panel" class="mb-3 bg-emerald-500 text-white p-3 rounded-xl shadow-lg hidden">
+                <div class="flex items-center justify-between">
+                    <div><p class="text-[7px] font-black uppercase opacity-80">DESTINATION</p><p id="dest-name" class="font-black text-sm">---</p></div>
+                    <i class="fa-solid fa-route text-xl opacity-80"></i>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mt-2 pt-2 border-t border-white/20">
+                    <div><p class="text-[7px] font-black uppercase opacity-80">DISTANCE</p><p id="distance-display" class="font-black text-base">---</p></div>
+                    <div><p class="text-[7px] font-black uppercase opacity-80">TEMPS</p><p id="time-display" class="font-black text-base">---</p></div>
+                </div>
+                <div id="direction-arrow" class="mt-2 text-center text-[9px]">
+                    <i class="fa-solid fa-location-arrow text-lg animate-pulse"></i>
+                    <span id="direction-text" class="ml-1">Suivez l'itinéraire</span>
+                </div>
+            </div>
+            
+            <div id="live-map-container" class="flex-1 w-full rounded-xl border-2 border-white shadow-lg relative overflow-hidden bg-slate-100" style="min-height: 50vh; height: auto;">
+                <div id="map" class="absolute inset-0 z-10 w-full h-full"></div>
+                <div id="map-loading" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="relative w-8 h-8 mx-auto mb-2">
+                            <div class="absolute inset-0 border-3 border-slate-100 border-t-emerald-500 rounded-full animate-spin"></div>
+                        </div>
+                        <p class="text-[9px] font-black text-slate-400">Chargement...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Légende compacte -->
+            <div class="mt-3 bg-white/90 backdrop-blur-sm p-2 rounded-xl border border-slate-100">
+                <div class="flex items-center justify-around text-[8px] font-bold">
+                    <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div><span>Ma position</span></div>
+                    <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-blue-500"></div><span>Patient</span></div>
+                    <div class="flex items-center gap-1"><div class="w-2 h-2 bg-emerald-400"></div><span>Itinéraire</span></div>
+                    <div class="flex items-center gap-1"><div class="w-2 h-2 bg-amber-500 rounded-full"></div><span>Trajectoire</span></div>
+                </div>
+            </div>
+            
+            <button id="fix-patient-gps" class="mt-2 w-full py-2 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase hidden">
+                📍 Fixer ce lieu comme domicile du patient
+            </button>
+        </div>
+    `;
+    
+    setTimeout(async () => {
+        const mapElement = document.getElementById('map');
+        if (!mapElement) return;
+        if (map) { map.remove(); map = null; markers = {}; }
+        
+        map = L.map('map', { zoomControl: false, attributionControl: false, zoomSnap: 0.5 });
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+            maxZoom: 20,
+            subdomains: ['a', 'b', 'c']
+        }).addTo(map);
+        
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize(true);
+                setTimeout(() => {
+                    if (map) map.invalidateSize(true);
+                }, 500);
+            }
+        }, 300);
+        
+        const enableGpsBtn = document.getElementById('enable-gps-btn');
+        const gpsWarning = document.getElementById('gps-warning');
+        
+        const requestLocation = () => {
+            if (!navigator.geolocation) {
+                showToast("GPS non supporté par votre navigateur", "error");
+                gpsWarning?.classList.remove('hidden');
+                return false;
+            }
+            
+            showToast("📍 Recherche de votre position...", "info", 2000);
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    console.log("✅ Position obtenue:", position.coords);
+                    gpsWarning?.classList.add('hidden');
+                    showToast("GPS activé !", "success");
+                    
+                    const aidantIcon = createCustomIcon('#10B981', true, 'lg', 'user-nurse');
+                    if (markers['aidant']) map.removeLayer(markers['aidant']);
+                    markers['aidant'] = L.marker([position.coords.latitude, position.coords.longitude], { icon: aidantIcon }).addTo(map);
+                    map.setView([position.coords.latitude, position.coords.longitude], 16);
+                    
+                    startAidantTracking();
+                    return true;
+                },
+                (error) => {
+                    console.error("Erreur GPS:", error);
+                    let message = "Impossible d'obtenir votre position";
+                    if (error.code === 1) {
+                        message = "❌ Vous devez autoriser l'accès à votre position";
+                        if (error.message && error.message.includes("denied")) {
+                            message = "❌ Accès refusé. Autorisez dans les paramètres puis rafraîchissez.";
+                        }
+                    }
+                    if (error.code === 2) message = "📍 Position indisponible, réessayez";
+                    if (error.code === 3) message = "⏱️ Délai dépassé, vérifiez votre connexion";
+                    
+                    showToast(message, "error", 5000);
+                    gpsWarning?.classList.remove('hidden');
+                    
+                    const warningText = document.querySelector('#gps-warning .text-amber-700');
+                    if (warningText) warningText.innerHTML = message;
+                    
+                    return false;
+                },
+                { 
+                    enableHighAccuracy: true, 
+                    timeout: 15000,
+                    maximumAge: 0
+                }
+            );
+        };
+        
+        document.getElementById('center-map-btn')?.addEventListener('click', () => {
+            requestLocation();
+        });
+        
+        document.getElementById('clear-trajectory-btn')?.addEventListener('click', () => { 
+            clearTrajectory(); 
+            showToast("Trajectoire effacée", "info"); 
+        });
+        
+        enableGpsBtn?.addEventListener('click', () => {
+            requestLocation();
+        });
+        
+        document.getElementById('fix-patient-gps')?.addEventListener('click', () => fixCurrentLocationAsPatientHome());
+        
+        document.getElementById('stop-navigation-btn')?.addEventListener('click', () => stopNavigation());
+        
+        AppState.currentPatient = activePatient.id;
+        localStorage.setItem("current_patient_id", activePatient.id);
+        localStorage.setItem("active_patient_id", activePatient.id);
+        
+        await startNavigation(activePatient.id, activePatient);
+        
+        const mapLoading = document.getElementById('map-loading');
+        if (mapLoading) {
+            setTimeout(() => {
+                mapLoading.style.opacity = '0';
+                setTimeout(() => mapLoading.style.display = 'none', 300);
+            }, 500);
+        }
+
+        const improveGpsBtn = document.getElementById('improve-gps-btn');
+        if (improveGpsBtn) {
+            improveGpsBtn.addEventListener('click', async () => {
+                try {
+                    const result = await improveGPSAccuracy();
+                    if (result && result.position) {
+                        const { latitude, longitude } = result.position.coords;
+                        if (markers['aidant']) {
+                            markers['aidant'].setLatLng([latitude, longitude]);
+                            map.setView([latitude, longitude], 18);
+                        }
+                        showToast(`🎯 Précision optimisée à ${Math.round(result.accuracy)} mètres`, "success");
+                    }
+                } catch (err) {
+                    showToast("Impossible d'améliorer la précision", "error");
+                }
+            });
+        }
+
+        requestLocation();
+        
+    }, 100);
+}
+
+// ============================================================
+// FONCTIONS GPS ET NAVIGATION (AIDANT)
+// ============================================================
+
+/**
+ * 📍 AJOUTER UN CERCLE DE PRÉCISION SUR LA CARTE
+ */
+function addAccuracyCircle(lat, lng, accuracy, color = '#3B82F6') {
+    if (window._accuracyCircle) {
+        map.removeLayer(window._accuracyCircle);
+    }
+    
+    const circle = L.circle([lat, lng], {
+        radius: accuracy,
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.15,
+        weight: 2,
+        opacity: 0.6
+    }).addTo(map);
+    
+    window._accuracyCircle = circle;
+    return circle;
+}
+
+/**
+ * 📍 AJOUTER UN MARQUEUR DE POSITION AVEC CERCLE DE PRÉCISION
+ */
+function addPositionMarkerWithAccuracy(lat, lng, accuracy, label = "Ma position") {
+    if (window._positionMarker) {
+        map.removeLayer(window._positionMarker);
+    }
+    if (window._positionCircle) {
+        map.removeLayer(window._positionCircle);
+    }
+    
+    const icon = L.divIcon({
+        className: 'position-marker',
+        html: `
+            <div class="relative">
+                <div class="w-5 h-5 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-blue-500 rounded-full opacity-30 animate-ping"></div>
+            </div>
+        `,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    });
+    
+    window._positionMarker = L.marker([lat, lng], { icon }).addTo(map);
+    window._positionCircle = L.circle([lat, lng], {
+        radius: accuracy,
+        color: '#3B82F6',
+        fillColor: '#60A5FA',
+        fillOpacity: 0.15,
+        weight: 2
+    }).addTo(map);
+    
+    window._positionMarker.bindPopup(`
+        <div class="text-center p-1">
+            <p class="font-black text-xs">${label}</p>
+            <p class="text-[9px] text-slate-500">Précision: ${Math.round(accuracy)} mètres</p>
+        </div>
+    `);
+}
+
+/**
+ * 🎯 AMÉLIORER LA PRÉCISION GPS
+ */
+async function improveGPSAccuracy() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            Swal.fire("Erreur", "GPS non supporté", "error");
+            reject();
+            return;
+        }
+        
+        let bestAccuracy = Infinity;
+        let bestPosition = null;
+        let attempts = 0;
+        let watchId = null;
+        
+        Swal.fire({
+            title: "📍 Amélioration de la précision",
+            html: `
+                <div class="text-center">
+                    <div class="relative w-20 h-20 mx-auto mb-4">
+                        <div class="absolute inset-0 border-4 border-slate-100 border-t-emerald-500 rounded-full animate-spin"></div>
+                        <i class="fa-solid fa-satellite-dish absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-500 text-2xl"></i>
+                    </div>
+                    <p class="text-sm font-bold">Recherche du signal GPS...</p>
+                    <p class="text-xs text-slate-500 mt-2">Déplacez-vous lentement</p>
+                    <div class="mt-4 w-full bg-slate-200 rounded-full h-2">
+                        <div id="gps-accuracy-bar" class="bg-emerald-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                    <p id="gps-accuracy-value" class="text-[10px] text-slate-400 mt-2">En attente...</p>
+                    <p id="gps-advice" class="text-[9px] text-amber-500 mt-3">⚡ Déplacez-vous vers un espace dégagé</p>
+                </div>
+            `,
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const accuracy = position.coords.accuracy;
+                        attempts++;
+                        
+                        const percent = Math.min(100, (100 - accuracy) * 1.5);
+                        document.getElementById('gps-accuracy-bar').style.width = `${Math.max(0, percent)}%`;
+                        document.getElementById('gps-accuracy-value').innerHTML = `Précision: ${Math.round(accuracy)} mètres`;
+                        
+                        const adviceEl = document.getElementById('gps-advice');
+                        if (accuracy > 100) {
+                            adviceEl.innerHTML = '⚠️ Précision faible - Déplacez-vous vers un espace dégagé';
+                            adviceEl.className = 'text-[9px] text-amber-500 mt-3';
+                        } else if (accuracy > 50) {
+                            adviceEl.innerHTML = '👍 Précision moyenne - Encore un peu...';
+                            adviceEl.className = 'text-[9px] text-blue-500 mt-3';
+                        } else if (accuracy > 20) {
+                            adviceEl.innerHTML = '✅ Bonne précision - Attendez la stabilisation';
+                            adviceEl.className = 'text-[9px] text-emerald-500 mt-3';
+                        } else {
+                            adviceEl.innerHTML = '🎯 Précision excellente ! Position prête';
+                            adviceEl.className = 'text-[9px] text-emerald-600 font-bold mt-3';
+                        }
+                        
+                        if (accuracy < bestAccuracy) {
+                            bestAccuracy = accuracy;
+                            bestPosition = position;
+                        }
+                        
+                        if (accuracy < 20 && attempts > 5) {
+                            navigator.geolocation.clearWatch(watchId);
+                            Swal.close();
+                            resolve({ position: bestPosition, accuracy: bestAccuracy });
+                        } else if (attempts > 30) {
+                            navigator.geolocation.clearWatch(watchId);
+                            Swal.close();
+                            if (bestPosition) {
+                                resolve({ position: bestPosition, accuracy: bestAccuracy });
+                            } else {
+                                reject();
+                            }
+                        }
+                    },
+                    (error) => {
+                        console.error("Erreur GPS:", error);
+                        navigator.geolocation.clearWatch(watchId);
+                        Swal.close();
+                        reject();
+                    },
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                );
+            }
+        }).then(() => {
+            if (bestPosition) {
+                Swal.fire({
+                    title: "✅ Précision optimisée !",
+                    html: `Précision finale: <b>${Math.round(bestAccuracy)} mètres</b>`,
+                    icon: bestAccuracy < 50 ? "success" : "warning",
+                    confirmButtonText: "OK"
+                });
+            }
+        });
+    });
+}
+
+/**
+ * 📍 LISSAGE DES POSITIONS GPS
+ */
+let positionHistory = [];
+let lastValidPosition = null;
+
+function smoothPosition(lat, lng, accuracy, maxHistory = 5) {
+    if (accuracy > 100) {
+        console.log(`📍 Position ignorée (précision: ${Math.round(accuracy)}m)`);
+        return lastValidPosition || { lat, lng };
+    }
+    
+    if (lastValidPosition) {
+        const distance = calculateDistance(
+            lat, lng, 
+            lastValidPosition.lat, lastValidPosition.lng
+        );
+        if (distance > 50) {
+            console.log(`📍 Saut de position détecté (${Math.round(distance)}m), ignoré`);
+            return lastValidPosition;
+        }
+    }
+    
+    positionHistory.push({ lat, lng, accuracy, timestamp: Date.now() });
+    if (positionHistory.length > maxHistory) positionHistory.shift();
+    
+    if (positionHistory.length >= 3) {
+        const recent = positionHistory.slice(-3);
+        const avgLat = recent.reduce((sum, p) => sum + p.lat, 0) / 3;
+        const avgLng = recent.reduce((sum, p) => sum + p.lng, 0) / 3;
+        lastValidPosition = { lat: avgLat, lng: avgLng };
+        return lastValidPosition;
+    }
+    
+    lastValidPosition = { lat, lng };
+    return lastValidPosition;
+}
+
+async function loadAssignedPatients() {
+    try {
+        const patients = await secureFetch('/patients');
+        const selector = document.getElementById('patient-selector');
+        if (selector && patients?.length) {
+            selector.innerHTML = '<option value="">-- Choisir un patient --</option>' +
+                patients.map(p => `<option value="${p.id}" data-lat="${p.lat || ''}" data-lng="${p.lng || ''}">🏠 ${p.nom_complet} - ${p.adresse?.substring(0, 40) || 'Adresse non renseignée'}</option>`).join('');
+        }
+    } catch (err) { console.error(err); }
+}
+
+async function startNavigation(patientId, fallbackPatient = null) {
+    try {
+        let patient = fallbackPatient;
+
+        if (!patient) {
+            patient = await secureFetch(`/patients/${patientId}`);
+        }
+
+        const patientCoords = getPatientLatLng(patient);
+
+        if (!patientCoords) {
+            UI.warning("Le domicile du patient n’a pas encore de position GPS.");
+            document.getElementById('fix-patient-gps')?.classList.remove('hidden');
+        
+            const navPanel = document.getElementById("navigation-panel");
+            if (navPanel) navPanel.classList.add("hidden");
+        
+            map.setView([6.368, 2.401], 12);
+            return;
+        }
+
+        document.getElementById('fix-patient-gps').classList.add('hidden');
+        
+        currentPatient = patient;
+        currentPatientCoords = patientCoords;
+        isNavigating = true;
+        
+        console.log("🚗 Navigation démarrée vers:", currentPatientCoords);
+        
+        document.getElementById('navigation-panel').classList.remove('hidden');
+        document.getElementById('stop-navigation-btn').classList.remove('hidden');
+        document.getElementById('dest-name').innerText = patient.nom_complet;
+        
+        if (markers['patient']) map.removeLayer(markers['patient']);
+        const patientIcon = createCustomIcon('#3B82F6', false, 'lg', 'home');
+        markers['patient'] = L.marker([patientCoords.lat, patientCoords.lng], { icon: patientIcon }).addTo(map);
+        
+        await calculateAndDisplayRoute();
+        checkIfArrived();
+        
+    } catch (err) { 
+        console.error("Erreur startNavigation:", err);
+        UI.error("Impossible de démarrer la navigation"); 
+    }
+}
+
+function stopNavigation() {
+    isNavigating = false;
+    currentPatient = null;
+    currentPatientCoords = null;
+    offRouteAlertShown = false;
+    document.getElementById('navigation-panel').classList.add('hidden');
+    document.getElementById('stop-navigation-btn').classList.add('hidden');
+    if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+    if (markers['patient']) { map.removeLayer(markers['patient']); delete markers['patient']; }
+}
+
+async function calculateAndDisplayRoute() {
+    if (!isNavigating || !currentPatientCoords) return;
+    if (!navigator.geolocation) return;
+    
+    navigator.geolocation.getCurrentPosition(async (position) => {
+        const startLat = position.coords.latitude;
+        const startLng = position.coords.longitude;
+        const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${currentPatientCoords.lng},${currentPatientCoords.lat}?overview=full&geometries=geojson&steps=true`;
+        
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data.routes?.length) {
+                const route = data.routes[0];
+                const distance = route.distance;
+                const duration = route.duration;
+                
+                const distanceDisplay = document.getElementById('distance-display');
+                const timeDisplay = document.getElementById('time-display');
+                
+                if (distanceDisplay) distanceDisplay.innerHTML = formatDistance(distance);
+                if (timeDisplay) timeDisplay.innerHTML = formatDuration(duration);
+                
+                console.log(`📍 Distance: ${formatDistance(distance)}, Temps: ${formatDuration(duration)}`);
+                
+                if (routeLayer) map.removeLayer(routeLayer);
+                routeLayer = L.geoJSON(route.geometry, { 
+                    style: { color: '#10B981', weight: 5, opacity: 0.9 } 
+                }).addTo(map);
+                
+                lastRouteCalculation = Date.now();
+            } else {
+                console.warn("Aucun itinéraire trouvé");
+            }
+        } catch (err) { 
+            console.error("Erreur calcul itinéraire:", err);
+        }
+    }, (err) => { 
+        console.warn("Erreur GPS:", err.message);
+    });
+}
+
+function checkIfOffRoute(currentLat, currentLng, route) {
+    if (!route?.geometry?.coordinates) return;
+    let minDistance = Infinity;
+    for (const point of route.geometry.coordinates) {
+        const distance = calculateDistance(currentLat, currentLng, point[1], point[0]);
+        if (distance < minDistance) minDistance = distance;
+    }
+    const directionText = document.getElementById('direction-text');
+    if (minDistance > OFF_ROUTE_THRESHOLD && !offRouteAlertShown) {
+        offRouteAlertShown = true;
+        directionText.innerHTML = '⚠️ Vous vous êtes écarté de l\'itinéraire ! Recalcul...';
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        showToast("⚠️ Vous vous êtes écarté de l'itinéraire", "warning", 5000);
+        setTimeout(() => { offRouteAlertShown = false; calculateAndDisplayRoute(); setTimeout(() => directionText.innerHTML = 'Suivez l\'itinéraire tracé', 3000); }, 3000);
+    } else if (minDistance <= OFF_ROUTE_THRESHOLD) {
+        offRouteAlertShown = false;
+        directionText.innerHTML = '✅ Suivez l\'itinéraire tracé';
+    }
+}
+
+function checkIfArrived() {
+    if (!isNavigating || !currentPatientCoords) return;
+    navigator.geolocation.getCurrentPosition((position) => {
+        const distance = calculateDistance(position.coords.latitude, position.coords.longitude, currentPatientCoords.lat, currentPatientCoords.lng);
+        if (distance < 50) {
+            if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
+            showToast("🎉 Vous êtes arrivé à destination !", "success", 5000);
+            Swal.fire({ icon: "success", title: "Arrivé à destination !", text: `Vous êtes au domicile de ${currentPatient.nom_complet}`, confirmButtonText: "Démarrer la visite", confirmButtonColor: "#10B981", showCancelButton: true, cancelButtonText: "Plus tard" }).then((result) => { if (result.isConfirmed) window.startVisit(currentPatient.id); });
+        }
+    });
+}
+
+async function fixCurrentLocationAsPatientHome() {
+    const selector = document.getElementById('patient-selector');
+    const patientId = selector?.value;
+    const patientName = selector?.options[selector.selectedIndex]?.text?.split(' -')[0];
+    
+    if (!patientId) {
+        UI.warning("Sélectionnez d'abord un patient");
+        return;
+    }
+
+    if (!navigator.geolocation) {
+        return Swal.fire({
+            title: "GPS non supporté",
+            text: "Votre navigateur ne supporte pas la géolocalisation.",
+            icon: "error"
+        });
+    }
+
+    let permissionStatus = null;
+    if (navigator.permissions && navigator.permissions.query) {
+        try {
+            permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+            console.log("État permission GPS :", permissionStatus.state);
+        } catch (e) {
+            console.warn("Erreur permission", e);
+        }
+    }
+
+    if (permissionStatus && permissionStatus.state === 'denied') {
+        Swal.fire({
+            title: "📍 Accès GPS refusé",
+            html: `
+                <div class="text-left">
+                    <p class="mb-2">Vous avez refusé l'accès à votre position.</p>
+                    <p class="text-xs text-slate-500">Pour réactiver :</p>
+                    <ul class="text-xs text-left mt-2 space-y-1">
+                        <li>• <strong>Android (Chrome)</strong> : 🔒 Cadenas → Autorisations → Position → Autoriser</li>
+                        <li>• <strong>iPhone (Safari)</strong> : ⚙️ Réglages → Confidentialité → Localisation → Safari → Autoriser</li>
+                    </ul>
+                </div>
+            `,
+            icon: "warning",
+            confirmButtonText: "OK"
+        });
+        return;
+    }
+
+    const confirm = await Swal.fire({
+        title: "📍 Enregistrer le domicile",
+        text: `Voulez-vous utiliser votre position actuelle comme domicile de ${patientName} ?`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "OUI, ENREGISTRER",
+        confirmButtonColor: "#10B981",
+        cancelButtonText: "Annuler"
+    });
+    
+    if (!confirm.isConfirmed) return;
+
+    Swal.fire({
+        title: "Recherche GPS...",
+        html: `
+            <div class="text-center">
+                <div class="relative w-12 h-12 mx-auto mb-3">
+                    <div class="absolute inset-0 border-3 border-slate-100 border-t-emerald-500 rounded-full animate-spin"></div>
+                    <i class="fa-solid fa-location-dot absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-500"></i>
+                </div>
+                <p class="text-xs text-slate-600">Recherche du signal GPS...</p>
+                <p class="text-[9px] text-slate-400 mt-2">Déplacez-vous dans un espace dégagé</p>
+            </div>
+        `,
+        allowOutsideClick: false,
+        showConfirmButton: false
+    });
+
+    const options = {
+        enableHighAccuracy: true,
+        timeout: 30000,
+        maximumAge: 0
+    };
+
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const accuracy = position.coords.accuracy;
+            console.log(`✅ Position: ${position.coords.latitude}, ${position.coords.longitude} (précision: ${Math.round(accuracy)}m)`);
+            
+            let precisionText = "";
+            let precisionColor = "";
+            
+            if (accuracy < 20) {
+                precisionText = "Précision excellente ! 🎯";
+                precisionColor = "text-emerald-600";
+            } else if (accuracy < 50) {
+                precisionText = "Bonne précision 👍";
+                precisionColor = "text-blue-600";
+            } else if (accuracy < 100) {
+                precisionText = "Précision moyenne ⚠️";
+                precisionColor = "text-amber-600";
+            } else {
+                precisionText = "Précision faible 📡";
+                precisionColor = "text-rose-600";
+            }
+            
+            if (accuracy > 100) {
+                const retry = await Swal.fire({
+                    title: "📍 Signal GPS faible",
+                    html: `
+                        <div class="text-center">
+                            <p class="text-sm font-bold ${precisionColor}">${precisionText}</p>
+                            <p class="text-xs text-slate-500 mt-2">Précision: ${Math.round(accuracy)} mètres</p>
+                            <p class="text-[10px] text-slate-400 mt-3">Déplacez-vous dans un espace dégagé.</p>
+                        </div>
+                    `,
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "🔄 Réessayer",
+                    cancelButtonText: "✅ Enregistrer quand même",
+                    confirmButtonColor: "#F59E0B",
+                    cancelButtonColor: "#10B981"
+                });
+                
+                if (retry.isConfirmed) {
+                    Swal.fire({ title: "Nouvelle recherche...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+                    return fixCurrentLocationAsPatientHome();
+                }
+            }
+            
+            await Swal.fire({
+                title: "📍 Position capturée",
+                html: `<div class="text-center"><p class="text-sm font-bold ${precisionColor}">${precisionText}</p><p class="text-xs text-slate-500">Précision: ${Math.round(accuracy)} mètres</p></div>`,
+                icon: accuracy < 100 ? "success" : "warning",
+                timer: 1500,
+                showConfirmButton: false
+            });
+            
+            try {
+                await secureFetch('/patients/update-gps', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        patient_id: patientId,
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    })
+                });
+                
+                Swal.fire({ icon: "success", title: "✅ Domicile enregistré !", timer: 2000, showConfirmButton: false });
+                await loadPatientLocation(patientId);
+                await calculateAndDisplayRoute();
+                
+            } catch (err) {
+                console.error(err);
+                Swal.fire("Erreur", err.message, "error");
+            }
+        },
+        (error) => {
+            console.error("Erreur GPS:", error);
+            let message = "Impossible d'obtenir votre position";
+            let title = "Erreur GPS";
+            switch(error.code) {
+                case 1: title = "❌ Accès refusé"; message = "Autorisez l'accès à votre position.";
+                    break;
+                case 2: title = "📍 Position indisponible"; message = "Activez votre GPS.";
+                    break;
+                case 3: title = "⏱️ Délai dépassé"; message = "Vérifiez votre connexion.";
+                    break;
+            }
+            Swal.fire({ title: title, text: message, icon: "error" });
+        },
+        options
+    );
+}
+
+async function loadPatientLocation(patientId) {
+    try {
+        const patient = await secureFetch(`/patients/${patientId}`);
+        if (patient?.lat && patient?.lng) {
+            if (markers['patient']) map.removeLayer(markers['patient']);
+            const patientIcon = createCustomIcon('#3B82F6', false, 'lg', 'home');
+            markers['patient'] = L.marker([patient.lat, patient.lng], { icon: patientIcon }).addTo(map);
+            return { lat: patient.lat, lng: patient.lng };
+        } else { UI.warning("Ce patient n'a pas de position GPS enregistrée"); return null; }
+    } catch (err) { return null; }
+}
+
+function startAidantTracking() {
+    if (!navigator.geolocation) return;
+    const aidantIcon = createCustomIcon('#10B981', true, 'lg', 'user-nurse');
+    
+    const options = {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 10000
+    };
+    
+    watchId = navigator.geolocation.watchPosition(
+        (position) => {
+            const rawLat = position.coords.latitude;
+            const rawLng = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+            
+            const smoothed = smoothPosition(rawLat, rawLng, accuracy);
+            
+            addPositionMarkerWithAccuracy(smoothed.lat, smoothed.lng, accuracy, "Votre position");
+            
+            if (markers['aidant']) {
+                markers['aidant'].setLatLng([smoothed.lat, smoothed.lng]);
+            } else {
+                markers['aidant'] = L.marker([smoothed.lat, smoothed.lng], { icon: aidantIcon }).addTo(map);
+            }
+            
+            trajectoryPoints.push([smoothed.lat, smoothed.lng]);
+            updateTrajectoryLine();
+            
+            const selector = document.getElementById('patient-selector');
+            if (selector && selector.value && isNavigating) {
+                calculateAndDisplayRoute();
+            }
+        },
+        (error) => console.warn("Erreur tracking:", error.message),
+        options
+    );
+}
+
+function updateTrajectoryLine() {
+    if (trajectoryPoints.length < 2) return;
+    if (trajectoryLayer) map.removeLayer(trajectoryLayer);
+    trajectoryLayer = L.polyline(trajectoryPoints, { color: '#F59E0B', weight: 3, opacity: 0.6 }).addTo(map);
+}
+
+function clearTrajectory() {
+    trajectoryPoints = [];
+    if (trajectoryLayer) { map.removeLayer(trajectoryLayer); trajectoryLayer = null; }
+}
+
+function clearRoute() {
+    if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+    document.getElementById('distance-display').innerHTML = '---';
+    document.getElementById('time-display').innerHTML = '---';
+}
+
+// Fonctions globales supplémentaires
+window.copyAddressToClipboard = (address) => { if (address) { navigator.clipboard.writeText(address); showToast("Adresse copiée !", "success"); } };
+window.zoomToLocation = (lat, lng) => map?.setView([lat, lng], 16);
+window.openGoogleMaps = (lat, lng) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`, '_blank');
+
+async function getCurrentLocation() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error("GPS non supporté par ce téléphone"));
+            return;
+        }
+
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 30000,
+            maximumAge: 0
+        };
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const accuracy = pos.coords.accuracy;
+                console.log(`📍 Position obtenue avec précision: ${Math.round(accuracy)}m`);
+                resolve({ 
+                    lat: pos.coords.latitude, 
+                    lon: pos.coords.longitude,
+                    accuracy: accuracy 
+                });
+            },
+            (err) => {
+                console.error("❌ Erreur GPS:", err);
+                let msg = "Impossible d'obtenir votre position";
+                if (err.code === 1) msg = "📍 Autorisez l'accès à votre position";
+                if (err.code === 2) msg = "📍 Position indisponible - Activez le GPS";
+                if (err.code === 3) msg = "⏱️ Délai dépassé - Vérifiez votre connexion GPS";
+                reject(new Error(msg));
+            },
+            options
+        );
+    });
+}
+
+// ============================================================
+// EXPORTS
+// ============================================================
+
 export { initCoordinatorMap, initFamilyMap, initAidantMap };
