@@ -4216,7 +4216,12 @@ const ROLE_VIEWS = {
         "billing",
         "profile",
         "users",
-        "notifications"
+        "notifications", 
+        "add-patient",       
+        "add-aidant",       
+        "link-family",       
+        "end-visit",         
+        "start-visit" 
     ],
 
       AIDANT: [
@@ -5230,7 +5235,10 @@ window.loadPatients = Patients.loadPatients;
 window.loadVisits = Visites.loadVisits;
 window.verifyOTP = Auth.verifyOTP;
 window.openAddPatient = () => window.switchView('add-patient');
-window.openEndVisit = () => window.switchView('end-visit');
+window.openEndVisit = () => {
+    console.log("🟢 openEndVisit appelé");
+    window.switchView('end-visit');
+};
 window.submitAddAidant = Aidants.submitAddAidant;
 window.loadEducationPage = Education.loadEducationPage;
 window.openLinkFamilyModal = (id, name) => {
@@ -5238,6 +5246,11 @@ window.openLinkFamilyModal = (id, name) => {
     window.switchView('link-family');
 };
 window.openAddAidantModal = Aidants.openAddAidantModal;
+
+window.openAddAidant = () => {
+    console.log("🟢 openAddAidant appelé");
+    window.switchView('add-aidant');
+};
 
 if (Commandes && typeof Commandes.markAsDelivered === 'function') {
     window.markAsDelivered = Commandes.markAsDelivered.bind(Commandes);
@@ -5303,7 +5316,14 @@ window.finishOnboarding = finishOnboarding;
 window.nextOnboarding = nextOnboarding;
 window.setPatientHomeDirect = Patients.setPatientHomeDirect;
 window.openAssignModal = Planning.openAssignModal;
-window.openAssignPage = Planning.openAssignPage;
+window.openAssignPage = () => {
+    console.log("🟢 openAssignPage appelé");
+    if (typeof Planning.openAssignPage === 'function') {
+        Planning.openAssignPage();
+    } else {
+        console.error("❌ Planning.openAssignPage n'est pas défini");
+    }
+};
 window.openOrderModal = Commandes.openOrderModal;
 window.loadPlanning = Planning.loadPlanning;
 window.loadCommandes = Commandes.loadCommandes;
@@ -5329,6 +5349,8 @@ window.showToast = showToast;
 window.UI = UI;
 window.playSound = playSound;
 window.renderRHDashboard = Admin.renderRHDashboard;
+console.log("✅ Toutes les fonctions globales ont été assignées");
+
 
 
 
