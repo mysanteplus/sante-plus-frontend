@@ -1,28 +1,36 @@
+// modules/planning.js - VERSION COMPLÈTE CORRIGÉE
+
 import { secureFetch } from "../core/api.js";
 import { UI } from "../core/utils.js";
-import { CONFIG } from "../core/config.js"; 
+import { CONFIG } from "../core/config.js";
 
+// ============================================================
+// FONCTIONS UTILITAIRES
+// ============================================================
 
-
-
-
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 /**
  * 🏷️ Formater l'affichage du créneau selon le type d'assignation
- * @param {Object} item - L'assignation
- * @returns {string} HTML formaté pour l'affichage du créneau
  */
 function formatScheduleDisplay(item) {
     const isMaman = localStorage.getItem("user_is_maman") === "true";
-    const primaryColor = isMaman ? '#E11D48' : '#059669';
     
     // CAS 1: Assignation ponctuelle avec heure définie
     if (item.type_assignation === 'ponctuelle' && item.heure_prevue) {
         const hour = item.heure_prevue.substring(0, 5);
         return `
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <i class="fa-regular fa-clock text-emerald-600 text-sm"></i>
+                <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                    <i class="fa-regular fa-clock text-amber-600 text-sm"></i>
                 </div>
                 <div>
                     <p class="text-xl font-black text-slate-800">${hour}</p>
@@ -40,7 +48,6 @@ function formatScheduleDisplay(item) {
         const startFormatted = startDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
         const endFormatted = endDate ? endDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '...';
         
-        // Calculer la durée en jours
         let durationText = '';
         if (endDate) {
             const diffTime = Math.abs(endDate - startDate);
@@ -70,6 +77,7 @@ function formatScheduleDisplay(item) {
     }
     
     // CAS 3: Assignation permanente (DEFAULT)
+    const isMaman = localStorage.getItem("user_is_maman") === "true";
     return `
         <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-full ${isMaman ? 'bg-pink-100' : 'bg-emerald-100'} flex items-center justify-center">
@@ -83,9 +91,6 @@ function formatScheduleDisplay(item) {
     `;
 }
 
-
-// js/modules/planning.js - AJOUTER CETTE FONCTION AU DÉBUT (après formatScheduleDisplay)
-
 /**
  * 🏷️ Obtenir le texte du statut avec la bonne couleur
  */
@@ -97,7 +102,6 @@ function getStatusInfo(statut, typeAssignation, isMaman) {
         'Annulé': { icon: 'fa-circle-xmark', text: 'Annulé', color: 'text-rose-600', bg: 'bg-rose-50' }
     };
     
-    // Pour les assignations permanentes, on peut personnaliser l'affichage
     if (typeAssignation === 'permanente' && statut === 'Planifié') {
         return {
             icon: 'fa-infinity',
@@ -110,17 +114,9 @@ function getStatusInfo(statut, typeAssignation, isMaman) {
     return statusMap[statut] || statusMap['Planifié'];
 }
 
-
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
+// ============================================================
+// 1. CHARGER LE PLANNING
+// ============================================================
 
 export async function loadPlanning() {
     const listContainer = document.getElementById("planning-list");
@@ -144,10 +140,7 @@ export async function loadPlanning() {
         }
 
         listContainer.innerHTML = data.map(item => {
-            // 🔥 Utiliser la nouvelle fonction pour l'affichage du créneau
             const scheduleDisplay = formatScheduleDisplay(item);
-            
-            // 🔥 Utiliser la nouvelle fonction pour le statut
             const statusInfo = getStatusInfo(item.statut, item.type_assignation, isMaman);
             
             const borderColor = item.statut === 'Terminé' ? 'border-emerald-500' : 
@@ -157,7 +150,6 @@ export async function loadPlanning() {
             
             const buttonBg = isMaman ? 'bg-pink-600 hover:bg-pink-700' : 'bg-emerald-600 hover:bg-emerald-700';
             
-            // Badge du type d'assignation (petit rappel visuel)
             let typeBadge = '';
             if (item.type_assignation === 'permanente') {
                 typeBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${isMaman ? 'bg-pink-50 text-pink-600' : 'bg-emerald-50 text-emerald-600'}">
@@ -175,7 +167,6 @@ export async function loadPlanning() {
             
             return `
                 <div class="bg-white p-5 rounded-xl border-l-4 ${borderColor} shadow-sm animate-fadeIn mb-4 hover:shadow-md transition-all">
-                    <!-- En-tête avec créneau et statut -->
                     <div class="flex justify-between items-start">
                         ${scheduleDisplay}
                         <div class="flex flex-col items-end gap-1">
@@ -187,12 +178,10 @@ export async function loadPlanning() {
                         </div>
                     </div>
                     
-                    <!-- Date complète -->
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mt-3">
                         📅 ${new Date(item.date_prevue).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                     
-                    <!-- Infos patient -->
                     <div class="mt-4">
                         <h4 class="font-black text-slate-800 text-base">${escapeHtml(item.patient?.nom_complet || 'Patient inconnu')}</h4>
                         <p class="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
@@ -207,7 +196,6 @@ export async function loadPlanning() {
                         ` : ''}
                     </div>
 
-                    <!-- Consignes -->
                     ${item.notes_coordinateur ? `
                         <div class="mt-3 p-3 rounded-xl" style="background: ${primaryLight};">
                             <p class="text-[9px] font-black uppercase tracking-wider mb-1" style="color: ${primaryColor};">📋 Consignes :</p>
@@ -215,7 +203,6 @@ export async function loadPlanning() {
                         </div>
                     ` : ''}
                     
-                    <!-- Bouton d'action -->
                     ${userRole === "AIDANT" && item.statut !== 'Terminé' ? `
                         <button onclick="window.openMissionBriefing('${item.patient_id}', '${item.id}')" 
                                 class="w-full mt-4 py-3 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all ${buttonBg}">
@@ -237,15 +224,11 @@ export async function loadPlanning() {
     }
 }
 
+// ============================================================
+// 2. PAGE D'ASSIGNATION
+// ============================================================
 
-
-
-/**
- * 🗓️ PAGE D'ASSIGNATION INDÉPENDANTE (Remplace la modale)
- */
 export async function openAssignPage(patientId = null, aidantId = null) {
-
-    // 🔥 Vider le cache pour éviter le flash
     if (typeof clearApiCache === 'function') {
         clearApiCache();
     }
@@ -263,7 +246,6 @@ export async function openAssignPage(patientId = null, aidantId = null) {
         
         Swal.close();
         
-        // Stocker les données et les pré-sélections
         window._assignData = { aidants, patients };
         window._preSelectedPatientId = patientId;
         window._preSelectedAidantId = aidantId;
@@ -276,17 +258,11 @@ export async function openAssignPage(patientId = null, aidantId = null) {
     }
 }
 
+// ============================================================
+// 3. RENDU DE LA PAGE D'ASSIGNATION
+// ============================================================
 
-
-/**
- * 🎨 RENDU DE LA PAGE D'ASSIGNATION
- */
-
-/**
- * 🔧 CONFIGURATION DES FILTRES DE RECHERCHE
- */
 function setupDropdownFilters() {
-    // Filtre aidants
     const aidantSearch = document.getElementById('aidant-search');
     if (aidantSearch) {
         aidantSearch.addEventListener('input', (e) => {
@@ -299,7 +275,6 @@ function setupDropdownFilters() {
         });
     }
     
-    // Filtre patients
     const patientSearch = document.getElementById('patient-search');
     if (patientSearch) {
         patientSearch.addEventListener('input', (e) => {
@@ -312,9 +287,6 @@ function setupDropdownFilters() {
     }
 }
 
-/**
- * 🔽 OUVERTURE/FERMETURE DROPDOWN AIDANT
- */
 window.toggleAidantDropdown = () => {
     const dropdown = document.getElementById('aidant-dropdown');
     const chevron = document.getElementById('aidant-chevron');
@@ -322,7 +294,6 @@ window.toggleAidantDropdown = () => {
         dropdown.classList.toggle('hidden');
         if (chevron) chevron.style.transform = dropdown.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
         
-        // Fermer l'autre dropdown
         const patientDropdown = document.getElementById('patient-dropdown');
         const patientChevron = document.getElementById('patient-chevron');
         if (patientDropdown && !patientDropdown.classList.contains('hidden')) {
@@ -332,9 +303,6 @@ window.toggleAidantDropdown = () => {
     }
 };
 
-/**
- * 🔽 OUVERTURE/FERMETURE DROPDOWN PATIENT
- */
 window.togglePatientDropdown = () => {
     const dropdown = document.getElementById('patient-dropdown');
     const chevron = document.getElementById('patient-chevron');
@@ -342,7 +310,6 @@ window.togglePatientDropdown = () => {
         dropdown.classList.toggle('hidden');
         if (chevron) chevron.style.transform = dropdown.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
         
-        // Fermer l'autre dropdown
         const aidantDropdown = document.getElementById('aidant-dropdown');
         const aidantChevron = document.getElementById('aidant-chevron');
         if (aidantDropdown && !aidantDropdown.classList.contains('hidden')) {
@@ -352,18 +319,13 @@ window.togglePatientDropdown = () => {
     }
 };
 
-
-
-
 async function renderAssignPage() {
     const container = document.getElementById("view-container");
     const { aidants, patients } = window._assignData || { aidants: [], patients: [] };
     
-    // 🔥 NOUVEAU : Récupérer les pré-sélections
     const preSelectedPatientId = window._preSelectedPatientId;
     const preSelectedAidantId = window._preSelectedAidantId;
     
-    // 🔥 NOUVEAU : Trouver les éléments pré-sélectionnés
     let selectedAidant = null;
     let selectedPatient = null;
     
@@ -375,11 +337,9 @@ async function renderAssignPage() {
         selectedPatient = patients.find(p => p.id === preSelectedPatientId);
     }
     
-    // 🔥 NOUVEAU : Nettoyer les variables temporaires
     delete window._preSelectedPatientId;
     delete window._preSelectedAidantId;
     
-
     const isMaman = localStorage.getItem("user_is_maman") === "true";
     const themeColor = isMaman ? 'pink' : 'emerald';
     const themeBgClass = isMaman ? 'bg-pink-50' : 'bg-emerald-50';
@@ -389,7 +349,6 @@ async function renderAssignPage() {
     
     container.innerHTML = `
         <div class="animate-fadeIn max-w-2xl mx-auto pb-32">
-            <!-- Header -->
             <div class="flex items-center gap-4 mb-6">
                 <button onclick="window.switchView('rh-dashboard')" 
                         class="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all active:scale-95">
@@ -401,7 +360,6 @@ async function renderAssignPage() {
                 </div>
             </div>
 
-            <!-- Carte principale -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 
                 <!-- Sélecteur Aidant -->
@@ -424,7 +382,6 @@ async function renderAssignPage() {
                             <i class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform" id="aidant-chevron"></i>
                         </div>
                         
-                        <!-- Dropdown Aidant -->
                         <div id="aidant-dropdown" class="hidden absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg z-50 max-h-72 overflow-y-auto">
                             <div class="sticky top-0 bg-white p-3 border-b border-slate-100">
                                 <div class="relative">
@@ -470,15 +427,13 @@ async function renderAssignPage() {
                                     <i class="fa-solid fa-user text-blue-500 text-base"></i>
                                 </div>
                                 <div>
-                                        <p id="selected-patient-name" class="font-semibold text-slate-800 text-sm">${selectedPatient ? selectedPatient.nom_complet : 'Choisir un patient'}</p>
-                                        <p id="selected-patient-formule" class="text-[10px] text-slate-400">${selectedPatient ? (selectedPatient.formule || 'Standard') : 'Sélectionnez dans la liste'}</p>
-                                
+                                    <p id="selected-patient-name" class="font-semibold text-slate-800 text-sm">${selectedPatient ? selectedPatient.nom_complet : 'Choisir un patient'}</p>
+                                    <p id="selected-patient-formule" class="text-[10px] text-slate-400">${selectedPatient ? (selectedPatient.formule || 'Standard') : 'Sélectionnez dans la liste'}</p>
                                 </div>
                             </div>
                             <i class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform" id="patient-chevron"></i>
                         </div>
                         
-                        <!-- Dropdown Patient -->
                         <div id="patient-dropdown" class="hidden absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg z-50 max-h-72 overflow-y-auto">
                             <div class="sticky top-0 bg-white p-3 border-b border-slate-100">
                                 <div class="relative">
@@ -590,7 +545,6 @@ async function renderAssignPage() {
         </div>
     `;
 
-    // Initialiser les sélecteurs
     window._selectedAidant = null;
     window._selectedPatient = null;
     
@@ -598,12 +552,10 @@ async function renderAssignPage() {
     setupAssignTypeHandlers();
 }
 
+// ============================================================
+// 4. SOUMISSION DE L'ASSIGNATION
+// ============================================================
 
-
-
-/**
- * 📤 SOUMISSION AVEC TYPE D'ASSIGNATION
- */
 window.submitAssignmentEnhanced = async () => {
     if (!window._selectedAidant) {
         Swal.fire({
@@ -691,10 +643,9 @@ window.submitAssignmentEnhanced = async () => {
     }
 };
 
-/**
- * 🔧 Gestionnaire des types d'assignation
- */
-// planning.js - Version corrigée de setupAssignTypeHandlers
+// ============================================================
+// 5. GESTIONNAIRE DES TYPES D'ASSIGNATION
+// ============================================================
 
 function setupAssignTypeHandlers() {
     const typePermanente = document.getElementById('type-permanente');
@@ -714,11 +665,9 @@ function setupAssignTypeHandlers() {
     const inactiveBorderClass = 'border-slate-200';
     
     const setActiveStyle = (activeBtn, inactiveBtns) => {
-        // Nettoyer les classes de l'élément actif
         activeBtn.classList.remove(inactiveBgClass, inactiveTextClass, inactiveBorderClass);
         activeBtn.classList.add(activeBgClass, activeTextClass, activeBorderClass);
         
-        // Nettoyer les classes des éléments inactifs
         inactiveBtns.forEach(btn => {
             btn.classList.remove(activeBgClass, activeTextClass, activeBorderClass);
             btn.classList.add(inactiveBgClass, inactiveTextClass, inactiveBorderClass);
@@ -747,12 +696,12 @@ function setupAssignTypeHandlers() {
         heureContainer.classList.remove('hidden');
     });
 }
-/**
- * 💡 TRANSITION INTELLIGENTE - Briefing
- */
- 
 
- export const openMissionBriefing = (patientId, planningId) => { 
+// ============================================================
+// 6. OUVRIR LE BRIEFING D'UNE MISSION
+// ============================================================
+
+export const openMissionBriefing = (patientId, planningId) => { 
     console.log("📋 openMissionBriefing appelée avec:", patientId, planningId);
     
     if (typeof UI !== 'undefined' && UI.vibrate) {
@@ -770,15 +719,20 @@ function setupAssignTypeHandlers() {
         window.switchView('patients');
     }
 };
-// Fonction pour lier le planning au démarrage de la visite
+
+// ============================================================
+// 7. DÉMARRER UNE VISITE PLANIFIÉE
+// ============================================================
+
 window.startPlannedVisit = (patientId, planningId) => {
     localStorage.setItem("current_planning_id", planningId);
     window.startVisit(patientId);
 };
 
-/**
- * 🗑️ SUPPRIMER UNE ASSIGNATION (Délier aidant-patient)
- */
+// ============================================================
+// 8. SUPPRIMER UNE ASSIGNATION (Délier aidant-patient)
+// ============================================================
+
 window.unassignAidant = async (planningId, patientName, aidantName) => {
     console.log("🔍 [DEBUG] unassignAidant appelée avec:", { planningId, patientName, aidantName });
     
@@ -825,7 +779,6 @@ window.unassignAidant = async (planningId, patientName, aidantName) => {
             showConfirmButton: false 
         });
         
-        // Recharger la vue RH
         if (typeof loadRHAssignments === 'function') {
             await loadRHAssignments();
         } else if (typeof window.loadRHAssignments === 'function') {
@@ -846,8 +799,9 @@ window.unassignAidant = async (planningId, patientName, aidantName) => {
     }
 };
 
-
-
+// ============================================================
+// 9. EXPORTS
+// ============================================================
 
 window.openMissionBriefing = openMissionBriefing;
 window.unassignAidant = unassignAidant;
@@ -855,4 +809,8 @@ window.startPlannedVisit = startPlannedVisit;
 window.submitAssignmentEnhanced = submitAssignmentEnhanced;
 window.toggleAidantDropdown = toggleAidantDropdown;
 window.togglePatientDropdown = togglePatientDropdown;
-window.openAssignPage = openAssignPage;  
+window.openAssignPage = openAssignPage;
+
+export { 
+     renderAssignPage
+};
