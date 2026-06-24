@@ -4098,7 +4098,10 @@ const ROLE_VIEWS = {
          "admin",
         "admin-setup",
         "admin-users",
-        "subscription"  
+        "subscription",
+        "feed",
+        "messages",
+        "visits"
     ],
 
     AIDANT: [
@@ -4150,6 +4153,9 @@ const ADMIN_ONLY_VIEWS = [
 // ✅ VUES AIDANT (uniquement pour AIDANT et COORDINATEUR)
 const AIDANT_ONLY_VIEWS = ['planning', 'start-visit', 'end-visit'];
 
+// ✅ VUES QUI NÉCESSITENT UN PATIENT SÉLECTIONNÉ
+const PATIENT_REQUIRED_VIEWS = ['feed', 'messages'];
+
 // ============================================================
 // FONCTION SWITCHVIEW CORRIGÉE
 // ============================================================
@@ -4181,7 +4187,7 @@ async function performViewSwitch(viewName) {
         let defaultView = "home";
 
         if (userRole === "COORDINATEUR") {
-            defaultView = "dashboard";  // ✅ LES ADMINS VONT SUR LE DASHBOARD
+            defaultView = "dashboard";
         } else if (userRole === "AIDANT") {
             defaultView = "patients";
         } else if (userRole === "FAMILLE" && isMaman && !isSansPatient) {
@@ -4212,6 +4218,77 @@ async function performViewSwitch(viewName) {
             localStorage.removeItem("last_view");
             await window.switchView("home");
             return;
+        }
+    }
+
+    // ============================================================
+    // 🔥 NOUVEAU : VÉRIFICATION PATIENT REQUIS POUR FEED ET MESSAGES
+    // ============================================================
+    const PATIENT_REQUIRED_VIEWS = ['feed', 'messages'];
+    
+    if (PATIENT_REQUIRED_VIEWS.includes(viewName)) {
+        let patientId = AppState.currentPatient || 
+                        localStorage.getItem("current_patient_id") || 
+                        localStorage.getItem("active_patient_id");
+        
+        // Si aucun patient n'est sélectionné, essayer d'en trouver un
+        if (!patientId) {
+            try {
+                const patients = await secureFetch("/patients");
+                if (patients && patients.length > 0) {
+                    // Si un seul patient, le sélectionner automatiquement
+                    if (patients.length === 1) {
+                        patientId = patients[0].id;
+                        AppState.currentPatient = patientId;
+                        localStorage.setItem("current_patient_id", patientId);
+                        localStorage.setItem("active_patient_id", patientId);
+                        console.log(`✅ Patient unique sélectionné pour ${viewName}`);
+                    } else {
+                        // Plusieurs patients, demander à l'utilisateur de choisir
+                        const patientChoices = patients.map(p => ({
+                            id: p.id,
+                            name: p.nom_complet || 'Patient sans nom'
+                        }));
+                        
+                        // Utiliser la fonction de sélection moderne
+                        const selected = await openModernSelector(
+                            patientChoices,
+                            "Sélectionner un patient",
+                            "Rechercher un patient..."
+                        );
+                        
+                        if (selected) {
+                            patientId = selected.id;
+                            AppState.currentPatient = patientId;
+                            localStorage.setItem("current_patient_id", patientId);
+                            localStorage.setItem("active_patient_id", patientId);
+                            console.log(`✅ Patient sélectionné pour ${viewName}`);
+                        } else {
+                            // L'utilisateur a annulé, retourner à la liste des patients
+                            console.warn("ℹ️ Aucun patient sélectionné, retour aux patients");
+                            await window.switchView("patients");
+                            return;
+                        }
+                    }
+                } else {
+                    // Aucun patient trouvé
+                    console.warn("ℹ️ Aucun patient trouvé, retour aux patients");
+                    await window.switchView("patients");
+                    return;
+                }
+            } catch (err) {
+                console.error("❌ Erreur récupération patients:", err);
+                await window.switchView("patients");
+                return;
+            }
+        }
+        
+        // Si on a un patient, on continue
+        if (patientId) {
+            AppState.currentPatient = patientId;
+            localStorage.setItem("current_patient_id", patientId);
+            localStorage.setItem("active_patient_id", patientId);
+            console.log(`✅ Accès à ${viewName} avec le patient ${patientId}`);
         }
     }
 
