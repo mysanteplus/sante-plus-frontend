@@ -4095,11 +4095,10 @@ const ROLE_VIEWS = {
         "link-family",
         "end-visit",
         "start-visit",
-        // ✅ TOUTES LES VUES ADMIN AJOUTÉES
-        "admin",
+         "admin",
         "admin-setup",
         "admin-users",
-        "subscription"  // Les admins peuvent aussi voir les abonnements
+        "subscription"  
     ],
 
     AIDANT: [
