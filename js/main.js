@@ -4003,138 +4003,10 @@ window.selectPackConfort = (packId, price, durationMonths) => {
 // LIENS DE NAVIGATION (DESKTOP)
 // ============================================================
 
-function getNavLinks(role, mode) {
-    const isMaman = localStorage.getItem("user_is_maman") === "true";
-    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
 
-    const isFamily = role === "FAMILLE";
-    const isAidant = role === "AIDANT";
-    const isCoordinateur = role === "COORDINATEUR";
-    const isSansPatient = typeCompte === "SANS_PATIENT";
 
-    let tabs = [];
 
-    // ============================================================
-    // COORDINATEUR
-    // ============================================================
-    if (isCoordinateur) {
-        tabs = [
-            { id: "dashboard", icon: "fa-chart-pie", label: "Dashboard" },
-            { id: "patients", icon: "fa-hospital-user", label: "Patients" },
-            { id: "aidants", icon: "fa-user-nurse", label: "Aidants" },
-            { id: "planning", icon: "fa-calendar-days", label: "Planning" },
-            { id: "rh-dashboard", icon: "fa-users", label: "RH" },
-            { id: "map", icon: "fa-location-dot", label: "Radar" },
-            { id: "commandes", icon: "fa-box", label: "Commandes" },
-            { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
-            { id: "users", icon: "fa-users-gear", label: "Utilisateurs" },
-            { id: "profile", icon: "fa-user-circle", label: "Profil" }
-        ];
-    }
 
-    // ============================================================
-    // AIDANT
-    // ============================================================
-      else if (isAidant) {
-          tabs = [
-              { id: "home", icon: "fa-home", label: "Accueil" },
-              { id: "patients", icon: "fa-folder-open", label: "Dossiers" },
-              { id: "feed", icon: "fa-newspaper", label: "Journal" },
-              { id: "messages", icon: "fa-comments", label: "Messages" },
-              { id: "planning", icon: "fa-calendar-days", label: "Planning" },
-              { id: "visits", icon: "fa-calendar-check", label: "Visites" },
-              { id: "commandes", icon: "fa-box", label: "Livraisons" },
-              { id: "map", icon: "fa-location-dot", label: "Radar" },
-              { id: "profile", icon: "fa-user-circle", label: "Profil" }
-          ];
-      }
-
-    // ============================================================
-    // FAMILLE MAMAN & BÉBÉ
-    // ============================================================
-    else if (isFamily && isMaman) {
-        if (isSansPatient) {
-            tabs = [
-                { id: "home", icon: "fa-home", label: "Accueil" },
-                { id: "commandes", icon: "fa-box", label: "Commandes" },
-                { id: "education", icon: "fa-graduation-cap", label: "Éducation" },
-                { id: "subscription", icon: "fa-crown", label: "Abonnement" },
-                { id: "profile", icon: "fa-user-circle", label: "Profil" }
-            ];
-        } else {
-            tabs = [
-                { id: "dashboard-maman", icon: "fa-chart-line", label: "Tableau maman" },
-                { id: "feed", icon: "fa-newspaper", label: "Journal bébé" },
-                { id: "visits", icon: "fa-calendar-check", label: "Visites" },
-                { id: "commandes", icon: "fa-box", label: "Commandes" },
-                { id: "education", icon: "fa-graduation-cap", label: "Éducation" },
-                { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
-                { id: "subscription", icon: "fa-crown", label: "Abonnement" },
-                { id: "profile", icon: "fa-user-circle", label: "Profil" }
-            ];
-        }
-    }
-
-    // ============================================================
-    // FAMILLE SENIOR
-    // ============================================================
-    else if (isFamily && !isMaman) {
-        if (isSansPatient) {
-            tabs = [
-                { id: "home", icon: "fa-home", label: "Accueil" },
-                { id: "commandes", icon: "fa-box", label: "Commandes" },
-                { id: "subscription", icon: "fa-crown", label: "Abonnement" },
-                { id: "profile", icon: "fa-user-circle", label: "Profil" }
-            ];
-        } else {
-            tabs = [
-                { id: "home", icon: "fa-home", label: "Accueil" },
-                { id: "feed", icon: "fa-newspaper", label: "Journal de soins" },
-                { id: "visits", icon: "fa-calendar-check", label: "Visites" },
-                { id: "commandes", icon: "fa-box", label: "Commandes" },
-                { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
-                { id: "subscription", icon: "fa-crown", label: "Abonnement" },
-                { id: "profile", icon: "fa-user-circle", label: "Profil" }
-            ];
-        }
-    }
-
-    // ============================================================
-    // FALLBACK SÉCURITÉ
-    // ============================================================
-    else {
-        tabs = [
-            { id: "home", icon: "fa-home", label: "Accueil" },
-            { id: "profile", icon: "fa-user-circle", label: "Profil" }
-        ];
-    }
-
-    // ============================================================
-    // GÉNÉRATION MOBILE
-    // ============================================================
-    if (mode === "mobile") {
-        return tabs.map(tab => `
-            <button onclick="window.switchView('${tab.id}')" 
-                    data-view="${tab.id}" 
-                    class="nav-btn flex flex-col items-center gap-1 flex-1 text-slate-400 transition-all">
-                <i class="fa-solid ${tab.icon} text-lg"></i>
-                <span class="text-[8px] font-black uppercase tracking-tighter">${tab.label}</span>
-            </button>
-        `).join("");
-    }
-
-    // ============================================================
-    // GÉNÉRATION DESKTOP / SIDEBAR
-    // ============================================================
-    return tabs.map(tab => `
-        <button onclick="window.switchView('${tab.id}')" 
-                data-view="${tab.id}" 
-                class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all text-sm">
-            <i class="fa-solid ${tab.icon} text-base w-5"></i>
-            <span>${tab.label}</span>
-        </button>
-    `).join("");
-}
 // ============================================================
 // TRANSITION ENTRE LES VUES (SWITCHVIEW)
 // ============================================================
@@ -4199,8 +4071,9 @@ window.switchView = async function(viewName) {
 
 
 
+
 // ============================================================
-// CHARGEMENT D'UNE VUE SPÉCIFIQUE (VERSION CORRIGÉE)
+// DÉFINITION DES VUES PAR RÔLE (CORRIGÉ)
 // ============================================================
 
 const ROLE_VIEWS = {
@@ -4216,60 +4089,71 @@ const ROLE_VIEWS = {
         "billing",
         "profile",
         "users",
-        "notifications", 
-        "add-patient",       
-        "add-aidant",       
-        "link-family",       
-        "end-visit",         
-        "start-visit" 
+        "notifications",
+        "add-patient",
+        "add-aidant",
+        "link-family",
+        "end-visit",
+        "start-visit",
+        // ✅ TOUTES LES VUES ADMIN AJOUTÉES
+        "admin",
+        "admin-setup",
+        "admin-users",
+        "subscription"  // Les admins peuvent aussi voir les abonnements
     ],
 
-      AIDANT: [
-       "home",
-       "patients",
-       "feed",
-       "messages",
-       "planning",
-       "visits",
-       "commandes",
-       "map",
-       "profile",
-       "notifications",
-       "start-visit",
-       "end-visit"
-   ],
+    AIDANT: [
+        "home",
+        "patients",
+        "feed",
+        "messages",
+        "planning",
+        "visits",
+        "commandes",
+        "map",
+        "profile",
+        "notifications",
+        "start-visit",
+        "end-visit",
+        "subscription"
+    ],
 
-   FAMILLE: [
-       "home",
-       "dashboard-maman",
-       "feed",
-       "visits",
-       "commandes",
-       "billing",
-       "subscription",
-       "profile",
-       "education",
-       "notifications",
-       "maman-planning",
-       "map"
-   ]
+    FAMILLE: [
+        "home",
+        "dashboard-maman",
+        "feed",
+        "visits",
+        "commandes",
+        "billing",
+        "subscription",
+        "profile",
+        "education",
+        "notifications",
+        "maman-planning",
+        "map"
+    ]
 };
-
 
 // ✅ VUES PUBLIQUES (accessibles à tous les connectés)
 const PUBLIC_VIEWS = ['home', 'profile', 'notifications'];
 
-// ✅ VUES RÉSERVÉES (avec vérification supplémentaire)
-
+// ✅ VUES ADMIN (uniquement pour COORDINATEUR)
 const ADMIN_ONLY_VIEWS = [
     "dashboard",
     "aidants",
     "rh-dashboard",
     "admin",
-    "users"
+    "users",
+    "admin-setup",
+    "admin-users"
 ];
 
+// ✅ VUES AIDANT (uniquement pour AIDANT et COORDINATEUR)
 const AIDANT_ONLY_VIEWS = ['planning', 'start-visit', 'end-visit'];
+
+// ============================================================
+// FONCTION SWITCHVIEW CORRIGÉE
+// ============================================================
 
 async function performViewSwitch(viewName) {
     const container = document.getElementById("view-container");
@@ -4291,46 +4175,45 @@ async function performViewSwitch(viewName) {
     const allowedViews = ROLE_VIEWS[userRole] || [];
     const isAllowed = allowedViews.includes(viewName) || PUBLIC_VIEWS.includes(viewName);
     
-   if (!isAllowed) {
-       console.warn(`Vue non autorisée pour ${userRole}:`, viewName);
-   
-       localStorage.removeItem("last_view");
-   
-       let defaultView = "home";
-   
-       if (userRole === "COORDINATEUR") {
-           defaultView = "dashboard";
-       } else if (userRole === "AIDANT") {
-           defaultView = "patients";
-       } else if (
-           userRole === "FAMILLE" &&
-           isMaman &&
-           !isSansPatient
-       ) {
-           defaultView = "dashboard-maman";
-       }
-   
-       if (viewName !== defaultView) {
-           await window.switchView(defaultView);
-       }
-   
-       return;
-   }
-    
-    // ✅ Vérification supplémentaire pour les vues admin
-    if (ADMIN_ONLY_VIEWS.includes(viewName) && userRole !== "COORDINATEUR") {
-        console.warn(`Vue admin bloquée pour ${userRole}:`, viewName);
+    if (!isAllowed) {
+        console.warn(`⛔ Vue non autorisée pour ${userRole}:`, viewName);
         localStorage.removeItem("last_view");
-        await window.switchView("home");
+
+        let defaultView = "home";
+
+        if (userRole === "COORDINATEUR") {
+            defaultView = "dashboard";  // ✅ LES ADMINS VONT SUR LE DASHBOARD
+        } else if (userRole === "AIDANT") {
+            defaultView = "patients";
+        } else if (userRole === "FAMILLE" && isMaman && !isSansPatient) {
+            defaultView = "dashboard-maman";
+        }
+
+        if (viewName !== defaultView) {
+            await window.switchView(defaultView);
+        }
         return;
     }
     
-    // ✅ Vérification pour les vues aidant
-    if (AIDANT_ONLY_VIEWS.includes(viewName) && userRole !== "AIDANT" && userRole !== "COORDINATEUR") {
-        console.warn(`Vue aidant bloquée pour ${userRole}:`, viewName);
-        localStorage.removeItem("last_view");
-        await window.switchView("home");
-        return;
+    // ✅ VÉRIFICATION SUPPLÉMENTAIRE POUR LES VUES ADMIN
+    if (ADMIN_ONLY_VIEWS.includes(viewName)) {
+        if (userRole !== "COORDINATEUR") {
+            console.warn(`⛔ Vue admin ${viewName} bloquée pour ${userRole}`);
+            localStorage.removeItem("last_view");
+            await window.switchView("home");
+            return;
+        }
+        console.log(`✅ Accès admin accordé à ${viewName}`);
+    }
+    
+    // ✅ VÉRIFICATION POUR LES VUES AIDANT
+    if (AIDANT_ONLY_VIEWS.includes(viewName)) {
+        if (userRole !== "AIDANT" && userRole !== "COORDINATEUR") {
+            console.warn(`⛔ Vue aidant ${viewName} bloquée pour ${userRole}`);
+            localStorage.removeItem("last_view");
+            await window.switchView("home");
+            return;
+        }
     }
 
     // ============================================================
@@ -4443,7 +4326,12 @@ async function performViewSwitch(viewName) {
         "start-visit": "Démarrer la visite",
         "subscription": "Nos Formules",
         "profile": "Mon Profil",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        // ✅ TITRES ADMIN AJOUTÉS
+        "admin": "Administration",
+        "admin-setup": "Configuration Admin",
+        "admin-users": "Gestion Utilisateurs",
+        "users": "Utilisateurs"
     };
     
     if (titleElement) titleElement.innerText = viewTitles[viewName] || "Santé Plus";
@@ -4512,10 +4400,14 @@ async function performViewSwitch(viewName) {
         "add-aidant": '<div class="animate-fadeIn" id="add-aidant-content"></div>',
         "end-visit": '<div class="animate-fadeIn" id="end-visit-content"></div>',
         "start-visit": '<div class="animate-fadeIn" id="start-visit-content"></div>',
-        users: '<div class="animate-fadeIn" id="users-content"></div>'
+        users: '<div class="animate-fadeIn" id="users-content"></div>',
+        // ✅ TEMPLATES ADMIN AJOUTÉS
+        "admin": '<div class="animate-fadeIn" id="admin-content"></div>',
+        "admin-setup": '<div class="animate-fadeIn" id="admin-setup-content"></div>',
+        "admin-users": '<div class="animate-fadeIn" id="admin-users-content"></div>'
     };
 
-    // Afficher le template immédiatement
+    // Afficher le template
     container.innerHTML = templates[viewName] || `<div class="animate-fadeIn"><div id="${viewName}-content"></div></div>`;
 
     // Animation d'entrée
@@ -4536,138 +4428,110 @@ async function performViewSwitch(viewName) {
     // 7. CHARGEMENT DES DONNÉES PAR VUE
     // ============================================================
     try {
-               console.log("🧭 Vue demandée :", viewName);
-               console.log("👤 Rôle :", userRole);
-               console.log("✅ Vue autorisée :", isAllowed);
+        console.log("🧭 Vue demandée :", viewName);
+        console.log("👤 Rôle :", userRole);
+
         switch (viewName) {
-          case "dashboard":
-              if (userRole !== "COORDINATEUR") {
-                  console.warn(`Dashboard admin bloqué pour ${userRole}`);
-                  localStorage.removeItem("last_view");
-                  await window.switchView("home");
-                  return;
-              }
-          
-              container.innerHTML = document.getElementById("template-dashboard").innerHTML;
-              await Dashboard.loadAdminDashboard();
-              break;
+            case "dashboard":
+                if (userRole !== "COORDINATEUR") {
+                    console.warn(`Dashboard admin bloqué pour ${userRole}`);
+                    localStorage.removeItem("last_view");
+                    await window.switchView("home");
+                    return;
+                }
+                container.innerHTML = document.getElementById("template-dashboard").innerHTML;
+                await Dashboard.loadAdminDashboard();
+                break;
+                
             case "patients":
                 await Patients.loadPatients();
                 refreshMicroInteractions();
                 break;
+                
             case "visits":
                 await Visites.loadVisits();
                 break;
 
-           case "messages": {
-                 if (window.cleanupRealtime) window.cleanupRealtime();
-             
-                 let patientId =
-                     AppState.currentPatient ||
-                     localStorage.getItem("current_patient_id") ||
-                     localStorage.getItem("active_patient_id");
-             
-                 // Si aucun patient n'est encore sélectionné, on vérifie les dossiers disponibles
-                 if (!patientId) {
-                     try {
-                         let patients = await secureFetch("/patients", { noCache: true });
-             
-                         if (!Array.isArray(patients)) {
-                             patients = patients?.data || patients?.results || [];
-                         }
-             
-                         // S'il n'y a qu'un seul dossier, on peut l'utiliser directement
-                         if (patients.length === 1) {
-                             patientId = patients[0].id;
-                         }
-             
-                         // S'il y a plusieurs dossiers, on ne choisit pas à la place de l'utilisateur
-                         else if (patients.length > 1) {
-                             console.warn("Plusieurs dossiers disponibles. Sélection obligatoire avant d'ouvrir les messages.");
-                             await window.switchView("patients");
-                             return;
-                         }
-             
-                     } catch (err) {
-                         console.warn("Impossible de récupérer les dossiers pour les messages:", err);
-                     }
-                 }
-             
-                 if (!patientId) {
-                     console.warn("Aucun dossier disponible pour ouvrir les messages");
-                     await window.switchView("patients");
-                     return;
-                 }
-             
-                 AppState.currentPatient = patientId;
-                 localStorage.setItem("current_patient_id", patientId);
-                 localStorage.setItem("active_patient_id", patientId);
-             
-                 if (Messages?.loadFeed) {
-                     await Messages.loadFeed();
-                 } else if (typeof window.loadFeed === "function") {
-                     await window.loadFeed();
-                 } else {
-                     console.warn("Fonction loadFeed introuvable pour les messages");
-                 }
-             
-                 break;
-             }
-             
-             case "feed": {
-                 if (window.cleanupRealtime) window.cleanupRealtime();
-             
-                 let patientId =
-                     AppState.currentPatient ||
-                     localStorage.getItem("current_patient_id") ||
-                     localStorage.getItem("active_patient_id");
-             
-                 // Si aucun patient n'est encore sélectionné, on vérifie les dossiers disponibles
-                 if (!patientId) {
-                     try {
-                         let patients = await secureFetch("/patients", { noCache: true });
-             
-                         if (!Array.isArray(patients)) {
-                             patients = patients?.data || patients?.results || [];
-                         }
-             
-                         // S'il n'y a qu'un seul dossier, on peut l'utiliser directement
-                         if (patients.length === 1) {
-                             patientId = patients[0].id;
-                         }
-             
-                         // S'il y a plusieurs dossiers, on ne choisit pas à la place de l'utilisateur
-                         else if (patients.length > 1) {
-                             console.warn("Plusieurs dossiers disponibles. Sélection obligatoire avant d'ouvrir le journal.");
-                             await window.switchView("patients");
-                             return;
-                         }
-             
-                     } catch (err) {
-                         console.warn("Impossible de récupérer les dossiers pour le journal:", err);
-                     }
-                 }
-             
-                 if (!patientId) {
-                     console.warn("Aucun dossier disponible pour ouvrir le journal");
-                     await window.switchView("patients");
-                     return;
-                 }
-             
-                 AppState.currentPatient = patientId;
-                 localStorage.setItem("current_patient_id", patientId);
-                 localStorage.setItem("active_patient_id", patientId);
-             
-                 if (Messages?.loadFeed) {
-                     await Messages.loadFeed();
-                 } else if (typeof window.loadFeed === "function") {
-                     await window.loadFeed();
-                 } else {
-                     console.warn("Fonction loadFeed introuvable pour le journal");
-                 }
-             
-                 break;
-             }
+            case "messages":
+                if (window.cleanupRealtime) window.cleanupRealtime();
+                
+                let patientId = AppState.currentPatient || localStorage.getItem("current_patient_id") || localStorage.getItem("active_patient_id");
+                
+                if (!patientId) {
+                    try {
+                        let patients = await secureFetch("/patients", { noCache: true });
+                        if (!Array.isArray(patients)) {
+                            patients = patients?.data || patients?.results || [];
+                        }
+                        if (patients.length === 1) {
+                            patientId = patients[0].id;
+                        } else if (patients.length > 1) {
+                            console.warn("Plusieurs dossiers disponibles. Sélection obligatoire.");
+                            await window.switchView("patients");
+                            return;
+                        }
+                    } catch (err) {
+                        console.warn("Impossible de récupérer les dossiers:", err);
+                    }
+                }
+                
+                if (!patientId) {
+                    console.warn("Aucun dossier disponible");
+                    await window.switchView("patients");
+                    return;
+                }
+                
+                AppState.currentPatient = patientId;
+                localStorage.setItem("current_patient_id", patientId);
+                localStorage.setItem("active_patient_id", patientId);
+                
+                if (Messages?.loadFeed) {
+                    await Messages.loadFeed();
+                } else if (typeof window.loadFeed === "function") {
+                    await window.loadFeed();
+                }
+                break;
+                
+            case "feed":
+                if (window.cleanupRealtime) window.cleanupRealtime();
+                
+                let feedPatientId = AppState.currentPatient || localStorage.getItem("current_patient_id") || localStorage.getItem("active_patient_id");
+                
+                if (!feedPatientId) {
+                    try {
+                        let patients = await secureFetch("/patients", { noCache: true });
+                        if (!Array.isArray(patients)) {
+                            patients = patients?.data || patients?.results || [];
+                        }
+                        if (patients.length === 1) {
+                            feedPatientId = patients[0].id;
+                        } else if (patients.length > 1) {
+                            console.warn("Plusieurs dossiers disponibles. Sélection obligatoire.");
+                            await window.switchView("patients");
+                            return;
+                        }
+                    } catch (err) {
+                        console.warn("Impossible de récupérer les dossiers:", err);
+                    }
+                }
+                
+                if (!feedPatientId) {
+                    console.warn("Aucun dossier disponible");
+                    await window.switchView("patients");
+                    return;
+                }
+                
+                AppState.currentPatient = feedPatientId;
+                localStorage.setItem("current_patient_id", feedPatientId);
+                localStorage.setItem("active_patient_id", feedPatientId);
+                
+                if (Messages?.loadFeed) {
+                    await Messages.loadFeed();
+                } else if (typeof window.loadFeed === "function") {
+                    await window.loadFeed();
+                }
+                break;
+                
             case "billing":
                 const billingTemplate = document.getElementById("template-billing");
                 if (billingTemplate) {
@@ -4677,27 +4541,35 @@ async function performViewSwitch(viewName) {
                 }
                 await Billing.loadBilling();
                 break;
+                
             case "aidants":
                 await Aidants.loadAidants();
                 break;
+                
             case "planning":
                 await Planning.loadPlanning();
                 break;
+                
             case "commandes":
                 await Commandes.loadCommandes();
                 break;
+                
             case "add-patient":
                 await Patients.renderAddPatientView();
                 break;
+                
             case "link-family":
                 await Patients.renderLinkFamilyView();
                 break;
+                
             case "add-aidant":
                 await Aidants.renderAddAidantView();
                 break;
+                
             case "end-visit":
                 await Visites.renderEndVisitView();
                 break;
+                
             case "start-visit":
                 if (!AppState.currentPatient) {
                     const patients = await secureFetch("/patients");
@@ -4711,6 +4583,7 @@ async function performViewSwitch(viewName) {
                 }
                 await Visites.renderStartVisitView(AppState.currentPatient);
                 break;
+                
             case "home":
                 const homeTypeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
                 const homeIsSansPatient = homeTypeCompte === "SANS_PATIENT";
@@ -4724,18 +4597,23 @@ async function performViewSwitch(viewName) {
                     renderMobileHub();
                 }
                 break;
+                
             case "subscription":
                 await Subscription.renderSubscriptionPage();
                 break;
+                
             case "rh-dashboard":
                 await Admin.renderRHDashboard();
                 break;
+                
             case "profile":
                 await Profile.renderProfilePage();
                 break;
+                
             case "notifications":
                 await Notifications.renderNotificationsPage();
                 break;
+                
             case "dashboard-maman":
                 if (userRole !== "FAMILLE" || !isMaman) {
                     console.warn(`Dashboard maman bloqué pour ${userRole}`);
@@ -4743,9 +4621,9 @@ async function performViewSwitch(viewName) {
                     await window.switchView("home");
                     return;
                 }
-            
                 await Maman.loadMamanDashboard();
                 break;
+                
             case "maman-planning":
                 if (typeof loadMamanPlanning === 'function') {
                     await loadMamanPlanning();
@@ -4754,13 +4632,12 @@ async function performViewSwitch(viewName) {
                     await loadMamanPlanning();
                 }
                 break;
-          case "map":
-               console.log("📡 Entrée dans case map");
-               console.log("🧩 MapModule:", MapModule);
-               console.log("🧩 initLiveMap:", typeof MapModule.initLiveMap);
-           
-               await MapModule.initLiveMap();
-               break;
+                
+            case "map":
+                console.log("📡 Entrée dans case map");
+                await MapModule.initLiveMap();
+                break;
+                
             case "education":
                 if (!isMaman) {
                     UI.warning("Cette section est réservée aux mamans");
@@ -4769,9 +4646,105 @@ async function performViewSwitch(viewName) {
                 }
                 await loadEducationPage();
                 break;
+                
             case "users":
                 const { renderUsersPage } = await import('./modules/users.js');
                 await renderUsersPage();
+                break;
+                
+            // ✅ CAS ADMIN AJOUTÉS
+            case "admin":
+            case "admin-setup":
+            case "admin-users":
+                if (userRole !== "COORDINATEUR") {
+                    console.warn(`⛔ Accès admin refusé à ${viewName}`);
+                    await window.switchView("home");
+                    return;
+                }
+                console.log(`✅ Chargement de la vue admin: ${viewName}`);
+                
+                // Charger le contenu admin approprié
+                if (viewName === "admin") {
+                    // Vue admin principale
+                    container.innerHTML = `
+                        <div class="animate-fadeIn p-6">
+                            <div class="flex items-center gap-4 mb-8">
+                                <div>
+                                    <h2 class="text-2xl font-black text-slate-800">Administration</h2>
+                                    <p class="text-sm text-slate-500">Gestion complète de la plateforme</p>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div onclick="window.switchView('users')" 
+                                     class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-98">
+                                    <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-3">
+                                        <i class="fa-solid fa-users text-blue-600 text-xl"></i>
+                                    </div>
+                                    <h3 class="font-black text-slate-800">Utilisateurs</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Gérer tous les comptes</p>
+                                </div>
+                                
+                                <div onclick="window.switchView('admin-setup')" 
+                                     class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-98">
+                                    <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center mb-3">
+                                        <i class="fa-solid fa-user-shield text-emerald-600 text-xl"></i>
+                                    </div>
+                                    <h3 class="font-black text-slate-800">Administrateurs</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Créer et gérer les admins</p>
+                                </div>
+                                
+                                <div onclick="window.switchView('rh-dashboard')" 
+                                     class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-98">
+                                    <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center mb-3">
+                                        <i class="fa-solid fa-user-nurse text-purple-600 text-xl"></i>
+                                    </div>
+                                    <h3 class="font-black text-slate-800">RH & Assignations</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Gestion des aidants</p>
+                                </div>
+                                
+                                <div onclick="window.switchView('billing')" 
+                                     class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-98">
+                                    <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center mb-3">
+                                        <i class="fa-solid fa-credit-card text-amber-600 text-xl"></i>
+                                    </div>
+                                    <h3 class="font-black text-slate-800">Facturation</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Gestion des paiements</p>
+                                </div>
+                                
+                                <div onclick="window.switchView('patients')" 
+                                     class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-98">
+                                    <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mb-3">
+                                        <i class="fa-solid fa-hospital-user text-green-600 text-xl"></i>
+                                    </div>
+                                    <h3 class="font-black text-slate-800">Patients</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Gestion des dossiers</p>
+                                </div>
+                                
+                                <div onclick="window.switchView('commandes')" 
+                                     class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-98">
+                                    <div class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center mb-3">
+                                        <i class="fa-solid fa-box text-orange-600 text-xl"></i>
+                                    </div>
+                                    <h3 class="font-black text-slate-800">Commandes</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Suivi des commandes</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else if (viewName === "admin-setup") {
+                    // La page admin-setup est déjà gérée par le HTML static
+                    // On charge le contenu depuis admin-setup.html
+                    container.innerHTML = `
+                        <div class="animate-fadeIn">
+                            <iframe src="/admin-setup.html" style="width:100%; min-height:80vh; border:none; border-radius:1.5rem;"></iframe>
+                        </div>
+                    `;
+                } else if (viewName === "admin-users") {
+                    // La page admin-users est déjà gérée par le module users.js
+                    const { renderUsersPage } = await import('./modules/users.js');
+                    await renderUsersPage();
+                }
                 break;
         }
 
@@ -4786,7 +4759,7 @@ async function performViewSwitch(viewName) {
         }
 
     } catch (err) {
-        console.error("DEBUG VIEW ERROR:", err);
+        console.error("❌ DEBUG VIEW ERROR:", err);
         container.innerHTML = `<div class="p-10 text-center bg-white rounded-[2rem] border border-rose-100 shadow-sm animate-fadeIn">
                                     <i class="fa-solid fa-circle-exclamation text-rose-500 text-3xl mb-4"></i>
                                     <h3 class="text-rose-500 font-black text-lg uppercase">Erreur de chargement</h3>
@@ -4796,6 +4769,151 @@ async function performViewSwitch(viewName) {
         container.style.opacity = "1";
     }
 }
+
+// ============================================================
+// NAVIGATION DESKTOP (SIDEBAR) - CORRIGÉE
+// ============================================================
+
+function getNavLinks(role, mode) {
+    const isMaman = localStorage.getItem("user_is_maman") === "true";
+    const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+
+    const isFamily = role === "FAMILLE";
+    const isAidant = role === "AIDANT";
+    const isCoordinateur = role === "COORDINATEUR";
+    const isSansPatient = typeCompte === "SANS_PATIENT";
+
+    let tabs = [];
+
+    // ============================================================
+    // COORDINATEUR
+    // ============================================================
+    if (isCoordinateur) {
+        tabs = [
+            { id: "dashboard", icon: "fa-chart-pie", label: "Dashboard" },
+            { id: "patients", icon: "fa-hospital-user", label: "Patients" },
+            { id: "aidants", icon: "fa-user-nurse", label: "Aidants" },
+            { id: "planning", icon: "fa-calendar-days", label: "Planning" },
+            { id: "rh-dashboard", icon: "fa-users", label: "RH" },
+            { id: "map", icon: "fa-location-dot", label: "Radar" },
+            { id: "commandes", icon: "fa-box", label: "Commandes" },
+            { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+            { id: "users", icon: "fa-users-gear", label: "Utilisateurs" },
+            // ✅ AJOUT DES VUES ADMIN DANS LA SIDEBAR
+            { id: "admin", icon: "fa-shield-halved", label: "Administration" },
+            { id: "profile", icon: "fa-user-circle", label: "Profil" }
+        ];
+    }
+
+    // ============================================================
+    // AIDANT
+    // ============================================================
+    else if (isAidant) {
+        tabs = [
+            { id: "home", icon: "fa-home", label: "Accueil" },
+            { id: "patients", icon: "fa-folder-open", label: "Dossiers" },
+            { id: "feed", icon: "fa-newspaper", label: "Journal" },
+            { id: "messages", icon: "fa-comments", label: "Messages" },
+            { id: "planning", icon: "fa-calendar-days", label: "Planning" },
+            { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+            { id: "commandes", icon: "fa-box", label: "Livraisons" },
+            { id: "map", icon: "fa-location-dot", label: "Radar" },
+            { id: "profile", icon: "fa-user-circle", label: "Profil" }
+        ];
+    }
+
+    // ============================================================
+    // FAMILLE MAMAN & BÉBÉ
+    // ============================================================
+    else if (isFamily && isMaman) {
+        if (isSansPatient) {
+            tabs = [
+                { id: "home", icon: "fa-home", label: "Accueil" },
+                { id: "commandes", icon: "fa-box", label: "Commandes" },
+                { id: "education", icon: "fa-graduation-cap", label: "Éducation" },
+                { id: "subscription", icon: "fa-crown", label: "Abonnement" },
+                { id: "profile", icon: "fa-user-circle", label: "Profil" }
+            ];
+        } else {
+            tabs = [
+                { id: "dashboard-maman", icon: "fa-chart-line", label: "Tableau maman" },
+                { id: "feed", icon: "fa-newspaper", label: "Journal bébé" },
+                { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+                { id: "commandes", icon: "fa-box", label: "Commandes" },
+                { id: "education", icon: "fa-graduation-cap", label: "Éducation" },
+                { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+                { id: "subscription", icon: "fa-crown", label: "Abonnement" },
+                { id: "profile", icon: "fa-user-circle", label: "Profil" }
+            ];
+        }
+    }
+
+    // ============================================================
+    // FAMILLE SENIOR
+    // ============================================================
+    else if (isFamily && !isMaman) {
+        if (isSansPatient) {
+            tabs = [
+                { id: "home", icon: "fa-home", label: "Accueil" },
+                { id: "commandes", icon: "fa-box", label: "Commandes" },
+                { id: "subscription", icon: "fa-crown", label: "Abonnement" },
+                { id: "profile", icon: "fa-user-circle", label: "Profil" }
+            ];
+        } else {
+            tabs = [
+                { id: "home", icon: "fa-home", label: "Accueil" },
+                { id: "feed", icon: "fa-newspaper", label: "Journal de soins" },
+                { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+                { id: "commandes", icon: "fa-box", label: "Commandes" },
+                { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+                { id: "subscription", icon: "fa-crown", label: "Abonnement" },
+                { id: "profile", icon: "fa-user-circle", label: "Profil" }
+            ];
+        }
+    }
+
+    // ============================================================
+    // FALLBACK SÉCURITÉ
+    // ============================================================
+    else {
+        tabs = [
+            { id: "home", icon: "fa-home", label: "Accueil" },
+            { id: "profile", icon: "fa-user-circle", label: "Profil" }
+        ];
+    }
+
+    // ============================================================
+    // GÉNÉRATION DES LIENS
+    // ============================================================
+    if (mode === "mobile") {
+        return tabs.map(tab => `
+            <button onclick="window.switchView('${tab.id}')" 
+                    data-view="${tab.id}" 
+                    class="nav-btn flex flex-col items-center gap-1 flex-1 text-slate-400 transition-all">
+                <i class="fa-solid ${tab.icon} text-lg"></i>
+                <span class="text-[8px] font-black uppercase tracking-tighter">${tab.label}</span>
+            </button>
+        `).join("");
+    }
+
+    // Desktop / Sidebar
+    return tabs.map(tab => `
+        <button onclick="window.switchView('${tab.id}')" 
+                data-view="${tab.id}" 
+                class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all text-sm">
+            <i class="fa-solid ${tab.icon} text-base w-5"></i>
+            <span>${tab.label}</span>
+        </button>
+    `).join("");
+}
+
+
+window.performViewSwitch = performViewSwitch;
+window.getNavLinks = getNavLinks;
+
+
+
+
 
 
 // ============================================================
