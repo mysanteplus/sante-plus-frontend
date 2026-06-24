@@ -240,101 +240,7 @@ function createCoordinatorIcon(color, iconName, isAnimated) {
 // FONCTION D'AJOUT DU FOND DE CARTE
 // ============================================================
 
-function addTileLayer(mapInstance, style = 'satellite') {
-    // ============================================================
-    // 🗺️ CHOIX DU FOND DE CARTE - DÉCOMMENTER CELUI QUE TU VEUX
-    // ============================================================
-    
-    // 🔴 OPTION 1: GOOGLE MAPS SATELLITE (Très réaliste - Recommandé)
-    // https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}
-    // 's' = satellite, 'y' = hybrid (satellite + routes), 'm' = plan, 'p' = terrain
-    // ============================================================
-    // L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-    //     maxZoom: 20,
-    //     attribution: 'Google'
-    // }).addTo(mapInstance);
 
-    // 🔴 OPTION 2: GOOGLE MAPS HYBRID (Satellite + Routes - Très bonne visibilité)
-    // ============================================================
-    // L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-    //     maxZoom: 20,
-    //     attribution: 'Google'
-    // }).addTo(mapInstance);
-
-    // 🔴 OPTION 3: GOOGLE MAPS PLAN (Comme Google Maps classique)
-    // ============================================================
-    // L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-    //     maxZoom: 20,
-    //     attribution: 'Google'
-    // }).addTo(mapInstance);
-
-    // 🔴 OPTION 4: GOOGLE MAPS TERRAIN (Avec relief)
-    // ============================================================
-    // L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
-    //     maxZoom: 20,
-    //     attribution: 'Google'
-    // }).addTo(mapInstance);
-
-    // 🔴 OPTION 5: ESRI SATELLITE (Excellente qualité)
-    // ============================================================
-    // L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    //     maxZoom: 19,
-    //     attribution: 'Tiles &copy; Esri'
-    // }).addTo(mapInstance);
-
-    // 🔴 OPTION 6: OPENSTREETMAP (Classique, gratuit, détaillé)
-    // ============================================================
-    // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    //     maxZoom: 20,
-    //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    // }).addTo(mapInstance);
-
-    // 🔴 OPTION 7: OPENSTREETMAP HUMANITARIAN (Détaillé, couleurs douces)
-    // ============================================================
-    // L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-    //     maxZoom: 20,
-    //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    // }).addTo(mapInstance);
-
-    // 🔴 OPTION 8: CARTODB VOYAGER (Élégant, moderne)
-    // ============================================================
-    // L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    //     maxZoom: 20,
-    //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB'
-    // }).addTo(mapInstance);
-
-    // 🔴 OPTION 9: CARTODB DARK MATTER (Mode nuit)
-    // ============================================================
-    // L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    //     maxZoom: 20,
-    //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB'
-    // }).addTo(mapInstance);
-
-    // 🔴 OPTION 10: GOOGLE MAPS SATELLITE AVEC ROUTES (Défaut - si rien n'est décommenté)
-    // ============================================================
-    if (style === 'satellite') {
-        L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            attribution: 'Google'
-        }).addTo(mapInstance);
-    } else if (style === 'hybrid') {
-        L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            attribution: 'Google'
-        }).addTo(mapInstance);
-    } else if (style === 'street') {
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 20,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(mapInstance);
-    } else {
-        // Défaut: Satellite
-        L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            attribution: 'Google'
-        }).addTo(mapInstance);
-    }
-}
 
 // ============================================================
 // FONCTION PRINCIPALE - ROUTAGE PAR RÔLE
@@ -426,238 +332,70 @@ export async function initLiveMap() {
 // 🗺️ VUE COORDINATEUR
 // ============================================================
 
-async function initCoordinatorMap() {
-    const container = document.getElementById('view-container');
+ 
+// ✅ AJOUTER CETTE VARIABLE GLOBALE
+let userInteracted = false; // Indique si l'utilisateur a interagi avec la carte
+
+// ============================================================
+// FONCTION D'AJOUT DU FOND DE CARTE (OpenStreetMap - maxZoom corrigé)
+// ============================================================
+
+function addTileLayer(mapInstance, style = 'street') {
+    // ============================================================
+    // 🗺️ OPENSTREETMAP - maxZoom: 19 (CORRIGÉ)
+    // ============================================================
     
-    container.innerHTML = `
-        <div class="animate-fadeIn flex flex-col h-[85vh] pb-32">
-            <div class="flex justify-between items-center mb-6 shrink-0 flex-wrap gap-3">
-                <div>
-                    <h3 class="text-2xl font-black text-slate-800">📡 Radar Supervision</h3>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Suivi en temps réel des interventions</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button id="refresh-map-btn" class="bg-white p-3 rounded-xl shadow-md border border-slate-100">
-                        <i class="fa-solid fa-rotate-right text-slate-600"></i>
-                    </button>
-                    <button id="center-all-btn" class="bg-white p-3 rounded-xl shadow-md border border-slate-100">
-                        <i class="fa-solid fa-globe text-slate-600"></i>
-                    </button>
-                    <button id="show-alerts-btn" class="bg-amber-500 text-white px-4 py-3 rounded-xl shadow-md text-[10px] font-black uppercase">
-                        <i class="fa-solid fa-bell"></i> Alertes
-                    </button>
-                    <button id="toggle-map-style" class="bg-white p-3 rounded-xl shadow-md border border-slate-100" title="Changer le style de carte">
-                        <i class="fa-solid fa-layer-group text-slate-600"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Aidants live</p>
-                    <p id="admin-live-count" class="text-2xl font-black text-emerald-600 mt-1">0</p>
-                </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Patients GPS</p>
-                    <p id="admin-patient-count" class="text-2xl font-black text-blue-600 mt-1">0</p>
-                </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Hors zone</p>
-                    <p id="admin-alert-count" class="text-2xl font-black text-rose-600 mt-1">0</p>
-                </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Positions anciennes</p>
-                    <p id="admin-stale-count" class="text-2xl font-black text-amber-600 mt-1">0</p>
-                </div>
-            </div>
-            
-            <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-2">Filtrer par aidant</label>
-                        <select id="filter-aidant" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
-                            <option value="">Tous les aidants</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-2">Filtrer par patient</label>
-                        <select id="filter-patient" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
-                            <option value="">Tous les patients</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-2">Statut</label>
-                        <select id="filter-status" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
-                            <option value="all">Tous</option>
-                            <option value="inside">Dans la zone ✅</option>
-                            <option value="outside">Hors zone ⚠️</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="live-map-container" class="flex-1 w-full rounded-[2rem] border-4 border-white shadow-2xl relative overflow-hidden bg-slate-100 min-h-[500px]">
-                <div id="map" class="absolute inset-0 z-10 w-full h-full"></div>
-                <div id="map-loading" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center">
-                    <div class="text-center">
-                        <div class="relative w-10 h-10 mx-auto mb-3">
-                            <div class="absolute inset-0 border-3 border-slate-100 border-t-emerald-500 rounded-full animate-spin"></div>
-                        </div>
-                        <p class="text-[10px] font-black text-slate-400">Chargement de la carte...</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-3 bg-white/90 backdrop-blur-sm p-3 rounded-xl border border-slate-100">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[8px] font-bold">
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span>Aidant actif</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-                        <span>Domicile patient</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full bg-rose-500 animate-pulse"></div>
-                        <span>Hors zone</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full bg-amber-500"></div>
-                        <span>Position ancienne</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="info-panel" class="fixed right-4 top-24 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 z-30 hidden transition-all">
-                <div class="p-4 border-b border-slate-100 flex justify-between items-center">
-                    <h4 id="panel-title" class="font-black text-slate-800">Détails</h4>
-                    <button id="close-panel" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button>
-                </div>
-                <div id="panel-content" class="p-4 max-h-96 overflow-y-auto"></div>
-            </div>
-        </div>
-    `;
-
-    await new Promise(r => setTimeout(r, 100));
-    
-    const mapElement = document.getElementById('map');
-    if (!mapElement) {
-        console.error("❌ Map element non trouvé");
-        return;
+    if (style === 'street') {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(mapInstance);
+    } 
+    // ✅ OpenStreetMap Humanitarian (plus détaillé)
+    else if (style === 'hot') {
+        L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(mapInstance);
     }
-    
-    if (map) {
-        map.remove();
-        map = null;
-        markers = {};
+    // ✅ CartoDB Voyager (élégant)
+    else if (style === 'voyager') {
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB'
+        }).addTo(mapInstance);
     }
-
-    const existingMapElement = document.getElementById("map");
-    if (existingMapElement && existingMapElement._leaflet_id) {
-        existingMapElement._leaflet_id = null;
+    // ✅ Google Satellite (pour comparaison)
+    else if (style === 'satellite') {
+        L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            attribution: 'Google'
+        }).addTo(mapInstance);
     }
-    
-    map = L.map('map', { 
-        zoomControl: false, 
-        attributionControl: false, 
-        zoomSnap: 0.5,
-        center: [6.368, 2.401],
-        zoom: 14
-    });
-    
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-    
-    // ✅ AJOUT DU FOND DE CARTE AVEC LES OPTIONS
-    addTileLayer(map, 'satellite'); // Change 'satellite' par 'hybrid', 'street', etc.
-    
-    setTimeout(() => {
-        if (map) map.invalidateSize(true);
-    }, 200);
-    
-    // ✅ BOUTON POUR CHANGER LE STYLE DE CARTE
-    document.getElementById('toggle-map-style')?.addEventListener('click', () => {
-        // Supprimer les anciennes couches
-        map.eachLayer(layer => {
-            if (layer instanceof L.TileLayer) {
-                map.removeLayer(layer);
-            }
-        });
-        
-        // Alterner entre Satellite et Plan
-        isSatelliteView = !isSatelliteView;
-        if (isSatelliteView) {
-            addTileLayer(map, 'satellite');
-            showToast("🌍 Mode Satellite", "info", 1500);
-        } else {
-            addTileLayer(map, 'street');
-            showToast("🗺️ Mode Plan", "info", 1500);
-        }
-    });
-    
-    // Événements
-    document.getElementById('refresh-map-btn')?.addEventListener('click', () => loadCoordinatorData());
-    document.getElementById('center-all-btn')?.addEventListener('click', () => centerAllMarkers());
-    document.getElementById('show-alerts-btn')?.addEventListener('click', () => showAlertsPanel());
-    document.getElementById('close-panel')?.addEventListener('click', () => {
-        document.getElementById('info-panel').classList.add('hidden');
-    });
-    
-    document.getElementById('filter-aidant')?.addEventListener('change', () => applyFilters());
-    document.getElementById('filter-patient')?.addEventListener('change', () => applyFilters());
-    document.getElementById('filter-status')?.addEventListener('change', () => applyFilters());
-    
-    await loadCoordinatorData();
-    await loadFiltersData();
-    
-    if (activeInterval) clearInterval(activeInterval);
-    activeInterval = setInterval(() => loadCoordinatorData(), 10000);
-}
-
-async function loadCoordinatorData() {
-    try {
-        const aidantsRaw = await secureFetch("/visites/active-aidants");
-        const patientsRaw = await secureFetch("/visites/patients-locations");
-
-        const aidants = normalizeArray(aidantsRaw);
-        const patients = normalizeArray(patientsRaw);
-
-        activeAidants = aidants;
-
-        const outside = aidants.filter(a => a.is_inside_geofence === false).length;
-        const stale = aidants.filter(a => a.last_position && !isFreshPosition(a, 10)).length;
-
-        updateCoordinatorCounters({
-            aidants,
-            patients,
-            outside,
-            stale
-        });
-
-        updateCoordinatorMarkers(aidants, patients);
-        updateCoordinatorStats(aidants);
-
-        if (!aidants.length && !patients.length) {
-            renderCoordinatorEmptyNotice("Aucune donnée GPS disponible pour le moment.");
-        } else if (!aidants.length) {
-            renderCoordinatorEmptyNotice("Aucun aidant actif actuellement. Les patients géolocalisés restent visibles.");
-        } else {
-            hideCoordinatorEmptyNotice();
-        }
-
-        hideMapLoading();
-
-    } catch (err) {
-        console.error("❌ Erreur chargement données:", err);
-        renderCoordinatorEmptyNotice("Impossible de charger les données terrain. Vérifiez la connexion ou le backend.");
-        hideMapLoading();
-        showToast("Erreur de chargement Radar Admin", "error");
+    // ✅ Google Hybrid
+    else if (style === 'hybrid') {
+        L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            attribution: 'Google'
+        }).addTo(mapInstance);
+    }
+    // ✅ Par défaut: OpenStreetMap
+    else {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(mapInstance);
     }
 }
+
+// ============================================================
+// FONCTION POUR METTRE À JOUR LES MARQUEURS SANS RECENTRER
+// ============================================================
 
 function updateCoordinatorMarkers(aidants, patients) {
     if (!map) return;
 
+    // Supprimer les anciens marqueurs
     Object.keys(markers).forEach(key => {
         if (markers[key] && map) {
             try {
@@ -667,8 +405,11 @@ function updateCoordinatorMarkers(aidants, patients) {
         }
     });
 
-    const bounds = [];
+     // Récupérer la vue actuelle
+    const currentCenter = map.getCenter();
+    const currentZoom = map.getZoom();
 
+    // Ajouter les marqueurs patients
     if (Array.isArray(patients) && patients.length) {
         patients.forEach(patient => {
             const coords = safeLatLng(patient?.lat, patient?.lng);
@@ -690,7 +431,6 @@ function updateCoordinatorMarkers(aidants, patients) {
                 `);
 
                 markers[`patient_${patient.id}`] = marker;
-                bounds.push([coords.lat, coords.lng]);
 
             } catch (e) {
                 console.warn("Erreur marqueur patient:", e);
@@ -698,6 +438,7 @@ function updateCoordinatorMarkers(aidants, patients) {
         });
     }
 
+    // Ajouter les marqueurs aidants
     if (Array.isArray(aidants) && aidants.length) {
         aidants.forEach(aidant => {
             const coords = safeLatLng(
@@ -752,7 +493,6 @@ function updateCoordinatorMarkers(aidants, patients) {
                 `);
 
                 markers[`aidant_${aidant.id}`] = marker;
-                bounds.push([coords.lat, coords.lng]);
 
             } catch (e) {
                 console.warn("Erreur marqueur aidant:", e);
@@ -760,16 +500,292 @@ function updateCoordinatorMarkers(aidants, patients) {
         });
     }
 
-    if (bounds.length > 0) {
-        try {
-            map.fitBounds(bounds, { padding: [50, 50] });
-        } catch (e) {
+    // ✅ NE PAS RECENTRER AUTOMATIQUEMENT !!!
+    // On garde la position et le zoom actuels
+    // Seulement si c'est la première fois et qu'il n'y a pas de marqueurs, on centre
+    if (!userInteracted && Object.keys(markers).length > 0) {
+        // Premier chargement : centrer sur les marqueurs
+        const bounds = [];
+        Object.values(markers).forEach(marker => {
+            if (marker && marker.getLatLng) {
+                try {
+                    bounds.push(marker.getLatLng());
+                } catch(e) {}
+            }
+        });
+        if (bounds.length > 0) {
+            try {
+                map.fitBounds(bounds, { padding: [50, 50] });
+                userInteracted = true; // Une fois centré, on ne le refait plus
+            } catch (e) {
+                map.setView([SPS_HQ.lat, SPS_HQ.lng], 12);
+            }
+        } else {
             map.setView([SPS_HQ.lat, SPS_HQ.lng], 12);
         }
-    } else {
+    }
+    
+    // ✅ Si la carte n'a pas de marqueurs, centrer sur le siège
+    if (Object.keys(markers).length === 0) {
         map.setView([SPS_HQ.lat, SPS_HQ.lng], 12);
     }
 }
+
+
+
+async function loadCoordinatorData() {
+    try {
+        const aidantsRaw = await secureFetch("/visites/active-aidants");
+        const patientsRaw = await secureFetch("/visites/patients-locations");
+
+        const aidants = normalizeArray(aidantsRaw);
+        const patients = normalizeArray(patientsRaw);
+
+        activeAidants = aidants;
+
+        const outside = aidants.filter(a => a.is_inside_geofence === false).length;
+        const stale = aidants.filter(a => a.last_position && !isFreshPosition(a, 10)).length;
+
+        updateCoordinatorCounters({
+            aidants,
+            patients,
+            outside,
+            stale
+        });
+
+        // ✅ Mettre à jour les marqueurs SANS recentrer
+        updateCoordinatorMarkers(aidants, patients);
+        updateCoordinatorStats(aidants);
+
+        if (!aidants.length && !patients.length) {
+            renderCoordinatorEmptyNotice("Aucune donnée GPS disponible pour le moment.");
+        } else if (!aidants.length) {
+            renderCoordinatorEmptyNotice("Aucun aidant actif actuellement. Les patients géolocalisés restent visibles.");
+        } else {
+            hideCoordinatorEmptyNotice();
+        }
+
+        hideMapLoading();
+
+    } catch (err) {
+        console.error("❌ Erreur chargement données:", err);
+        renderCoordinatorEmptyNotice("Impossible de charger les données terrain. Vérifiez la connexion ou le backend.");
+        hideMapLoading();
+        showToast("Erreur de chargement Radar Admin", "error");
+    }
+}
+
+// ============================================================
+// INITIALISATION DE LA CARTE COORDINATEUR (CORRIGÉE)
+// ============================================================
+
+async function initCoordinatorMap() {
+    const container = document.getElementById('view-container');
+    
+    container.innerHTML = `
+        <div class="animate-fadeIn flex flex-col h-[85vh] pb-32">
+            <!-- Header avec bouton "Centrer" ajouté -->
+            <div class="flex justify-between items-center mb-6 shrink-0 flex-wrap gap-3">
+                <div>
+                    <h3 class="text-2xl font-black text-slate-800">📡 Radar Supervision</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Suivi en temps réel des interventions</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="refresh-map-btn" class="bg-white p-3 rounded-xl shadow-md border border-slate-100">
+                        <i class="fa-solid fa-rotate-right text-slate-600"></i>
+                    </button>
+                    <button id="center-all-btn" class="bg-white p-3 rounded-xl shadow-md border border-slate-100">
+                        <i class="fa-solid fa-globe text-slate-600"></i>
+                    </button>
+                    <button id="show-alerts-btn" class="bg-amber-500 text-white px-4 py-3 rounded-xl shadow-md text-[10px] font-black uppercase">
+                        <i class="fa-solid fa-bell"></i> Alertes
+                    </button>
+                    <button id="toggle-map-style" class="bg-white p-3 rounded-xl shadow-md border border-slate-100" title="Changer le style de carte">
+                        <i class="fa-solid fa-layer-group text-slate-600"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Aidants live</p>
+                    <p id="admin-live-count" class="text-2xl font-black text-emerald-600 mt-1">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Patients GPS</p>
+                    <p id="admin-patient-count" class="text-2xl font-black text-blue-600 mt-1">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Hors zone</p>
+                    <p id="admin-alert-count" class="text-2xl font-black text-rose-600 mt-1">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Positions anciennes</p>
+                    <p id="admin-stale-count" class="text-2xl font-black text-amber-600 mt-1">0</p>
+                </div>
+            </div>
+            
+            <!-- Filtres -->
+            <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-2">Filtrer par aidant</label>
+                        <select id="filter-aidant" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                            <option value="">Tous les aidants</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-2">Filtrer par patient</label>
+                        <select id="filter-patient" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                            <option value="">Tous les patients</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-2">Statut</label>
+                        <select id="filter-status" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                            <option value="all">Tous</option>
+                            <option value="inside">Dans la zone ✅</option>
+                            <option value="outside">Hors zone ⚠️</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Carte -->
+            <div id="live-map-container" class="flex-1 w-full rounded-[2rem] border-4 border-white shadow-2xl relative overflow-hidden bg-slate-100 min-h-[500px]">
+                <div id="map" class="absolute inset-0 z-10 w-full h-full"></div>
+                <div id="map-loading" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="relative w-10 h-10 mx-auto mb-3">
+                            <div class="absolute inset-0 border-3 border-slate-100 border-t-emerald-500 rounded-full animate-spin"></div>
+                        </div>
+                        <p class="text-[10px] font-black text-slate-400">Chargement de la carte...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Légende -->
+            <div class="mt-3 bg-white/90 backdrop-blur-sm p-3 rounded-xl border border-slate-100">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[8px] font-bold">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span>Aidant actif</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                        <span>Domicile patient</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-rose-500 animate-pulse"></div>
+                        <span>Hors zone</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                        <span>Position ancienne</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="info-panel" class="fixed right-4 top-24 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 z-30 hidden transition-all">
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                    <h4 id="panel-title" class="font-black text-slate-800">Détails</h4>
+                    <button id="close-panel" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button>
+                </div>
+                <div id="panel-content" class="p-4 max-h-96 overflow-y-auto"></div>
+            </div>
+        </div>
+    `;
+
+    await new Promise(r => setTimeout(r, 100));
+    
+    const mapElement = document.getElementById('map');
+    if (!mapElement) {
+        console.error("❌ Map element non trouvé");
+        return;
+    }
+    
+    if (map) {
+        map.remove();
+        map = null;
+        markers = {};
+    }
+
+    const existingMapElement = document.getElementById("map");
+    if (existingMapElement && existingMapElement._leaflet_id) {
+        existingMapElement._leaflet_id = null;
+    }
+    
+    // ✅ CRÉATION DE LA CARTE AVEC maxZoom CORRIGÉ
+    map = L.map('map', { 
+        zoomControl: false, 
+        attributionControl: false, 
+        zoomSnap: 0.5,
+        center: [6.368, 2.401],
+        zoom: 13,
+        maxZoom: 19,
+        minZoom: 8
+    });
+    
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    
+    // ✅ AJOUT DU FOND DE CARTE
+    addTileLayer(map, 'street');
+    
+    setTimeout(() => {
+        if (map) map.invalidateSize(true);
+    }, 200);
+    
+    // ✅ BOUTON POUR CHANGER LE STYLE DE CARTE
+    document.getElementById('toggle-map-style')?.addEventListener('click', () => {
+        map.eachLayer(layer => {
+            if (layer instanceof L.TileLayer) {
+                map.removeLayer(layer);
+            }
+        });
+        
+        // Alterner entre OpenStreetMap et CartoDB
+        if (currentMapStyle === 'street') {
+            addTileLayer(map, 'voyager');
+            currentMapStyle = 'voyager';
+            showToast("🗺️ Mode Voyager", "info", 1500);
+        } else {
+            addTileLayer(map, 'street');
+            currentMapStyle = 'street';
+            showToast("🗺️ Mode Standard", "info", 1500);
+        }
+    });
+    
+    // ✅ Événement pour détecter l'interaction utilisateur
+    map.on('dragstart zoomstart', () => {
+        userInteracted = true;
+    });
+    
+    // ✅ Événements
+    document.getElementById('refresh-map-btn')?.addEventListener('click', () => loadCoordinatorData());
+    document.getElementById('center-all-btn')?.addEventListener('click', () => {
+        userInteracted = true;
+        centerAllMarkers();
+    });
+    document.getElementById('show-alerts-btn')?.addEventListener('click', () => showAlertsPanel());
+    document.getElementById('close-panel')?.addEventListener('click', () => {
+        document.getElementById('info-panel').classList.add('hidden');
+    });
+    
+    document.getElementById('filter-aidant')?.addEventListener('change', () => applyFilters());
+    document.getElementById('filter-patient')?.addEventListener('change', () => applyFilters());
+    document.getElementById('filter-status')?.addEventListener('change', () => applyFilters());
+    
+    // ✅ Charger les données initiales
+    await loadCoordinatorData();
+    await loadFiltersData();
+    
+    if (activeInterval) clearInterval(activeInterval);
+    activeInterval = setInterval(() => loadCoordinatorData(), 15000);
+}
+
+// ✅ VARIABLE POUR LE STYLE DE CARTE ACTUEL
+let currentMapStyle = 'street';
 
 function renderCoordinatorEmptyNotice(message) {
     const container = document.getElementById("live-map-container");
