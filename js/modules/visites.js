@@ -1,12 +1,27 @@
+// modules/visites.js - VERSION COMPLÈTE CORRIGÉE
+
 import { secureFetch } from "../core/api.js";
 import { CONFIG } from "../core/config.js";
 import { AppState } from "../core/state.js";
 import { UI, compressImage, showSkeleton } from "../core/utils.js";
 import supabase from "../core/supabaseClient.js";
 
+// ============================================================
+// VARIABLES GLOBALES
+// ============================================================
 
-// Canal Realtime PERSISTANT pour les visites
+let geoWatchId = null;
+let lastSentPosition = null;
+let trackingInterval = null;
 let realtimeChannel = null;
+
+console.log("🔍 [visites.js] Début du chargement du module");
+console.log("🔍 [visites.js] UI importé:", typeof UI);
+console.log("🔍 [visites.js] secureFetch importé:", typeof secureFetch);
+
+// ============================================================
+// CANAL REALTIME
+// ============================================================
 
 function getRealtimeChannel() {
     if (!realtimeChannel) {
@@ -22,159 +37,206 @@ function getRealtimeChannel() {
     return realtimeChannel;
 }
 
+// ============================================================
+// FONCTIONS UTILITAIRES
+// ============================================================
 
-// Au tout début de visites.js, après les imports
-console.log("🔍 [visites.js] Début du chargement du module");
-console.log("🔍 [visites.js] UI importé:", typeof UI);
-console.log("🔍 [visites.js] secureFetch importé:", typeof secureFetch);
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
-// Variables globales pour le tracking GPS
-let geoWatchId = null;
-let lastSentPosition = null;
-let trackingInterval = null;
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3;
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
 
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+}
+
+async function getCurrentLocation() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            return reject(new Error("GPS non supporté par ce téléphone"));
+        }
+
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 30000,
+            maximumAge: 0
+        };
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const accuracy = pos.coords.accuracy;
+                console.log(`📍 Position obtenue avec précision: ${Math.round(accuracy)}m`);
+                
+                if (accuracy > 150) {
+                    console.warn(`⚠️ Précision faible (${Math.round(accuracy)}m), mais on accepte`);
+                }
+                
+                resolve({ 
+                    lat: pos.coords.latitude, 
+                    lon: pos.coords.longitude,
+                    accuracy: accuracy 
+                });
+            },
+            (err) => {
+                let msg = "Erreur GPS";
+                if (err.code === 1) msg = "Merci d'autoriser le partage de position";
+                if (err.code === 2) msg = "Position indisponible, réessayez";
+                if (err.code === 3) msg = "Délai dépassé, vérifiez votre connexion";
+                reject(new Error(msg));
+            },
+            options
+        );
+    });
+}
+
+// ============================================================
+// 1. DÉMARRER UNE VISITE
+// ============================================================
 
 export async function startVisit(patientId) {
-  try {
-    UI.vibrate();
-    
-    // Vérifier si une visite est déjà en cours
-    const existingVisit = localStorage.getItem("active_visit_id");
-    if (existingVisit) {
-      const confirm = await Swal.fire({
-        title: "Visite en cours",
-        text: "Une visite est déjà active. Voulez-vous la terminer avant d'en démarrer une nouvelle ?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Terminer la visite",
-        cancelButtonText: "Annuler",
-        customClass: { popup: 'rounded-[2.5rem]' }
-      });
-      if (confirm.isConfirmed) {
-        window.switchView("end-visit");
-        return;
-      }
-      throw new Error("Une visite est déjà en cours");
-    }
-
-    Swal.fire({
-      title: '<i class="fa-solid fa-satellite-dish fa-beat text-emerald-500 mb-2"></i><br><span class="text-xl font-black">Initialisation du Suivi</span>',
-      html: '<p class="text-xs text-slate-400 uppercase tracking-widest font-bold">Couplage GPS et vérification du périmètre de sécurité...</p>',
-      allowOutsideClick: false,
-      showConfirmButton: false,
-      customClass: { popup: 'rounded-[2.5rem]' },
-      didOpen: () => Swal.showLoading(),
-    });
-
-    // 1. Capturer la position d'entrée
-    const coords = await getCurrentLocation();
-    const gpsString = `${coords.lat},${coords.lon}`;
-
-    // 2. ✅ CORRECTION ICI : secureFetch retourne déjà les données
-    const data = await secureFetch("/visites/start", {
-      method: "POST",
-      body: JSON.stringify({
-        patient_id: patientId,
-        gps_start: gpsString,
-      }),
-    
-    });
-
-    console.log("✅ Données reçues:", data);  
-
-    // ✅ Plus besoin de res.json() et res.ok
-    // if (!res.ok) throw new Error(data.error); ← À SUPPRIMER
-
-    // 3. Stockage des identifiants de session
-    localStorage.setItem("active_visit_id", data.visite_id);
-    localStorage.setItem("active_patient_id", patientId);
-
-    //----------------------------
-    //------------------------------
-
     try {
-    const { data: patient } = await supabase
-        .from("patients")
-        .select("famille_user_id, nom_complet")
-        .eq("id", patientId)
-        .single();
-    
-    if (patient && patient.famille_user_id) {
-        // Notification push
-        await fetch(`${CONFIG.API_URL}/notifications/send`, {
+        UI.vibrate();
+        
+        // Vérifier si une visite est déjà en cours
+        const existingVisit = localStorage.getItem("active_visit_id");
+        if (existingVisit) {
+            const confirm = await Swal.fire({
+                title: "Visite en cours",
+                text: "Une visite est déjà active. Voulez-vous la terminer avant d'en démarrer une nouvelle ?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Terminer la visite",
+                cancelButtonText: "Annuler",
+                customClass: { popup: 'rounded-[2.5rem]' }
+            });
+            if (confirm.isConfirmed) {
+                window.switchView("end-visit");
+                return;
+            }
+            throw new Error("Une visite est déjà en cours");
+        }
+
+        Swal.fire({
+            title: '<i class="fa-solid fa-satellite-dish fa-beat text-emerald-500 mb-2"></i><br><span class="text-xl font-black">Initialisation du Suivi</span>',
+            html: '<p class="text-xs text-slate-400 uppercase tracking-widest font-bold">Couplage GPS et vérification du périmètre de sécurité...</p>',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            customClass: { popup: 'rounded-[2.5rem]' },
+            didOpen: () => Swal.showLoading(),
+        });
+
+        // 1. Capturer la position d'entrée
+        const coords = await getCurrentLocation();
+        const gpsString = `${coords.lat},${coords.lon}`;
+
+        // 2. Démarrer la visite
+        const data = await secureFetch("/visites/start", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                userId: patient.famille_user_id,
-                title: "🔔 Début d'intervention",
-                message: `L'aidant est arrivé au domicile de ${patient.nom_complet}`,
-                type: "visit",
-                url: "/#feed"
-            })
+                patient_id: patientId,
+                gps_start: gpsString,
+            }),
+        });
+
+        console.log("✅ Données reçues:", data);
+
+        // 3. Stockage des identifiants de session
+        localStorage.setItem("active_visit_id", data.visite_id);
+        localStorage.setItem("active_patient_id", patientId);
+
+        // 4. Notification à la famille
+        try {
+            const { data: patient } = await supabase
+                .from("patients")
+                .select("famille_user_id, nom_complet")
+                .eq("id", patientId)
+                .single();
+            
+            if (patient && patient.famille_user_id) {
+                await fetch(`${CONFIG.API_URL}/notifications/send`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        userId: patient.famille_user_id,
+                        title: "🔔 Début d'intervention",
+                        message: `L'aidant est arrivé au domicile de ${patient.nom_complet}`,
+                        type: "visit",
+                        url: "/#feed"
+                    })
+                });
+            }
+        } catch (err) {
+            console.warn("Erreur notification famille:", err);
+        }
+
+        // 5. LANCEMENT DU TRACKER GPS
+        startBackgroundTracking(data.visite_id);
+
+        // 6. Rafraîchir l'UI
+        refreshAidantUI(patientId);
+
+        Swal.fire({
+            icon: "success",
+            title: '<span class="text-emerald-600 font-black">Protocole Activé</span>',
+            html: `
+                <div class="text-left bg-slate-50 p-4 rounded-2xl border border-slate-100 mt-4">
+                    <p class="text-[10px] text-slate-400 font-black uppercase mb-1">Système de sécurité</p>
+                    <p class="text-xs font-bold text-slate-600 leading-relaxed">📍 Position de départ: ${coords.lat.toFixed(6)}, ${coords.lon.toFixed(6)}<br>🛰️ Tracking GPS Live : <span class="text-emerald-500">ACTIF</span><br>📡 Rapport automatique : <span class="text-emerald-500">EN COURS</span></p>
+                </div>`,
+            timer: 4000,
+            showConfirmButton: false,
+            customClass: { popup: 'rounded-[2.5rem]' }
+        });
+
+        // 7. FORCER LE RAFRAÎCHISSEMENT
+        setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('app-data-updated', {
+                detail: { endpoint: '/visites/start', method: 'POST', resourceType: 'visit_started' }
+            }));
+        }, 500);
+
+        window.switchView("visits");
+
+    } catch (err) {
+        UI.vibrate("error");
+        Swal.fire({
+            title: "Erreur Visite",
+            text: err.message,
+            icon: "error",
+            confirmButtonColor: "#0F172A",
+            customClass: { popup: 'rounded-[2.5rem]' }
         });
     }
-} catch (err) {
-    console.warn("Erreur notification famille:", err);
 }
 
-    // 4. LANCEMENT DU TRACKER GPS
-    startBackgroundTracking(data.visite_id);
+// ============================================================
+// 2. CHARGER LES VISITES
+// ============================================================
 
-    // 5. Rafraîchir l'UI pour cacher le bouton "Démarrer"
-    refreshAidantUI(patientId);
-
-    Swal.fire({
-      icon: "success",
-      title: '<span class="text-emerald-600 font-black">Protocole Activé</span>',
-      html: `
-        <div class="text-left bg-slate-50 p-4 rounded-2xl border border-slate-100 mt-4">
-            <p class="text-[10px] text-slate-400 font-black uppercase mb-1">Système de sécurité</p>
-            <p class="text-xs font-bold text-slate-600 leading-relaxed">📍 Position de départ: ${coords.lat.toFixed(6)}, ${coords.lon.toFixed(6)}<br>🛰️ Tracking GPS Live : <span class="text-emerald-500">ACTIF</span><br>📡 Rapport automatique : <span class="text-emerald-500">EN COURS</span></p>
-        </div>`,
-      timer: 4000,
-      showConfirmButton: false,
-      customClass: { popup: 'rounded-[2.5rem]' }
-    });
-
-        // ✅ FORCER LE RAFRAÎCHISSEMENT
-    setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('app-data-updated', {
-            detail: { endpoint: '/visites/start', method: 'POST', resourceType: 'visit_started' }
-        }));
-    }, 500);
-
-    // Rediriger vers la page de visite en cours
-    window.switchView("visits");
-    
-
-  } catch (err) {
-    UI.vibrate("error");
-    Swal.fire({
-        title: "Erreur Visite",
-        text: err.message, 
-        icon: "error",
-        confirmButtonColor: "#0F172A",
-        customClass: { popup: 'rounded-[2.5rem]' }
-    });
-  }
-}
-
-
-
-
-/**
- * 📥 CHARGER LES VISITES
- */
 export async function loadVisits() {
     const container = document.getElementById("visits-list");
     if (!container) return;
 
-    // Afficher le squelette
     showSkeleton(container, 'visit-card');
 
     try {
         const data = await secureFetch("/visites");
-
         AppState.visites = Array.isArray(data) ? data : [];
         renderVisits();
     } catch (err) {
@@ -184,9 +246,10 @@ export async function loadVisits() {
     }
 }
 
-/**
- * Affiche les visites sous forme de Timeline
- */
+// ============================================================
+// 3. AFFICHER LES VISITES
+// ============================================================
+
 export function renderVisits() {
     const container = document.getElementById("visits-list");
     if (!container) return;
@@ -194,7 +257,6 @@ export function renderVisits() {
     const userRole = localStorage.getItem("user_role");
     const isMaman = localStorage.getItem("user_is_maman") === "true";
     const isCoordinateur = userRole === "COORDINATEUR";
-    const themeColor = isMaman ? 'pink' : 'emerald';
     const primaryColor = isMaman ? '#E11D48' : '#059669';
     const primaryLight = isMaman ? '#FFF1F2' : '#ECFDF5';
 
@@ -210,7 +272,6 @@ export function renderVisits() {
 
     container.innerHTML = AppState.visites
         .map((v, index) => {
-            // Statut avec badge dynamique
             const statusConfig = {
                 'Validé': { icon: 'fa-circle-check', text: 'Validé', color: 'text-emerald-600', bg: 'bg-emerald-50' },
                 'Rejeté': { icon: 'fa-circle-xmark', text: 'Rejeté', color: 'text-rose-500', bg: 'bg-rose-50' },
@@ -222,10 +283,9 @@ export function renderVisits() {
                 <div class="bg-white rounded-2xl border border-slate-100 shadow-sm mb-3 overflow-hidden hover:shadow-md transition-all" 
                      style="animation: fadeInUp 0.25s ease ${index * 0.05}s forwards; opacity: 0;">
                     
-                    <!-- En-tête coloré selon le statut -->
                     <div class="px-4 py-3 ${status.bg} border-b border-slate-100 flex justify-between items-center">
                         <div>
-                            <h4 class="font-black text-slate-800 text-sm">${v.patient?.nom_complet || 'Patient inconnu'}</h4>
+                            <h4 class="font-black text-slate-800 text-sm">${escapeHtml(v.patient?.nom_complet || 'Patient inconnu')}</h4>
                             <p class="text-[10px] text-slate-500 mt-0.5">
                                 <i class="fa-regular fa-calendar mr-1"></i>${UI.formatDate(v.heure_debut)}
                             </p>
@@ -236,7 +296,6 @@ export function renderVisits() {
                         </span>
                     </div>
                     
-                    <!-- Corps de la carte -->
                     <div class="p-4">
                         ${v.photo_url ? `
                             <div class="relative mb-3 rounded-xl overflow-hidden">
@@ -265,7 +324,6 @@ export function renderVisits() {
                             </div>
                         ` : ''}
                         
-                        <!-- Aidant -->
                         <div class="flex items-center justify-between pt-2 border-t border-slate-100">
                             <div class="flex items-center gap-2">
                                 <div class="w-8 h-8 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
@@ -279,7 +337,6 @@ export function renderVisits() {
                                     <p class="text-[9px] text-slate-400">Intervenant</p>
                                 </div>
                             </div>
-                            <!-- 🔒 BOUTON VALIDER : UNIQUEMENT POUR LE COORDINATEUR -->
                             ${isCoordinateur && v.statut === "En attente" ? `
                                 <button onclick="window.quickValidate('${v.id}', 'Validé')" 
                                         class="px-3 py-1.5 rounded-lg text-[9px] font-bold text-white transition-all active:scale-95"
@@ -295,18 +352,9 @@ export function renderVisits() {
         .join("");
 }
 
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-
+// ============================================================
+// 4. TERMINER UNE VISITE
+// ============================================================
 
 export async function submitEndVisit() {
     const visiteId = localStorage.getItem("active_visit_id");
@@ -327,11 +375,11 @@ export async function submitEndVisit() {
             didOpen: () => Swal.showLoading(),
         });
 
-        // 📍 Récupération silencieuse du GPS final
+        // Récupération GPS final
         let gpsEnd = "0,0";
         try {
-            if(navigator.geolocation) {
-                const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, {timeout:5000}));
+            if (navigator.geolocation) {
+                const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }));
                 gpsEnd = `${pos.coords.latitude},${pos.coords.longitude}`;
             }
         } catch (e) { console.warn("GPS final ignoré"); }
@@ -342,7 +390,7 @@ export async function submitEndVisit() {
         const activites = JSON.stringify(Array.from(document.querySelectorAll('.task-check:checked')).map(el => el.value));
 
         let fileToUpload = photoInput.files[0];
-        if (fileToUpload.size > 1024 * 1024) { // plus de 1MB
+        if (fileToUpload.size > 1024 * 1024) {
             fileToUpload = await compressImage(fileToUpload, 1024, 0.7);
             console.log(`📸 Photo compressée: ${(photoInput.files[0].size / 1024).toFixed(1)}KB → ${(fileToUpload.size / 1024).toFixed(1)}KB`);
         }
@@ -363,7 +411,7 @@ export async function submitEndVisit() {
 
         if (!response.ok) throw new Error("Erreur de transmission réseau.");
 
-        // 🛑 DÉCOUPLAGE DU TRACKER GPS
+        // Nettoyage
         const watchId = localStorage.getItem("geo_watch_id");
         if (watchId) {
             navigator.geolocation.clearWatch(parseInt(watchId));
@@ -384,39 +432,36 @@ export async function submitEndVisit() {
             customClass: { popup: 'rounded-[3rem]' }
         });
 
-
-          // ✅ APRÈS AVOIR CRÉÉ LE MESSAGE DANS LE FEED
-    // Envoyer une notification à la famille
-    try {
-        const { data: patient } = await supabase
-            .from("patients")
-            .select("famille_user_id, nom_complet")
-            .eq("id", visite.patient_id)
-            .single();
+        // Notification à la famille
+        try {
+            const { data: patient } = await supabase
+                .from("patients")
+                .select("famille_user_id, nom_complet")
+                .eq("id", patient?.patient_id)
+                .single();
+            
+            if (patient && patient.famille_user_id) {
+                await fetch(`${CONFIG.API_URL}/notifications/send`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        userId: patient.famille_user_id,
+                        title: "📋 Nouveau rapport de visite",
+                        message: `Le rapport de visite pour ${patient.nom_complet} est disponible`,
+                        type: "visit",
+                        url: "/#feed"
+                    })
+                });
+            }
+        } catch (err) {
+            console.warn("Erreur notification:", err);
+        }
         
-              if (patient && patient.famille_user_id) {
-                  await fetch(`${CONFIG.API_URL}/notifications/send`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                          userId: patient.famille_user_id,
-                          title: "📋 Nouveau rapport de visite",
-                          message: `Le rapport de visite pour ${patient.nom_complet} est disponible`,
-                          type: "visit",
-                          url: "/#feed"
-                      })
-                  });
-              }
-          } catch (err) {
-              console.warn("Erreur notification:", err);
-          }
-      
-      // ✅ FORCER LE RAFRAÎCHISSEMENT
-      window.dispatchEvent(new CustomEvent('app-data-updated', {
-          detail: { endpoint: '/visites/end', method: 'POST', resourceType: 'visit_ended' }
-      }));
-      
-        window.viewPatientFeed(AppState.currentPatient); 
+        window.dispatchEvent(new CustomEvent('app-data-updated', {
+            detail: { endpoint: '/visites/end', method: 'POST', resourceType: 'visit_ended' }
+        }));
+        
+        window.viewPatientFeed(AppState.currentPatient);
         window.switchView("visits");
 
     } catch (err) {
@@ -425,18 +470,13 @@ export async function submitEndVisit() {
     }
 }
 
-//--------------------------------------------------
-//-----------------------------------------------------
-
-/**
- * 📄 VUE : PAGE DE CLÔTURE DE VISITE (PLEIN ÉCRAN MOBILE)
- */
-// js/modules/visites.js - Remplacer renderEndVisitView()
+// ============================================================
+// 5. PAGE DE CLÔTURE DE VISITE
+// ============================================================
 
 export async function renderEndVisitView() {
     const container = document.getElementById("view-container");
     
-    // Récupérer le patient
     let patient = null;
     try {
         const patients = await secureFetch("/patients");
@@ -456,7 +496,6 @@ export async function renderEndVisitView() {
         return;
     }
     
-    // 🔥 DÉTECTION DU TYPE DE DOSSIER
     const isMaman = patient.categorie_service === 'MAMAN_BEBE' || 
                     patient.formule === 'MATERNITE' ||
                     localStorage.getItem("user_is_maman") === "true";
@@ -468,7 +507,6 @@ export async function renderEndVisitView() {
     
     container.innerHTML = `
         <div class="animate-fadeIn max-w-lg mx-auto pb-24">
-            <!-- Header -->
             <div class="flex items-center gap-4 mb-6">
                 <button onclick="window.switchView('visits')" class="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 active:scale-95">
                     <i class="fa-solid fa-arrow-left text-sm"></i>
@@ -486,7 +524,6 @@ export async function renderEndVisitView() {
 
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-6">
                 
-                <!-- 📋 SECTION ACTIVITÉS (ADAPTÉE SELON LE TYPE) -->
                 <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1 mb-3 block">
                         <i class="fa-regular fa-circle-check mr-1"></i> 
@@ -497,7 +534,6 @@ export async function renderEndVisitView() {
                     </div>
                 </div>
 
-                <!-- 🌸 SECTION BÉBÉ (UNIQUEMENT POUR LES DOSSIERS MAMAN) -->
                 ${isMaman ? `
                 <div class="border-t ${themeBorderClass} pt-4">
                     <label class="text-[10px] font-black ${themeTextClass} uppercase tracking-wider ml-1 mb-3 block flex items-center gap-2">
@@ -548,7 +584,6 @@ export async function renderEndVisitView() {
                 </div>
                 ` : ''}
 
-                <!-- 💊 SECTION TRAITEMENTS (UNIQUEMENT POUR SENIOR) -->
                 ${!isMaman ? `
                 <div class="border-t border-slate-100 pt-4">
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1 mb-3 block">
@@ -559,7 +594,6 @@ export async function renderEndVisitView() {
                 </div>
                 ` : ''}
 
-                <!-- 😊 HUMEUR DU PATIENT -->
                 <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1 mb-3 block">
                         <i class="fa-regular fa-face-smile mr-1"></i> 
@@ -573,7 +607,6 @@ export async function renderEndVisitView() {
                     </select>
                 </div>
 
-                <!-- 📝 NOTES / MESSAGE À LA FAMILLE -->
                 <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1 mb-3 block">
                         <i class="fa-regular fa-message mr-1"></i> 
@@ -583,7 +616,6 @@ export async function renderEndVisitView() {
                               placeholder="${isMaman ? 'État général, conseils, observations sur bébé...' : 'Déroulement de la visite, observations...'}"></textarea>
                 </div>
 
-                <!-- 📸 PHOTO OBLIGATOIRE -->
                 <div>
                     <label class="text-[10px] font-black ${themeTextClass} uppercase tracking-wider ml-1 mb-3 block">
                         <i class="fa-solid fa-camera mr-1"></i> Preuve photo requise
@@ -596,7 +628,6 @@ export async function renderEndVisitView() {
                     </div>
                 </div>
 
-                <!-- BOUTON DE VALIDATION -->
                 <div class="pt-4">
                     <button onclick="window.submitEndVisitWithContext(${isMaman})" 
                             class="w-full py-4 rounded-xl font-black uppercase tracking-wider text-[10px] shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
@@ -609,7 +640,6 @@ export async function renderEndVisitView() {
         </div>
     `;
 
-    // Afficher le nom du fichier quand une photo est sélectionnée
     const photoInput = document.getElementById('visit-photo');
     const photoLabel = document.getElementById('photo-label');
     if (photoInput && photoLabel) {
@@ -625,12 +655,12 @@ export async function renderEndVisitView() {
     }
 }
 
-/**
- * ✅ CHECKLIST ADAPTÉE SELON LE TYPE DE DOSSIER
- */
+// ============================================================
+// 6. CHECKLIST ADAPTÉE
+// ============================================================
+
 function getChecklistHTML(isMaman) {
     if (isMaman) {
-        // 🌸 Tâches spécifiques Maman & Bébé
         return `
             <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-pink-50 transition-colors">
                 <input type="checkbox" class="task-check w-5 h-5 accent-pink-500" value="Aide à l'allaitement"> 
@@ -658,7 +688,6 @@ function getChecklistHTML(isMaman) {
             </label>
         `;
     } else {
-        // 👴 Tâches spécifiques Senior
         return `
             <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-emerald-50 transition-colors">
                 <input type="checkbox" class="task-check w-5 h-5 accent-emerald-500" value="Aide à la mobilité / Promenade"> 
@@ -688,9 +717,10 @@ function getChecklistHTML(isMaman) {
     }
 }
 
-/**
- * 📤 SOUMISSION DU BILAN AVEC CONTEXTE (Maman ou Senior)
- */
+// ============================================================
+// 7. SOUMISSION AVEC CONTEXTE
+// ============================================================
+
 window.submitEndVisitWithContext = async (isMaman) => {
     const visiteId = localStorage.getItem("active_visit_id");
     const photoInput = document.getElementById("visit-photo");
@@ -700,12 +730,10 @@ window.submitEndVisitWithContext = async (isMaman) => {
         return Swal.fire("Photo Manquante", "La photo est obligatoire pour clôturer l'intervention.", "warning");
     }
 
-    // Récupérer les données communes
     const notes = document.getElementById("visit-notes")?.value || "";
     const humeur = document.getElementById("visit-humeur")?.value || "Calme";
     const activites = JSON.stringify(Array.from(document.querySelectorAll('.task-check:checked')).map(el => el.value));
     
-    // Récupérer les métriques bébé (si dossier Maman)
     let babyFeeding, babySleep, babyDiapers, babyWeight;
     if (isMaman) {
         babyFeeding = document.getElementById("baby-feeding")?.value;
@@ -713,9 +741,6 @@ window.submitEndVisitWithContext = async (isMaman) => {
         babyDiapers = document.getElementById("baby-diapers")?.value;
         babyWeight = document.getElementById("baby-weight")?.value;
     }
-    
-    // Récupérer les traitements (si dossier Senior)
-    const traitements = !isMaman ? document.getElementById("visit-traitements")?.value : null;
 
     try {
         Swal.fire({
@@ -726,7 +751,6 @@ window.submitEndVisitWithContext = async (isMaman) => {
             didOpen: () => Swal.showLoading(),
         });
 
-        // 📍 Récupération GPS finale
         let gpsEnd = "0,0";
         try {
             if (navigator.geolocation) {
@@ -739,13 +763,11 @@ window.submitEndVisitWithContext = async (isMaman) => {
             console.warn("GPS final ignoré");
         }
 
-        // Compression photo
         let fileToUpload = photoInput.files[0];
         if (fileToUpload.size > 2 * 1024 * 1024) {
             fileToUpload = await compressImage(fileToUpload, 1024, 0.8);
         }
 
-        // 1. Envoyer la visite
         const fd = new FormData();
         fd.append("visite_id", visiteId);
         fd.append("notes", notes);
@@ -765,7 +787,6 @@ window.submitEndVisitWithContext = async (isMaman) => {
             throw new Error(error.error || "Erreur de transmission");
         }
 
-        // 2. Envoyer les métriques bébé (si dossier Maman)
         if (isMaman && (babyFeeding || babySleep || babyDiapers || babyWeight)) {
             const patientId = localStorage.getItem("active_patient_id");
             
@@ -797,7 +818,6 @@ window.submitEndVisitWithContext = async (isMaman) => {
             console.log(`✅ ${metrics.length} métriques bébé enregistrées`);
         }
 
-        // 3. Nettoyage
         const watchId = localStorage.getItem("geo_watch_id");
         if (watchId) {
             navigator.geolocation.clearWatch(parseInt(watchId));
@@ -824,7 +844,6 @@ window.submitEndVisitWithContext = async (isMaman) => {
             customClass: { popup: 'rounded-3xl' }
         });
 
-        // Rafraîchir les vues
         if (isMaman && typeof window.loadMamanDashboard === 'function') {
             await window.loadMamanDashboard();
         }
@@ -837,128 +856,9 @@ window.submitEndVisitWithContext = async (isMaman) => {
     }
 };
 
-
-/**
- * 📤 SOUMISSION DU BILAN AVEC MÉTRIQUES BÉBÉ (pour dossiers Maman)
- */
-window.submitEndVisitWithBabyMetrics = async () => {
-    const visiteId = localStorage.getItem("active_visit_id");
-    const photoInput = document.getElementById("visit-photo");
-    
-    if (!photoInput.files || !photoInput.files[0]) {
-        UI.vibrate('error');
-        return Swal.fire("Photo Manquante", "La photo est obligatoire pour clôturer l'intervention.", "warning");
-    }
-
-    // Récupérer les métriques bébé si présentes
-    const babyFeeding = document.getElementById("baby-feeding")?.value;
-    const babySleep = document.getElementById("baby-sleep")?.value;
-    const babyDiapers = document.getElementById("baby-diapers")?.value;
-    const babyWeight = document.getElementById("baby-weight")?.value;
-
-    try {
-        Swal.fire({
-            title: '<i class="fa-solid fa-cloud-arrow-up fa-bounce text-blue-500 mb-4 text-4xl"></i><br><span class="text-xl font-black">Transmission...</span>',
-            html: '<p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Envoi du bilan certifié en cours...</p>',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            customClass: { popup: 'rounded-[3rem] p-8' },
-            didOpen: () => Swal.showLoading(),
-        });
-
-        // Récupération GPS
-        let gpsEnd = "0,0";
-        try {
-            if(navigator.geolocation) {
-                const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, {timeout:5000}));
-                gpsEnd = `${pos.coords.latitude},${pos.coords.longitude}`;
-            }
-        } catch (e) { console.warn("GPS final ignoré"); }
-
-        // Récupération des données
-        const notes = document.getElementById("visit-notes").value;
-        const humeur = document.getElementById("visit-humeur").value;
-        const activites = JSON.stringify(Array.from(document.querySelectorAll('.task-check:checked')).map(el => el.value));
-        
-        // Compression photo
-        let fileToUpload = photoInput.files[0];
-        if (fileToUpload.size > 1024 * 1024) {
-            fileToUpload = await compressImage(fileToUpload, 1024, 0.7);
-        }
-
-        // 1. Envoyer la visite
-        const fd = new FormData();
-        fd.append("visite_id", visiteId);
-        fd.append("notes", notes);
-        fd.append("humeur", humeur);
-        fd.append("activites_faites", activites);
-        fd.append("gps_end", gpsEnd);
-        fd.append("photo_visite", fileToUpload);
-
-        const response = await fetch(`${CONFIG.API_URL}/visites/end`, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-            body: fd,
-        });
-
-        if (!response.ok) throw new Error("Erreur de transmission réseau.");
-
-        // 2. Envoyer les métriques bébé si présentes
-        if (babyFeeding || babySleep || babyDiapers || babyWeight) {
-            const patientId = localStorage.getItem("active_patient_id");
-            
-            const metrics = [];
-            if (babyFeeding) metrics.push({ metric_type: 'feeding', value: parseFloat(babyFeeding) });
-            if (babySleep) metrics.push({ metric_type: 'sleep', value: parseFloat(babySleep) });
-            if (babyDiapers) metrics.push({ metric_type: 'diapers', value: parseInt(babyDiapers) });
-            if (babyWeight) metrics.push({ metric_type: 'weight', value: parseInt(babyWeight) });
-            
-            for (const metric of metrics) {
-                await secureFetch('/educational/baby-metric', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        patient_id: patientId,
-                        metric_type: metric.metric_type,
-                        value: metric.value,
-                        source: 'aidant_visite'
-                    })
-                });
-            }
-            console.log(`✅ ${metrics.length} métriques bébé enregistrées`);
-        }
-
-        // Nettoyage
-        const watchId = localStorage.getItem("geo_watch_id");
-        if (watchId) {
-            navigator.geolocation.clearWatch(parseInt(watchId));
-            localStorage.removeItem("geo_watch_id");
-        }
-        localStorage.removeItem("active_visit_id");
-        
-        UI.vibrate("success");
-        await Swal.fire({
-            icon: "success",
-            title: '<span class="text-emerald-500 font-black">Mission Accomplie</span>',
-            html: `<div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-center gap-2 mt-2">
-                    <i class="fa-solid fa-shield-check text-emerald-500"></i>
-                    <span class="text-[10px] font-black text-emerald-600 uppercase">Données Sécurisées</span>
-                   </div>`,
-            confirmButtonColor: "#0F172A",
-            confirmButtonText: "RETOUR AU PLANNING",
-            customClass: { popup: 'rounded-[3rem]' }
-        });
-
-        window.viewPatientFeed(AppState.currentPatient); 
-        window.switchView("visits");
-
-    } catch (err) {
-        UI.vibrate("error");
-        Swal.fire("Échec", err.message, "error");
-    }
-};
-
-//----------------------------------------------------------
-//----------------------------------------------------------
+// ============================================================
+// 8. PAGE DE DÉMARRAGE DE VISITE
+// ============================================================
 
 export async function renderStartVisitView(patientId) {
     if (!patientId) {
@@ -980,7 +880,7 @@ export async function renderStartVisitView(patientId) {
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
                     <div>
-                        <h3 class="font-black text-2xl text-slate-800 tracking-tight">Mission : ${p.nom_complet}</h3>
+                        <h3 class="font-black text-2xl text-slate-800 tracking-tight">Mission : ${escapeHtml(p.nom_complet)}</h3>
                         <p class="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">Prêt pour l'intervention ?</p>
                     </div>
                 </div>
@@ -988,12 +888,12 @@ export async function renderStartVisitView(patientId) {
                 <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
                     <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100">
                         <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Localisation</p>
-                        <p class="text-xs font-bold text-slate-800">${p.adresse || 'Adresse non renseignée'}</p>
+                        <p class="text-xs font-bold text-slate-800">${escapeHtml(p.adresse || 'Adresse non renseignée')}</p>
                     </div>
 
                     <div class="p-5 bg-blue-50 rounded-2xl border border-blue-100">
                         <p class="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1">Instructions</p>
-                        <p class="text-xs font-medium text-slate-700 leading-relaxed italic">"${p.notes_medicales || 'Aucune consigne.'}"</p>
+                        <p class="text-xs font-medium text-slate-700 leading-relaxed italic">"${escapeHtml(p.notes_medicales || 'Aucune consigne.')}"</p>
                     </div>
 
                     <button onclick="window.startVisit('${p.id}')" class="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl hover:bg-emerald-600 transition-all active:scale-95">
@@ -1009,8 +909,9 @@ export async function renderStartVisitView(patientId) {
     }
 }
 
-//--------------------------------------------------------------------
-//-------------------------------------------------------------------
+// ============================================================
+// 9. VÉRIFICATION DES VISITES ACTIVES AU DÉMARRAGE
+// ============================================================
 
 export async function checkActiveVisitOnStart() {
     try {
@@ -1023,11 +924,9 @@ export async function checkActiveVisitOnStart() {
             localStorage.setItem("active_visit_id", activeVisit.id);
             localStorage.setItem("active_patient_id", activeVisit.patient_id);
             
-            // ✅ Attendre que la vue patient soit chargée
             const currentPatientId = localStorage.getItem("active_patient_id");
             if (currentPatientId) {
                 setTimeout(() => {
-                    // Vérifier si on est sur la vue patient
                     const container = document.getElementById("aidant-active-area");
                     if (container) {
                         refreshAidantUI(currentPatientId);
@@ -1044,13 +943,11 @@ export async function checkActiveVisitOnStart() {
         console.error("Erreur vérification visite active:", err);
     }
 }
-//-------------------------------------------------------------------------
-//------------------------------------------------------------
 
-/**
- * 🔄 REPRISE AUTOMATIQUE DU TRACKING
- * À appeler dans main.js au démarrage pour éviter de perdre le suivi en cas de refresh
- */
+// ============================================================
+// 10. REPRISE AUTOMATIQUE DU TRACKING
+// ============================================================
+
 export function resumeTrackingIfActive() {
     const activeVisitId = localStorage.getItem("active_visit_id");
     if (activeVisitId && !geoWatchId) {
@@ -1059,9 +956,9 @@ export function resumeTrackingIfActive() {
     }
 }
 
-
-//-----------------------------------------------------------------------------
-//------------------------------------------------------------------------
+// ============================================================
+// 11. RAFRAÎCHIR L'UI AIDANT
+// ============================================================
 
 let refreshAttempts = 0;
 const MAX_REFRESH_ATTEMPTS = 20;
@@ -1082,7 +979,6 @@ export function refreshAidantUI(patientId) {
             return;
         }
         
-        // Réinitialiser le compteur
         refreshAttempts = 0;
         
         const activeVisitId = localStorage.getItem("active_visit_id");
@@ -1111,10 +1007,10 @@ export function refreshAidantUI(patientId) {
     tryRefresh();
 }
 
+// ============================================================
+// 12. NOTATION DE LA VISITE
+// ============================================================
 
-/**
- * ⭐ NOTATION DE LA VISITE (Famille)
- */
 window.rateVisit = async (visiteId) => {
     const { value: rating } = await Swal.fire({
         title: 'Noter l\'intervention',
@@ -1175,24 +1071,21 @@ window.rateVisit = async (visiteId) => {
     }
 };
 
+// ============================================================
+// 13. MOTEUR DE SURVEILLANCE LIVE (TRACKING GPS)
+// ============================================================
 
-/**
- * 📡 MOTEUR DE SURVEILLANCE LIVE
- * Envoie des signaux "ping" au serveur avec la position actuelle
- */
 function startBackgroundTracking(visiteId) {
     if (!navigator.geolocation) {
         console.warn("⚠️ GPS non supporté sur ce navigateur");
         return;
     }
 
-    // Nettoyer l'ancien watcher s'il existe
     if (geoWatchId) {
         navigator.geolocation.clearWatch(geoWatchId);
         geoWatchId = null;
     }
 
-    // Envoyer la position toutes les 10 secondes même sans mouvement
     if (trackingInterval) clearInterval(trackingInterval);
     
     trackingInterval = setInterval(async () => {
@@ -1201,7 +1094,6 @@ function startBackgroundTracking(visiteId) {
             return;
         }
         
-        // Demander une position à jour
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 async (position) => {
@@ -1211,9 +1103,8 @@ function startBackgroundTracking(visiteId) {
                 { enableHighAccuracy: true, timeout: 10000 }
             );
         }
-    }, 10000); // Toutes les 10 secondes
+    }, 15000);
 
-    // Watcher en continu pour les mouvements
     geoWatchId = navigator.geolocation.watchPosition(
         async (position) => {
             await sendPosition(position, visiteId);
@@ -1221,7 +1112,6 @@ function startBackgroundTracking(visiteId) {
         (error) => {
             console.error("❌ Erreur Watcher GPS:", error.message);
             if (error.code === 1) {
-                // Permission refusée
                 Swal.fire({
                     title: "GPS requis",
                     text: "Veuillez autoriser la localisation pour le suivi des visites",
@@ -1232,7 +1122,7 @@ function startBackgroundTracking(visiteId) {
         },
         { 
             enableHighAccuracy: true, 
-            maximumAge: 5000, // 5 secondes max
+            maximumAge: 5000,
             timeout: 15000 
         }
     );
@@ -1241,24 +1131,20 @@ function startBackgroundTracking(visiteId) {
     console.log("🛰️ [GPS] Tracking démarré avec ID:", geoWatchId);
 }
 
-// Fonction helper pour envoyer une position
 async function sendPosition(position, visiteId) {
     const { latitude, longitude, accuracy } = position.coords;
     
-    // ✅ Assouplir le seuil de précision (100m -> 150m)
     if (accuracy > 150) {
         console.warn(`🛰️ [GPS] Point ignoré : précision trop faible (${Math.round(accuracy)}m)`);
         return;
     }
 
-    // Vérifier si la position a changé de façon significative (> 10m au lieu de 5m)
     if (lastSentPosition) {
         const lastLat = lastSentPosition.lat;
         const lastLng = lastSentPosition.lng;
         const distance = calculateDistance(latitude, longitude, lastLat, lastLng);
         
         if (distance < 10) {
-            // Position trop proche de la précédente, on ignore
             return;
         }
     }
@@ -1286,75 +1172,10 @@ async function sendPosition(position, visiteId) {
     }
 }
 
+// ============================================================
+// 14. FIXER LE DOMICILE DU PATIENT
+// ============================================================
 
-
-
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; // Rayon de la Terre en mètres
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c;
-}
-
-/**
- * 📍 UTILITAIRE : RÉCUPÉRER LA POSITION GPS ACTUELLE
- */
-async function getCurrentLocation() {
-    return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-            return reject(new Error("GPS non supporté par ce téléphone"));
-        }
-
-        // ✅ Options pour une meilleure précision
-        const options = {
-            enableHighAccuracy: true,  // Forcer la haute précision
-            timeout: 30000,            // 30 secondes
-            maximumAge: 0              // Pas de cache
-        };
-
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const accuracy = pos.coords.accuracy;
-                console.log(`📍 Position obtenue avec précision: ${Math.round(accuracy)}m`);
-                
-                // ✅ Accepter même avec précision moyenne (moins de 100m)
-                if (accuracy > 150) {
-                    console.warn(`⚠️ Précision faible (${Math.round(accuracy)}m), mais on accepte`);
-                }
-                
-                resolve({ 
-                    lat: pos.coords.latitude, 
-                    lon: pos.coords.longitude,
-                    accuracy: accuracy 
-                });
-            },
-            (err) => {
-                let msg = "Erreur GPS";
-                if (err.code === 1) msg = "Merci d'autoriser le partage de position";
-                if (err.code === 2) msg = "Position indisponible, réessayez";
-                if (err.code === 3) msg = "Délai dépassé, vérifiez votre connexion";
-                reject(new Error(msg));
-            },
-            options
-        );
-    });
-}
-
-
-
-/**
- * 🏠 FIXER LE DOMICILE DU PATIENT (Elite Feature)
- * Permet à l'aidant, lors de sa première visite, d'enregistrer 
- * l'emplacement exact de la maison pour le Geofencing futur.
- */
 window.savePatientHomeGPS = async (patientId) => {
     const confirm = await Swal.fire({
         title: 'Fixer le domicile ?',
@@ -1388,4 +1209,28 @@ window.savePatientHomeGPS = async (patientId) => {
     }
 };
 
+// ============================================================
+// 15. OUVRIR LA PAGE DE FIN DE VISITE
+// ============================================================
 
+window.openEndVisit = () => {
+    console.log("🟢 openEndVisit appelé");
+    window.switchView('end-visit');
+};
+
+// ============================================================
+// EXPORTS
+// ============================================================
+
+export { 
+    getRealtimeChannel,
+    loadVisits,
+    renderVisits,
+    renderEndVisitView,
+    renderStartVisitView,
+    startVisit,
+    submitEndVisit,
+    checkActiveVisitOnStart,
+    resumeTrackingIfActive,
+    refreshAidantUI
+};
