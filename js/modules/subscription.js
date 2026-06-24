@@ -1,3 +1,5 @@
+// modules/subscription.js - VERSION PRODUCTION CORRIGÉE
+
 import { secureFetch } from "../core/api.js";
 import { UI } from "../core/utils.js";
 import { AppState } from "../core/state.js";
@@ -68,8 +70,192 @@ async function getCurrentPatientForSubscription() {
 }
 
 // ============================================================
+// PACKS CONFORT 24/7 (pour comptes SANS_PATIENT)
+// ============================================================
+
+function getConfortPacks() {
+    return [
+        { 
+            id: 'CONFORT_247_MENSUEL', 
+            name: 'Mensuel', 
+            desc: 'Accès complet', 
+            price: 25000, 
+            priceDisplay: '25.000 CFA', 
+            duration: 1, 
+            durationText: '1 mois',
+            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Historique de commandes'],
+            icon: 'fa-crown',
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-50',
+            popular: true
+        },
+        { 
+            id: 'CONFORT_247_TRIMESTRIEL', 
+            name: 'Trimestriel', 
+            desc: 'Économie 5%', 
+            price: 71250, 
+            priceDisplay: '71.250 CFA',
+            originalPrice: 75000,
+            duration: 3, 
+            durationText: '3 mois',
+            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Historique de commandes', 'Économie 5%'],
+            icon: 'fa-calendar-alt',
+            color: 'text-blue-600',
+            bg: 'bg-blue-50',
+            popular: false,
+            badge: '-5%'
+        },
+        { 
+            id: 'CONFORT_247_ANNUEL', 
+            name: 'Annuel', 
+            desc: 'Économie 15%', 
+            price: 255000, 
+            priceDisplay: '255.000 CFA',
+            originalPrice: 300000,
+            duration: 12, 
+            durationText: '12 mois',
+            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Historique de commandes', 'Économie 15%', 'Paiement unique'],
+            icon: 'fa-calendar-year',
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-50',
+            popular: false,
+            badge: '-15%'
+        }
+    ];
+}
+
+// ============================================================
+// DÉFINITION DES PACKS MÉDICAUX
+// ============================================================
+
+function getMedicalPacks(isMaman) {
+    if (isMaman) {
+        return [
+            { 
+                id: 'ESSENTIEL_MAMAN', 
+                name: 'Essentiel', 
+                desc: '2 semaines', 
+                price: 65000, 
+                priceDisplay: '65.000 CFA', 
+                duration: 0.5, 
+                durationText: '2 semaines',
+                features: ['Découverte post-partum', 'Suivi de base'],
+                icon: 'fa-seedling',
+                color: 'text-emerald-600',
+                bg: 'bg-emerald-50',
+                popular: false
+            },
+            { 
+                id: 'CONFORT_MAMAN', 
+                name: 'Confort', 
+                desc: '3 semaines', 
+                price: 100000, 
+                priceDisplay: '100.000 CFA', 
+                duration: 0.75, 
+                durationText: '3 semaines',
+                features: ['Accompagnement standard', 'Aide à l\'allaitement'],
+                icon: 'fa-chart-line',
+                color: 'text-blue-600',
+                bg: 'bg-blue-50',
+                popular: true
+            },
+            { 
+                id: 'SERENITE_MAMAN', 
+                name: 'Sérénité', 
+                desc: '4 semaines', 
+                price: 140000, 
+                priceDisplay: '140.000 CFA', 
+                duration: 1, 
+                durationText: '4 semaines',
+                features: ['Suivi rapproché premium', 'Accompagnement complet'],
+                icon: 'fa-crown',
+                color: 'text-gold-primary',
+                bg: 'bg-amber-50',
+                popular: false
+            },
+            { 
+                id: 'PRIVILEGE_MAMAN', 
+                name: 'Privilège', 
+                desc: '5 semaines', 
+                price: 200000, 
+                priceDisplay: '200.000 CFA', 
+                duration: 1.25, 
+                durationText: '5 semaines',
+                features: ['Coaching complet', 'Service diaspora', 'Support 24/7'],
+                icon: 'fa-star',
+                color: 'text-purple-600',
+                bg: 'bg-purple-50',
+                popular: false,
+                badge: '⭐ Premium'
+            }
+        ];
+    } else {
+        return [
+            { 
+                id: 'ESSENTIEL_SENIOR', 
+                name: 'Essentiel', 
+                desc: '4 visites / mois', 
+                price: 45000, 
+                priceDisplay: '45.000 CFA', 
+                duration: 1, 
+                durationText: '1 mois',
+                features: ['4 visites par mois', 'Suivi léger'],
+                icon: 'fa-seedling',
+                color: 'text-emerald-600',
+                bg: 'bg-emerald-50',
+                popular: false
+            },
+            { 
+                id: 'ACCOMPAGNEMENT_SENIOR', 
+                name: 'Accompagnement', 
+                desc: '8 visites / mois', 
+                price: 80000, 
+                priceDisplay: '80.000 CFA', 
+                duration: 1, 
+                durationText: '1 mois',
+                features: ['8 visites par mois', 'Sortie hôpital', 'Convalescence'],
+                icon: 'fa-hand-holding-heart',
+                color: 'text-blue-600',
+                bg: 'bg-blue-50',
+                popular: true
+            },
+            { 
+                id: 'SERENITE_SENIOR', 
+                name: 'Sérénité Seniors', 
+                desc: '12 visites / mois', 
+                price: 100000, 
+                priceDisplay: '100.000 CFA', 
+                duration: 1, 
+                durationText: '1 mois',
+                features: ['12 visites par mois', 'Suivi régulier', 'Personnes âgées'],
+                icon: 'fa-crown',
+                color: 'text-gold-primary',
+                bg: 'bg-amber-50',
+                popular: false
+            },
+            { 
+                id: 'PRIVILEGE_SENIOR', 
+                name: 'Privilège Famille', 
+                desc: 'Visites illimitées', 
+                price: 200000, 
+                priceDisplay: '200.000 CFA', 
+                duration: 1, 
+                durationText: '1 mois',
+                features: ['Visites illimitées', 'Coordination totale', 'Support prioritaire'],
+                icon: 'fa-star',
+                color: 'text-purple-600',
+                bg: 'bg-purple-50',
+                popular: false,
+                badge: '⭐ Premium'
+            }
+        ];
+    }
+}
+
+// ============================================================
 // PAGE D'ABONNEMENT
 // ============================================================
+
 export async function renderSubscriptionPage() {
     const container = document.getElementById("view-container");
     const userRole = localStorage.getItem("user_role");
@@ -77,68 +263,63 @@ export async function renderSubscriptionPage() {
     const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
     const isSansPatient = typeCompte === "SANS_PATIENT";
     
-    // Récupérer le patient actuel (uniquement pour les comptes AVEC_PATIENT)
-   
     let currentPatient = null;
 
-if (userRole === "FAMILLE" && !isSansPatient) {
-    try {
-        const result = await getCurrentPatientForSubscription();
+    if (userRole === "FAMILLE" && !isSansPatient) {
+        try {
+            const result = await getCurrentPatientForSubscription();
 
-        if (result.reason === "MULTIPLE_PATIENTS") {
-            container.innerHTML = `
-                <div class="flex flex-col items-center justify-center min-h-[55vh] p-8 text-center">
-                    <div class="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center mb-4">
-                        <i class="fa-solid fa-users text-3xl text-amber-500"></i>
+            if (result.reason === "MULTIPLE_PATIENTS") {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center min-h-[55vh] p-8 text-center">
+                        <div class="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-users text-3xl text-amber-500"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-slate-800">Choisissez un dossier</h3>
+                        <p class="text-sm text-slate-500 mt-2 max-w-xs">
+                            Vous avez plusieurs dossiers patients. Sélectionnez d'abord le dossier concerné avant de choisir une formule.
+                        </p>
+                        <button onclick="window.switchView('patients')" 
+                                class="mt-6 px-6 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
+                            Choisir un dossier
+                        </button>
                     </div>
-                    <h3 class="text-xl font-black text-slate-800">Choisissez un dossier</h3>
-                    <p class="text-sm text-slate-500 mt-2 max-w-xs">
-                        Vous avez plusieurs dossiers patients. Sélectionnez d’abord le dossier concerné avant de choisir une formule.
-                    </p>
-                    <button onclick="window.switchView('patients')" 
-                            class="mt-6 px-6 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
-                        Choisir un dossier
-                    </button>
-                </div>
-            `;
-            return;
-        }
+                `;
+                return;
+            }
 
-        if (result.reason === "NO_PATIENT") {
-            container.innerHTML = `
-                <div class="flex flex-col items-center justify-center min-h-[55vh] p-8 text-center">
-                    <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                        <i class="fa-solid fa-user-slash text-3xl text-slate-300"></i>
+            if (result.reason === "NO_PATIENT") {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center min-h-[55vh] p-8 text-center">
+                        <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-user-slash text-3xl text-slate-300"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-slate-800">Aucun dossier patient</h3>
+                        <p class="text-sm text-slate-500 mt-2 max-w-xs">
+                            Vous devez avoir un dossier patient actif pour souscrire à une formule médicale.
+                        </p>
+                        <button onclick="window.switchView('home')" 
+                                class="mt-6 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
+                            Retour à l'accueil
+                        </button>
                     </div>
-                    <h3 class="text-xl font-black text-slate-800">Aucun dossier patient</h3>
-                    <p class="text-sm text-slate-500 mt-2 max-w-xs">
-                        Vous devez avoir un dossier patient actif pour souscrire à une formule médicale.
-                    </p>
-                    <button onclick="window.switchView('home')" 
-                            class="mt-6 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
-                        Retour à l'accueil
-                    </button>
-                </div>
-            `;
-            return;
+                `;
+                return;
+            }
+
+            currentPatient = result.patient;
+
+        } catch (e) {
+            console.error("Erreur récupération patient:", e);
+            UI.error("Impossible de charger le dossier patient");
         }
-
-        currentPatient = result.patient;
-
-    } catch (e) {
-        console.error("Erreur récupération patient:", e);
-        UI.error("Impossible de charger le dossier patient");
     }
-}
     
-    // Définition des packs selon le type de compte
     let packs = [];
     
     if (isSansPatient) {
-        // Pack Confort 24/7 pour comptes SANS_PATIENT
         packs = getConfortPacks();
     } else {
-        // Packs médicaux pour comptes AVEC_PATIENT
         packs = getMedicalPacks(isMaman);
     }
     
@@ -233,200 +414,15 @@ if (userRole === "FAMILLE" && !isSansPatient) {
     `;
 }
 
-
 // ============================================================
-// PACKS CONFORT 24/7 (pour comptes SANS_PATIENT)
-// ============================================================
-
-function getConfortPacks() {
-    return [
-        { 
-            id: 'CONFORT_247_MENSUEL', 
-            name: 'Mensuel', 
-            desc: 'Accès complet', 
-            price: 25000, 
-            priceDisplay: '25.000 CFA', 
-            duration: 1, 
-            durationText: '1 mois',
-            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Historique de commandes'],
-            icon: 'fa-crown',
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50',
-            popular: true
-        },
-        { 
-            id: 'CONFORT_247_TRIMESTRIEL', 
-            name: 'Trimestriel', 
-            desc: 'Économie 5%', 
-            price: 71250, 
-            priceDisplay: '71.250 CFA',
-            originalPrice: 75000,
-            duration: 3, 
-            durationText: '3 mois',
-            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Historique de commandes', 'Économie 5%'],
-            icon: 'fa-calendar-alt',
-            color: 'text-blue-600',
-            bg: 'bg-blue-50',
-            popular: false,
-            badge: '-5%'
-        },
-        { 
-            id: 'CONFORT_247_ANNUEL', 
-            name: 'Annuel', 
-            desc: 'Économie 15%', 
-            price: 255000, 
-            priceDisplay: '255.000 CFA',
-            originalPrice: 300000,
-            duration: 12, 
-            durationText: '12 mois',
-            features: ['Commandes illimitées', 'Support prioritaire 24/7', 'Historique de commandes', 'Économie 15%', 'Paiement unique'],
-            icon: 'fa-calendar-year',
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50',
-            popular: false,
-            badge: '-15%'
-        }
-    ];
-}
-
-// ============================================================
-// DÉFINITION DES PACKS
+// SÉLECTION D'UN PACK ET PAIEMENT
 // ============================================================
 
-function getMedicalPacks(isMaman) {
-    if (isMaman) {
-        // Packs MAMAN & BÉBÉ
-        return [
-            { 
-                id: 'ESSENTIEL_MAMAN', 
-                name: 'Essentiel', 
-                desc: '2 semaines', 
-                price: 65000, 
-                priceDisplay: '65.000 CFA', 
-                duration: 0.5, 
-                durationText: '2 semaines',
-                features: ['Découverte post-partum', 'Suivi de base'],
-                icon: 'fa-seedling',
-                color: 'text-emerald-600',
-                bg: 'bg-emerald-50',
-                popular: false
-            },
-            { 
-                id: 'CONFORT_MAMAN', 
-                name: 'Confort', 
-                desc: '3 semaines', 
-                price: 100000, 
-                priceDisplay: '100.000 CFA', 
-                duration: 0.75, 
-                durationText: '3 semaines',
-                features: ['Accompagnement standard', 'Aide à l\'allaitement'],
-                icon: 'fa-chart-line',
-                color: 'text-blue-600',
-                bg: 'bg-blue-50',
-                popular: true
-            },
-            { 
-                id: 'SERENITE_MAMAN', 
-                name: 'Sérénité', 
-                desc: '4 semaines', 
-                price: 140000, 
-                priceDisplay: '140.000 CFA', 
-                duration: 1, 
-                durationText: '4 semaines',
-                features: ['Suivi rapproché premium', 'Accompagnement complet'],
-                icon: 'fa-crown',
-                color: 'text-gold-primary',
-                bg: 'bg-amber-50',
-                popular: false
-            },
-            { 
-                id: 'PRIVILEGE_MAMAN', 
-                name: 'Privilège', 
-                desc: '5 semaines', 
-                price: 200000, 
-                priceDisplay: '200.000 CFA', 
-                duration: 1.25, 
-                durationText: '5 semaines',
-                features: ['Coaching complet', 'Service diaspora', 'Support 24/7'],
-                icon: 'fa-star',
-                color: 'text-purple-600',
-                bg: 'bg-purple-50',
-                popular: false,
-                badge: '⭐ Premium'
-            }
-        ];
-    } else {
-        // Packs SENIOR
-        return [
-            { 
-                id: 'ESSENTIEL_SENIOR', 
-                name: 'Essentiel', 
-                desc: '4 visites / mois', 
-                price: 45000, 
-                priceDisplay: '45.000 CFA', 
-                duration: 1, 
-                durationText: '1 mois',
-                features: ['4 visites par mois', 'Suivi léger'],
-                icon: 'fa-seedling',
-                color: 'text-emerald-600',
-                bg: 'bg-emerald-50',
-                popular: false
-            },
-            { 
-                id: 'ACCOMPAGNEMENT_SENIOR', 
-                name: 'Accompagnement', 
-                desc: '8 visites / mois', 
-                price: 80000, 
-                priceDisplay: '80.000 CFA', 
-                duration: 1, 
-                durationText: '1 mois',
-                features: ['8 visites par mois', 'Sortie hôpital', 'Convalescence'],
-                icon: 'fa-hand-holding-heart',
-                color: 'text-blue-600',
-                bg: 'bg-blue-50',
-                popular: true
-            },
-            { 
-                id: 'SERENITE_SENIOR', 
-                name: 'Sérénité Seniors', 
-                desc: '12 visites / mois', 
-                price: 100000, 
-                priceDisplay: '100.000 CFA', 
-                duration: 1, 
-                durationText: '1 mois',
-                features: ['12 visites par mois', 'Suivi régulier', 'Personnes âgées'],
-                icon: 'fa-crown',
-                color: 'text-gold-primary',
-                bg: 'bg-amber-50',
-                popular: false
-            },
-            { 
-                id: 'PRIVILEGE_SENIOR', 
-                name: 'Privilège Famille', 
-                desc: 'Visites illimitées', 
-                price: 200000, 
-                priceDisplay: '200.000 CFA', 
-                duration: 1, 
-                durationText: '1 mois',
-                features: ['Visites illimitées', 'Coordination totale', 'Support prioritaire'],
-                icon: 'fa-star',
-                color: 'text-purple-600',
-                bg: 'bg-purple-50',
-                popular: false,
-                badge: '⭐ Premium'
-            }
-        ];
-    }
-}
-// ============================================================
-// SÉLECTION D'UN PACK
-// ============================================================
 window.selectSubscriptionPack = async (packId, price, durationMonths) => {
     const isMaman = localStorage.getItem("user_is_maman") === "true";
     const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
     const isSansPatient = typeCompte === "SANS_PATIENT";
     
-    // Sélectionner les bons packs selon le type de compte
     let selectedPack = null;
     let packs = [];
     
@@ -443,39 +439,38 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
         return;
     }
     
-    // Récupérer le patient ID (uniquement pour les comptes AVEC_PATIENT)
     let patientId = null;
 
-if (!isSansPatient) {
-    try {
-        const result = await getCurrentPatientForSubscription();
+    if (!isSansPatient) {
+        try {
+            const result = await getCurrentPatientForSubscription();
 
-        if (result.reason === "MULTIPLE_PATIENTS") {
-            await Swal.fire({
-                icon: "info",
-                title: "Choisissez d’abord un dossier",
-                text: "Vous avez plusieurs dossiers patients. Sélectionnez le dossier concerné avant de payer une formule.",
-                confirmButtonText: "Choisir un dossier",
-                confirmButtonColor: "#10B981"
-            });
+            if (result.reason === "MULTIPLE_PATIENTS") {
+                await Swal.fire({
+                    icon: "info",
+                    title: "Choisissez d'abord un dossier",
+                    text: "Vous avez plusieurs dossiers patients. Sélectionnez le dossier concerné avant de payer une formule.",
+                    confirmButtonText: "Choisir un dossier",
+                    confirmButtonColor: "#10B981"
+                });
 
-            await window.switchView("patients");
+                await window.switchView("patients");
+                return;
+            }
+
+            if (result.reason === "NO_PATIENT" || !result.patient) {
+                UI.error("Aucun patient trouvé");
+                return;
+            }
+
+            patientId = result.patient.id;
+
+        } catch (err) {
+            console.error("Erreur récupération patient:", err);
+            UI.error("Impossible de récupérer le patient");
             return;
         }
-
-        if (result.reason === "NO_PATIENT" || !result.patient) {
-            UI.error("Aucun patient trouvé");
-            return;
-        }
-
-        patientId = result.patient.id;
-
-    } catch (err) {
-        console.error("Erreur récupération patient:", err);
-        UI.error("Impossible de récupérer le patient");
-        return;
     }
-}
     
     // Confirmation avant paiement
     const confirm = await Swal.fire({
@@ -510,7 +505,6 @@ if (!isSansPatient) {
     
     if (!confirm.isConfirmed) return;
     
-    // Créer la facture
     Swal.fire({
         title: "Préparation...",
         didOpen: () => Swal.showLoading(),
@@ -538,7 +532,6 @@ if (!isSansPatient) {
         
             throw new Error("URL de paiement FedaPay non reçue");
         } else {
-            // Pour les comptes AVEC_PATIENT : créer une facture médicale
             facture = await secureFetch("/billing/generate", {
                 method: "POST",
                 body: JSON.stringify({
@@ -552,19 +545,16 @@ if (!isSansPatient) {
         
         Swal.close();
         
-        // Préparer les données pour FedaPay
         const userEmail = localStorage.getItem("user_email");
         const userName = localStorage.getItem("user_name") || "Client";
         const firstName = userName.split(' ')[0];
         const lastName = userName.split(' ')[1] || "SPS";
         
-        // Créer un bouton temporaire pour FedaPay
         const tempBtn = document.createElement('button');
         tempBtn.id = 'temp-pay-btn';
         tempBtn.style.display = 'none';
         document.body.appendChild(tempBtn);
         
-        // Initialiser FedaPay en mode popup
         FedaPay.init('#temp-pay-btn', {
             public_key: 'pk_live_yUBTAv4LLN0V7WBMpfuXnPdD',
             transaction: {
@@ -579,74 +569,72 @@ if (!isSansPatient) {
                 lastname: lastName
             },
             onComplete: async (response) => {
-    console.log("FedaPay fermé - Réponse complète:", response);
+                console.log("FedaPay fermé - Réponse complète:", response);
 
-    const transaction = response.transaction || response;
-    const isApproved = transaction && transaction.status === "approved";
+                const transaction = response.transaction || response;
+                const isApproved = transaction && transaction.status === "approved";
 
-    if (!isApproved) {
-        Swal.fire({
-            icon: "info",
-            title: "Paiement annulé",
-            text: "Vous pouvez réessayer quand vous voulez.",
-            confirmButtonText: "OK"
-        });
+                if (!isApproved) {
+                    Swal.fire({
+                        icon: "info",
+                        title: "Paiement annulé",
+                        text: "Vous pouvez réessayer quand vous voulez.",
+                        confirmButtonText: "OK"
+                    });
 
-        tempBtn.remove();
-        return;
-    }
+                    tempBtn.remove();
+                    return;
+                }
 
-    Swal.fire({
-        title: "Validation du paiement...",
-        didOpen: () => Swal.showLoading(),
-        allowOutsideClick: false
-    });
+                Swal.fire({
+                    title: "Validation du paiement...",
+                    didOpen: () => Swal.showLoading(),
+                    allowOutsideClick: false
+                });
 
-    try {
-        const result = await secureFetch("/billing/pay", {
-            method: "POST",
-            body: JSON.stringify({
-                abonnement_id: facture.id,
-                montant: price,
-                transaction_id: transaction.id,
-                mode_paiement: "FEDAPAY"
-            })
-        });
+                try {
+                    const result = await secureFetch("/billing/pay", {
+                        method: "POST",
+                        body: JSON.stringify({
+                            abonnement_id: facture.id,
+                            montant: price,
+                            transaction_id: transaction.id,
+                            mode_paiement: "FEDAPAY"
+                        })
+                    });
 
-        console.log("✅ Résultat de /billing/pay:", result);
+                    console.log("✅ Résultat de /billing/pay:", result);
 
-        localStorage.setItem("subscription_active", "true");
+                    localStorage.setItem("subscription_active", "true");
 
-        if (typeof window.refreshSubscriptionStatus === "function") {
-            await window.refreshSubscriptionStatus();
-        }
+                    if (typeof window.refreshSubscriptionStatus === "function") {
+                        await window.refreshSubscriptionStatus();
+                    }
 
-        Swal.fire({
-            icon: "success",
-            title: "✅ Abonnement activé !",
-            timer: 2000,
-            showConfirmButton: false
-        });
+                    Swal.fire({
+                        icon: "success",
+                        title: "✅ Abonnement activé !",
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
 
-        window.switchView("billing");
+                    window.switchView("billing");
 
-    } catch (err) {
-        console.error("❌ Erreur lors de la validation:", err);
+                } catch (err) {
+                    console.error("❌ Erreur lors de la validation:", err);
 
-        Swal.fire({
-            icon: "error",
-            title: "Erreur",
-            text: err.message || "Erreur lors de l'activation",
-            confirmButtonText: "OK"
-        });
-    } finally {
-        tempBtn.remove();
-    }
-}
-            
+                    Swal.fire({
+                        icon: "error",
+                        title: "Erreur",
+                        text: err.message || "Erreur lors de l'activation",
+                        confirmButtonText: "OK"
+                    });
+                } finally {
+                    tempBtn.remove();
+                }
+            }
         });
         
-        // Déclencher l'ouverture du popup
         document.getElementById('temp-pay-btn').click();
         
     } catch (err) {
@@ -661,45 +649,46 @@ if (!isSansPatient) {
     }
 };
 
+// ============================================================
+// RETRY PAYMENT
+// ============================================================
 
 window.retryPayment = async (abonnementId, montant, patientNom, packId, durationMonths) => {
-    // Récupérer le patient ID
-   let patientId = AppState.currentPatient ||
-    localStorage.getItem("current_patient_id") ||
-    localStorage.getItem("active_patient_id");
+    let patientId = AppState.currentPatient ||
+        localStorage.getItem("current_patient_id") ||
+        localStorage.getItem("active_patient_id");
 
-if (!patientId) {
-    try {
-        const result = await getCurrentPatientForSubscription();
+    if (!patientId) {
+        try {
+            const result = await getCurrentPatientForSubscription();
 
-        if (result.reason === "MULTIPLE_PATIENTS") {
-            await Swal.fire({
-                icon: "info",
-                title: "Choisissez d’abord un dossier",
-                text: "Vous avez plusieurs dossiers patients. Sélectionnez le dossier concerné avant de payer cette facture.",
-                confirmButtonText: "Choisir un dossier",
-                confirmButtonColor: "#10B981"
-            });
+            if (result.reason === "MULTIPLE_PATIENTS") {
+                await Swal.fire({
+                    icon: "info",
+                    title: "Choisissez d'abord un dossier",
+                    text: "Vous avez plusieurs dossiers patients. Sélectionnez le dossier concerné avant de payer cette facture.",
+                    confirmButtonText: "Choisir un dossier",
+                    confirmButtonColor: "#10B981"
+                });
 
-            await window.switchView("patients");
+                await window.switchView("patients");
+                return;
+            }
+
+            if (result.reason === "NO_PATIENT" || !result.patient) {
+                UI.error("Aucun patient trouvé");
+                return;
+            }
+
+            patientId = result.patient.id;
+
+        } catch (err) {
+            console.error("Erreur récupération patient:", err);
+            UI.error("Impossible de récupérer le patient");
             return;
         }
-
-        if (result.reason === "NO_PATIENT" || !result.patient) {
-            UI.error("Aucun patient trouvé");
-            return;
-        }
-
-        patientId = result.patient.id;
-
-    } catch (err) {
-        console.error("Erreur récupération patient:", err);
-        UI.error("Impossible de récupérer le patient");
-        return;
     }
-}
     
-    // Confirmation avant paiement
     const confirm = await Swal.fire({
         title: '<span class="text-xl font-black">💳 Paiement sécurisé</span>',
         html: `
@@ -736,19 +725,16 @@ if (!patientId) {
     try {
         Swal.close();
         
-        // Préparer les données pour FedaPay
         const userEmail = localStorage.getItem("user_email");
         const userName = localStorage.getItem("user_name") || "Client";
         const firstName = userName.split(' ')[0];
         const lastName = userName.split(' ')[1] || "SPS";
         
-        // Créer un bouton temporaire pour FedaPay
         const tempBtn = document.createElement('button');
         tempBtn.id = 'temp-pay-btn-retry';
         tempBtn.style.display = 'none';
         document.body.appendChild(tempBtn);
         
-        // Initialiser FedaPay en mode popup (sans iframe)
         FedaPay.init('#temp-pay-btn-retry', {
             public_key: 'pk_live_yUBTAv4LLN0V7WBMpfuXnPdD',
             transaction: {
@@ -815,7 +801,6 @@ if (!patientId) {
             }
         });
         
-        // Déclencher l'ouverture du popup
         document.getElementById('temp-pay-btn-retry').click();
         
     } catch (err) {
@@ -828,13 +813,4 @@ if (!patientId) {
             confirmButtonText: "OK"
         });
     }
-};
-                                      
-// ============================================================
-// INITIATION PAIEMENT FEDAPAY (fallback - non utilisé)
-// ============================================================
-
-window.initiateFedaPayPayment = async (packId, durationMonths, price) => {
-    // Cette fonction n'est plus utilisée, mais gardée pour compatibilité
-    console.warn("initiateFedaPayPayment n'est plus utilisé");
 };
