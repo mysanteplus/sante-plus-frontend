@@ -1223,14 +1223,5 @@ window.openEndVisit = () => {
 // ============================================================
 
 export { 
-    getRealtimeChannel,
-    loadVisits,
-    renderVisits,
-    renderEndVisitView,
-    renderStartVisitView,
-    startVisit,
-    submitEndVisit,
-    checkActiveVisitOnStart,
-    resumeTrackingIfActive,
-    refreshAidantUI
-};
+    getRealtimeChannel
+    };
