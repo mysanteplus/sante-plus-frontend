@@ -2556,4 +2556,4 @@ async function getCurrentLocation() {
 // EXPORTS
 // ============================================================
 
-export { initCoordinatorMap, initFamilyMap, initAidantMap };
+export { initCoordinatorMap, initAidantMap };
