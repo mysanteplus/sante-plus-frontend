@@ -1,7 +1,7 @@
 // ============================================================
 // js/modules/map.js - MODULE CARTE COMPLET
 // Version: 2.0
-// Description: Gestion de la carte pour les 3 rôles (COORDINATEUR, AIDANT, FAMILLE)
+// Description: Gestion de la carte pour les 3 rôles
 // ============================================================
 
 import { secureFetch } from "../core/api.js";
@@ -22,6 +22,7 @@ let activeInterval = null;
 let replayInterval = null;
 let currentReplayIndex = 0;
 let selectedAidantId = null;
+let isSatelliteView = true; // Pour le toggle entre modes
 
 // Coordonnées du siège SPS (Cotonou)
 const SPS_HQ = {
@@ -153,6 +154,47 @@ function getPositionAgeText(item) {
     return `Il y a ${hours}h`;
 }
 
+function clearMapRuntime() {
+    if (activeInterval) {
+        clearInterval(activeInterval);
+        activeInterval = null;
+    }
+
+    if (watchId) {
+        try {
+            navigator.geolocation.clearWatch(watchId);
+        } catch (e) {}
+        watchId = null;
+    }
+
+    if (map) {
+        try {
+            map.remove();
+        } catch (e) {}
+    }
+
+    map = null;
+    markers = {};
+
+    if (routeLayer) {
+        routeLayer = null;
+    }
+
+    if (trajectoryLayer) {
+        trajectoryLayer = null;
+    }
+}
+
+function hideMapLoading() {
+    const loaderElement = document.getElementById("map-loading");
+    if (loaderElement) {
+        loaderElement.style.opacity = "0";
+        setTimeout(() => {
+            loaderElement.style.display = "none";
+        }, 300);
+    }
+}
+
 // ============================================================
 // CRÉATION D'ICÔNES
 // ============================================================
@@ -192,6 +234,106 @@ function createCoordinatorIcon(color, iconName, isAnimated) {
         iconSize: [36, 36],
         iconAnchor: [18, 18]
     });
+}
+
+// ============================================================
+// FONCTION D'AJOUT DU FOND DE CARTE
+// ============================================================
+
+function addTileLayer(mapInstance, style = 'satellite') {
+    // ============================================================
+    // 🗺️ CHOIX DU FOND DE CARTE - DÉCOMMENTER CELUI QUE TU VEUX
+    // ============================================================
+    
+    // 🔴 OPTION 1: GOOGLE MAPS SATELLITE (Très réaliste - Recommandé)
+    // https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}
+    // 's' = satellite, 'y' = hybrid (satellite + routes), 'm' = plan, 'p' = terrain
+    // ============================================================
+    // L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    //     maxZoom: 20,
+    //     attribution: 'Google'
+    // }).addTo(mapInstance);
+
+    // 🔴 OPTION 2: GOOGLE MAPS HYBRID (Satellite + Routes - Très bonne visibilité)
+    // ============================================================
+    // L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    //     maxZoom: 20,
+    //     attribution: 'Google'
+    // }).addTo(mapInstance);
+
+    // 🔴 OPTION 3: GOOGLE MAPS PLAN (Comme Google Maps classique)
+    // ============================================================
+    // L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    //     maxZoom: 20,
+    //     attribution: 'Google'
+    // }).addTo(mapInstance);
+
+    // 🔴 OPTION 4: GOOGLE MAPS TERRAIN (Avec relief)
+    // ============================================================
+    // L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+    //     maxZoom: 20,
+    //     attribution: 'Google'
+    // }).addTo(mapInstance);
+
+    // 🔴 OPTION 5: ESRI SATELLITE (Excellente qualité)
+    // ============================================================
+    // L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    //     maxZoom: 19,
+    //     attribution: 'Tiles &copy; Esri'
+    // }).addTo(mapInstance);
+
+    // 🔴 OPTION 6: OPENSTREETMAP (Classique, gratuit, détaillé)
+    // ============================================================
+    // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    //     maxZoom: 20,
+    //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    // }).addTo(mapInstance);
+
+    // 🔴 OPTION 7: OPENSTREETMAP HUMANITARIAN (Détaillé, couleurs douces)
+    // ============================================================
+    // L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+    //     maxZoom: 20,
+    //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    // }).addTo(mapInstance);
+
+    // 🔴 OPTION 8: CARTODB VOYAGER (Élégant, moderne)
+    // ============================================================
+    // L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    //     maxZoom: 20,
+    //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB'
+    // }).addTo(mapInstance);
+
+    // 🔴 OPTION 9: CARTODB DARK MATTER (Mode nuit)
+    // ============================================================
+    // L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    //     maxZoom: 20,
+    //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB'
+    // }).addTo(mapInstance);
+
+    // 🔴 OPTION 10: GOOGLE MAPS SATELLITE AVEC ROUTES (Défaut - si rien n'est décommenté)
+    // ============================================================
+    if (style === 'satellite') {
+        L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            attribution: 'Google'
+        }).addTo(mapInstance);
+    } else if (style === 'hybrid') {
+        L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            attribution: 'Google'
+        }).addTo(mapInstance);
+    } else if (style === 'street') {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 20,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(mapInstance);
+    } else {
+        // Défaut: Satellite
+        L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            attribution: 'Google'
+        }).addTo(mapInstance);
+    }
 }
 
 // ============================================================
@@ -304,30 +446,30 @@ async function initCoordinatorMap() {
                     <button id="show-alerts-btn" class="bg-amber-500 text-white px-4 py-3 rounded-xl shadow-md text-[10px] font-black uppercase">
                         <i class="fa-solid fa-bell"></i> Alertes
                     </button>
+                    <button id="toggle-map-style" class="bg-white p-3 rounded-xl shadow-md border border-slate-100" title="Changer le style de carte">
+                        <i class="fa-solid fa-layer-group text-slate-600"></i>
+                    </button>
                 </div>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Aidants live</p>
-                        <p id="admin-live-count" class="text-2xl font-black text-emerald-600 mt-1">0</p>
-                    </div>
-                
-                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Patients GPS</p>
-                        <p id="admin-patient-count" class="text-2xl font-black text-blue-600 mt-1">0</p>
-                    </div>
-                
-                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Hors zone</p>
-                        <p id="admin-alert-count" class="text-2xl font-black text-rose-600 mt-1">0</p>
-                    </div>
-                
-                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Positions anciennes</p>
-                        <p id="admin-stale-count" class="text-2xl font-black text-amber-600 mt-1">0</p>
-                    </div>
-              </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Aidants live</p>
+                    <p id="admin-live-count" class="text-2xl font-black text-emerald-600 mt-1">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Patients GPS</p>
+                    <p id="admin-patient-count" class="text-2xl font-black text-blue-600 mt-1">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Hors zone</p>
+                    <p id="admin-alert-count" class="text-2xl font-black text-rose-600 mt-1">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Positions anciennes</p>
+                    <p id="admin-stale-count" class="text-2xl font-black text-amber-600 mt-1">0</p>
+                </div>
+            </div>
             
             <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -421,20 +563,39 @@ async function initCoordinatorMap() {
         attributionControl: false, 
         zoomSnap: 0.5,
         center: [6.368, 2.401],
-        zoom: 12
+        zoom: 14
     });
     
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-    }).addTo(map);
+    // ✅ AJOUT DU FOND DE CARTE AVEC LES OPTIONS
+    addTileLayer(map, 'satellite'); // Change 'satellite' par 'hybrid', 'street', etc.
     
     setTimeout(() => {
         if (map) map.invalidateSize(true);
     }, 200);
     
+    // ✅ BOUTON POUR CHANGER LE STYLE DE CARTE
+    document.getElementById('toggle-map-style')?.addEventListener('click', () => {
+        // Supprimer les anciennes couches
+        map.eachLayer(layer => {
+            if (layer instanceof L.TileLayer) {
+                map.removeLayer(layer);
+            }
+        });
+        
+        // Alterner entre Satellite et Plan
+        isSatelliteView = !isSatelliteView;
+        if (isSatelliteView) {
+            addTileLayer(map, 'satellite');
+            showToast("🌍 Mode Satellite", "info", 1500);
+        } else {
+            addTileLayer(map, 'street');
+            showToast("🗺️ Mode Plan", "info", 1500);
+        }
+    });
+    
+    // Événements
     document.getElementById('refresh-map-btn')?.addEventListener('click', () => loadCoordinatorData());
     document.getElementById('center-all-btn')?.addEventListener('click', () => centerAllMarkers());
     document.getElementById('show-alerts-btn')?.addEventListener('click', () => showAlertsPanel());
@@ -1020,62 +1181,6 @@ function getVisitLastUpdate(activeVisit) {
     );
 }
 
-function clearMapRuntime() {
-    if (activeInterval) {
-        clearInterval(activeInterval);
-        activeInterval = null;
-    }
-
-    if (watchId) {
-        try {
-            navigator.geolocation.clearWatch(watchId);
-        } catch (e) {}
-        watchId = null;
-    }
-
-    if (map) {
-        try {
-            map.remove();
-        } catch (e) {}
-    }
-
-    map = null;
-    markers = {};
-
-    if (routeLayer) {
-        routeLayer = null;
-    }
-
-    if (trajectoryLayer) {
-        trajectoryLayer = null;
-    }
-}
-
-function hideMapLoading() {
-    const loaderElement = document.getElementById("map-loading");
-    if (loaderElement) {
-        loaderElement.style.opacity = "0";
-        setTimeout(() => {
-            loaderElement.style.display = "none";
-        }, 300);
-    }
-}
-
-function renderMapNoticeOnTop(message) {
-    const container = document.getElementById("live-map-container");
-    if (!container || document.getElementById("map-notice")) return;
-
-    const notice = document.createElement("div");
-    notice.id = "map-notice";
-    notice.className = "absolute top-4 left-4 right-4 z-30 bg-white/95 backdrop-blur-sm border border-amber-100 rounded-2xl p-3 shadow-lg text-center";
-    notice.innerHTML = `
-        <p class="text-[10px] font-black text-amber-600 uppercase tracking-wider">Information Radar</p>
-        <p class="text-xs text-slate-600 mt-1">${escapeHtml(message)}</p>
-    `;
-
-    container.appendChild(notice);
-}
-
 async function initSansPatientRadar() {
     const container = document.getElementById("view-container");
     clearMapRuntime();
@@ -1157,7 +1262,6 @@ export async function initFamilyMap() {
 
     container.innerHTML = `
         <div class="animate-fadeIn flex flex-col h-[calc(100vh-120px)] pb-0">
-            <!-- Header -->
             <div class="flex justify-between items-center mb-4 shrink-0 flex-wrap gap-3">
                 <div>
                     <h3 class="text-xl font-black text-slate-800">👨‍👩‍👧 Suivi de votre proche</h3>
@@ -1172,10 +1276,12 @@ export async function initFamilyMap() {
                     <button id="history-family-btn" class="bg-indigo-500 text-white px-3 py-2 rounded-xl shadow-md text-[9px] font-black uppercase">
                         <i class="fa-solid fa-clock-rotate-left"></i> Historique
                     </button>
+                    <button id="toggle-family-map-style" class="bg-white p-2 rounded-xl shadow-md border border-slate-100" title="Changer le style de carte">
+                        <i class="fa-solid fa-layer-group text-slate-600"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Statut de la visite -->
             <div id="family-status-bar" class="mb-3 bg-white p-3 rounded-xl shadow-sm border border-slate-100">
                 <div class="flex items-center justify-between">
                     <div>
@@ -1195,7 +1301,6 @@ export async function initFamilyMap() {
                 </div>
             </div>
 
-            <!-- Carte -->
             <div id="live-map-container" class="flex-1 w-full rounded-xl border-2 border-white shadow-lg relative overflow-hidden bg-slate-100" style="min-height: 50vh; height: auto;">
                 <div id="map" class="absolute inset-0 z-10 w-full h-full"></div>
                 <div id="map-loading" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center">
@@ -1208,7 +1313,6 @@ export async function initFamilyMap() {
                 </div>
             </div>
 
-            <!-- Légende -->
             <div class="mt-3 bg-white/90 backdrop-blur-sm p-2 rounded-xl border border-slate-100">
                 <div class="flex items-center justify-around text-[8px] font-bold">
                     <div class="flex items-center gap-1">
@@ -1245,15 +1349,31 @@ export async function initFamilyMap() {
         zoomControl: false,
         attributionControl: false,
         center: [6.368, 2.401],
-        zoom: 12
+        zoom: 14
     });
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-    }).addTo(map);
+    // ✅ AJOUT DU FOND DE CARTE
+    addTileLayer(map, 'satellite');
+
+    // ✅ BOUTON POUR CHANGER LE STYLE DE CARTE (FAMILLE)
+    document.getElementById('toggle-family-map-style')?.addEventListener('click', () => {
+        map.eachLayer(layer => {
+            if (layer instanceof L.TileLayer) {
+                map.removeLayer(layer);
+            }
+        });
+        
+        isSatelliteView = !isSatelliteView;
+        if (isSatelliteView) {
+            addTileLayer(map, 'satellite');
+            showToast("🌍 Mode Satellite", "info", 1500);
+        } else {
+            addTileLayer(map, 'street');
+            showToast("🗺️ Mode Plan", "info", 1500);
+        }
+    });
 
     setTimeout(() => {
         if (map) map.invalidateSize(true);
@@ -1402,9 +1522,25 @@ async function loadFamilyData() {
     }
 }
 
-/**
- * 📜 VOIR L'HISTORIQUE DES VISITES (FAMILLE)
- */
+function renderMapNoticeOnTop(message) {
+    const container = document.getElementById("live-map-container");
+    if (!container || document.getElementById("map-notice")) return;
+
+    const notice = document.createElement("div");
+    notice.id = "map-notice";
+    notice.className = "absolute top-4 left-4 right-4 z-30 bg-white/95 backdrop-blur-sm border border-amber-100 rounded-2xl p-3 shadow-lg text-center";
+    notice.innerHTML = `
+        <p class="text-[10px] font-black text-amber-600 uppercase tracking-wider">Information Radar</p>
+        <p class="text-xs text-slate-600 mt-1">${escapeHtml(message)}</p>
+    `;
+
+    container.appendChild(notice);
+}
+
+// ============================================================
+// 📜 VOIR L'HISTORIQUE DES VISITES (FAMILLE)
+// ============================================================
+
 window.viewVisitHistory = async (patientId) => {
     try {
         const history = await secureFetch(`/visites/history/${patientId}?limit=30`);
@@ -1422,14 +1558,14 @@ window.viewVisitHistory = async (patientId) => {
         const html = history.map(v => `
             <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
                 <div>
-                    <p class="font-bold text-slate-800 text-xs">${v.patient?.nom_complet || 'Patient'}</p>
+                    <p class="font-bold text-slate-800 text-xs">${escapeHtml(v.patient?.nom_complet || 'Patient')}</p>
                     <p class="text-[9px] text-slate-400">${v.heure_debut_formatted || 'Date inconnue'}</p>
                     <p class="text-[9px] font-bold ${v.statut === 'Validé' ? 'text-emerald-600' : v.statut === 'En attente' ? 'text-amber-600' : 'text-slate-400'}">
                         ${v.statut}
                     </p>
                 </div>
                 <div class="text-right">
-                    <p class="text-[9px] text-slate-400">${v.aidant?.nom || 'Aidant inconnu'}</p>
+                    <p class="text-[9px] text-slate-400">${escapeHtml(v.aidant?.nom || 'Aidant inconnu')}</p>
                     ${v.photo_url ? `<button onclick="window.open('${v.photo_url}')" class="text-[8px] text-blue-500">📸 Voir photo</button>` : ''}
                 </div>
             </div>
@@ -1563,6 +1699,9 @@ async function initAidantMap() {
                     <button id="stop-navigation-btn" class="bg-rose-500 text-white px-3 py-2 rounded-xl shadow-md text-[9px] font-black uppercase hidden">
                         <i class="fa-solid fa-stop"></i> Arrêter
                     </button>
+                    <button id="toggle-aidant-map-style" class="bg-white p-2 rounded-xl shadow-md border border-slate-100" title="Changer le style de carte">
+                        <i class="fa-solid fa-layer-group text-slate-600"></i>
+                    </button>
                 </div>
             </div>
             
@@ -1647,11 +1786,26 @@ async function initAidantMap() {
         map = L.map('map', { zoomControl: false, attributionControl: false, zoomSnap: 0.5 });
         L.control.zoom({ position: 'bottomright' }).addTo(map);
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-            maxZoom: 20,
-            subdomains: ['a', 'b', 'c']
-        }).addTo(map);
+        // ✅ AJOUT DU FOND DE CARTE
+        addTileLayer(map, 'satellite');
+
+        // ✅ BOUTON POUR CHANGER LE STYLE DE CARTE (AIDANT)
+        document.getElementById('toggle-aidant-map-style')?.addEventListener('click', () => {
+            map.eachLayer(layer => {
+                if (layer instanceof L.TileLayer) {
+                    map.removeLayer(layer);
+                }
+            });
+            
+            isSatelliteView = !isSatelliteView;
+            if (isSatelliteView) {
+                addTileLayer(map, 'satellite');
+                showToast("🌍 Mode Satellite", "info", 1500);
+            } else {
+                addTileLayer(map, 'street');
+                showToast("🗺️ Mode Plan", "info", 1500);
+            }
+        });
         
         setTimeout(() => {
             if (map) {
@@ -2402,4 +2556,4 @@ async function getCurrentLocation() {
 // EXPORTS
 // ============================================================
 
-export { initCoordinatorMap, initAidantMap };
+export { initCoordinatorMap, initFamilyMap, initAidantMap };
