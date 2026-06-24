@@ -1,13 +1,62 @@
+// modules/patients.js - VERSION COMPLÈTE CORRIGÉE
+
 import { secureFetch } from "../core/api.js";
 import { AppState } from "../core/state.js";
 import { UI, showSkeleton } from "../core/utils.js";
 import * as Visites from "./visites.js";
-import { secureFetchWithCache } from "../core/utils.js";
 
+// ============================================================
+// FONCTIONS UTILITAIRES
+// ============================================================
 
-/**
- * 📥 1. CHARGER LA LISTE DES PATIENTS
- */
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function setActivePatient(patientId) {
+    if (!patientId) {
+        console.warn("patientId manquant dans setActivePatient");
+        return false;
+    }
+
+    AppState.currentPatient = patientId;
+    localStorage.setItem("current_patient_id", patientId);
+    localStorage.setItem("active_patient_id", patientId);
+
+    console.log("✅ Patient actif sélectionné:", patientId);
+    return true;
+}
+
+function updatePatientBadges() {
+    document.querySelectorAll(".patient-card-modern").forEach(el => {
+        const patientId = el.dataset.patientId;
+        const badge = el.querySelector(".patient-badge");
+
+        if (!badge) return;
+
+        const count = AppState.unreadByPatient?.[patientId] || 0;
+
+        if (count > 0) {
+            badge.textContent = count > 99 ? "99+" : count;
+            badge.classList.remove("hidden");
+            badge.classList.add("inline-flex");
+        } else {
+            badge.classList.add("hidden");
+            badge.classList.remove("inline-flex");
+        }
+    });
+}
+
+// ============================================================
+// 1. CHARGER LA LISTE DES PATIENTS
+// ============================================================
+
 export async function loadPatients() {
     const container = document.getElementById("patients-list");
     if (!container) return;
@@ -69,9 +118,11 @@ export async function loadPatients() {
         throw err;
     }
 }
-/**
- * 🎨 2. RENDU DE LA LISTE
- */
+
+// ============================================================
+// 2. RENDU DE LA LISTE DES PATIENTS
+// ============================================================
+
 export function renderPatients() {
     const container = document.getElementById("patients-list");
     const userRole = localStorage.getItem("user_role");
@@ -98,6 +149,22 @@ export function renderPatients() {
         const initials = p.nom_complet?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || '??';
         const hasGps = p.lat && p.lng;
         
+        // Ajouter le bouton "Suivre l'aidant" pour la famille
+        const familyActions = userRole === "FAMILLE" ? `
+            <div class="grid grid-cols-2 gap-2 mt-3">
+                <button onclick="event.stopPropagation(); window.switchView('map')"
+                        class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                        style="background: ${primaryLight}; color: ${primaryColor};">
+                    <i class="fa-solid fa-location-dot mr-1"></i> Suivre l'aidant
+                </button>
+                <button onclick="event.stopPropagation(); window.viewVisitHistory('${p.id}')"
+                        class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                        style="background: #EEF2FF; color: #4F46E5;">
+                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Historique
+                </button>
+            </div>
+        ` : '';
+        
         return `
             <div class="patient-card-modern" 
                  data-patient-id="${p.id}"
@@ -112,7 +179,7 @@ export function renderPatients() {
                     <!-- Infos principales -->
                     <div class="flex-1">
                         <div class="flex items-center gap-2 flex-wrap">
-                            <h4 class="font-bold text-slate-800 text-base">${p.nom_complet || 'Inconnu'}</h4>
+                            <h4 class="font-bold text-slate-800 text-base">${escapeHtml(p.nom_complet || 'Inconnu')}</h4>
                             
                             <span class="patient-badge hidden min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black items-center justify-center"></span>
                             
@@ -120,7 +187,7 @@ export function renderPatients() {
                         </div>
                         <div class="flex items-center gap-1 mt-0.5">
                             <i class="fa-solid fa-location-dot text-slate-300 text-[10px]"></i>
-                            <span class="text-[11px] text-slate-500">${p.adresse?.split(',')[0] || 'Adresse non renseignée'}</span>
+                            <span class="text-[11px] text-slate-500">${escapeHtml(p.adresse?.split(',')[0] || 'Adresse non renseignée')}</span>
                         </div>
                     </div>
                     
@@ -133,13 +200,13 @@ export function renderPatients() {
                 <!-- Footer avec infos supplémentaires -->
                 <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
                     <div class="flex items-center gap-2">
-                    <span class="badge-dynamic">
-                        ${p.formule === 'Basic' || p.formule === 'Essentiel' ? '<i class="fa-solid fa-leaf mr-1"></i>' : 
-                          p.formule === 'Standard' || p.formule === 'Confort' ? '<i class="fa-solid fa-chart-line mr-1"></i>' :
-                          p.formule === 'Premium' || p.formule === 'Sérénité' ? '<i class="fa-solid fa-crown mr-1"></i>' :
-                          '<i class="fa-solid fa-tag mr-1"></i>'}
-                        ${p.formule || 'Standard'}
-                    </span>
+                        <span class="badge-dynamic">
+                            ${p.formule === 'Basic' || p.formule === 'Essentiel' ? '<i class="fa-solid fa-leaf mr-1"></i>' : 
+                              p.formule === 'Standard' || p.formule === 'Confort' ? '<i class="fa-solid fa-chart-line mr-1"></i>' :
+                              p.formule === 'Premium' || p.formule === 'Sérénité' ? '<i class="fa-solid fa-crown mr-1"></i>' :
+                              '<i class="fa-solid fa-tag mr-1"></i>'}
+                            ${escapeHtml(p.formule || 'Standard')}
+                        </span>
                         ${hasGps ? `
                             <span class="badge-dynamic" style="background: #ECFDF5; color: #059669;">
                                 <i class="fa-solid fa-location-dot"></i> Géolocalisé
@@ -151,6 +218,7 @@ export function renderPatients() {
                     </span>
                 </div>
 
+                <!-- Actions principales -->
                 <div class="grid grid-cols-2 gap-2 mt-3">
                     <button onclick="event.stopPropagation(); window.viewPatientFeed('${p.id}')"
                             class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
@@ -165,10 +233,13 @@ export function renderPatients() {
                     </button>
                 </div>
                 
+                <!-- Actions spécifiques famille -->
+                ${familyActions}
+                
                 <!-- Action lier famille (coordinateur uniquement) -->
                 ${userRole === "COORDINATEUR" && !p.famille_user_id ? `
                     <div class="mt-3">
-                        <button onclick="event.stopPropagation(); window.openLinkFamilyModal('${p.id}', '${(p.nom_complet || '').replace(/'/g, "\\'")}')" 
+                        <button onclick="event.stopPropagation(); window.openLinkFamilyModal('${p.id}', '${escapeHtml(p.nom_complet || '')}')" 
                                 class="w-full py-2 rounded-xl text-[10px] font-bold transition-all" 
                                 style="background: ${primaryLight}; color: ${primaryColor};">
                             <i class="fa-solid fa-link"></i> Lier une famille
@@ -178,26 +249,16 @@ export function renderPatients() {
             </div>
         `;
     }).join("");
-       setTimeout(() => {
+    
+    setTimeout(() => {
         updatePatientBadges();
     }, 50);
 }
 
+// ============================================================
+// 3. PAGE D'AJOUT D'UN PATIENT
+// ============================================================
 
-// Fonction escapeHtml pour la sécurité
-function escapeHtml(str) {
-    if (!str) return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-/**
- * 📄 VUE : PAGE D'AJOUT D'UN PATIENT
- */
 export async function renderAddPatientView() {
     const container = document.getElementById("view-container");
     
@@ -300,6 +361,10 @@ export async function renderAddPatientView() {
     document.getElementById("submit-patient-btn").onclick = () => submitAddPatient();
 }
 
+// ============================================================
+// 4. SOUMISSION D'AJOUT DE PATIENT
+// ============================================================
+
 async function submitAddPatient() {
     const prenom = document.getElementById("form-pat-prenom")?.value;
     const nom = document.getElementById("form-pat-nom")?.value;
@@ -342,6 +407,10 @@ async function submitAddPatient() {
         Swal.fire({ title: "Erreur", text: err.message, icon: "error" });
     }
 }
+
+// ============================================================
+// 5. SÉLECTEUR DE FORMULE
+// ============================================================
 
 const FORMULES = [
     { id: "Basic", name: "Formule Basic", desc: "1 visite par semaine", price: "50.000 CFA", icon: "fa-seedling", color: "text-emerald-600" },
@@ -399,11 +468,10 @@ async function openFormuleSelector() {
     });
 }
 
+// ============================================================
+// 6. VUE : FICHE PATIENT (DÉTAIL)
+// ============================================================
 
-
-/**
- * 📄 VUE : FICHE PATIENT (Aidant)
- */
 export async function renderPatientDetailsView(patientId) {
     const container = document.getElementById("view-container");
     
@@ -418,21 +486,36 @@ export async function renderPatientDetailsView(patientId) {
         
         console.log("📋 Patient reçu (brut):", p);
         
-        // ✅ CORRECTION : Si c'est un tableau, prendre le premier élément
+        // Si c'est un tableau, prendre le premier élément
         if (Array.isArray(p) && p.length > 0) {
             p = p[0];
             console.log("📋 Patient après extraction:", p);
         }
         
-        // ✅ Vérifier que p est un objet valide
+        // Vérifier que p est un objet valide
         if (!p || typeof p !== 'object' || !p.id) {
             console.error("❌ Patient invalide:", p);
             throw new Error("Patient non trouvé ou format invalide");
         }
         
+        const userRole = localStorage.getItem("user_role");
         const isMaman = p.categorie_service === 'MAMAN_BEBE';
         const isPremium = p.formule === 'Premium' || p.type_pack === 'Premium';
         const initials = p.nom_complet?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || '??';
+        
+        // Actions supplémentaires pour la famille
+        const familyActions = userRole === "FAMILLE" ? `
+            <div class="grid grid-cols-2 gap-2 mt-4">
+                <button onclick="window.switchView('map')" 
+                        class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                    <i class="fa-solid fa-location-dot mr-2"></i> Suivre l'aidant
+                </button>
+                <button onclick="window.viewVisitHistory('${p.id}')" 
+                        class="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                    <i class="fa-solid fa-clock-rotate-left mr-2"></i> Historique
+                </button>
+            </div>
+        ` : '';
         
         container.innerHTML = `
             <div class="animate-fadeIn max-w-lg mx-auto pb-32">
@@ -472,6 +555,8 @@ export async function renderPatientDetailsView(patientId) {
 
                 <div id="aidant-active-area" class="mt-4"></div>
 
+                ${familyActions}
+
                 <button onclick="window.switchView('patients')" class="w-full mt-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-arrow-left text-xs"></i> Retour
                 </button>
@@ -491,50 +576,65 @@ export async function renderPatientDetailsView(patientId) {
             <div class="text-center py-20">
                 <i class="fa-solid fa-circle-exclamation text-rose-500 text-3xl mb-3"></i>
                 <p class="text-sm font-bold text-rose-500">Erreur de chargement</p>
-                <p class="text-xs text-slate-400 mt-1">${err.message}</p>
+                <p class="text-xs text-slate-400 mt-1">${escapeHtml(err.message)}</p>
                 <button onclick="window.switchView('patients')" class="mt-4 px-4 py-2 bg-slate-800 text-white rounded-xl">Retour</button>
             </div>
         `;
     }
 }
-/**
- * 📄 VUE : LIAISON FAMILLE
- */
+
+// ============================================================
+// 7. VUE : LIAISON FAMILLE
+// ============================================================
+
 export async function renderLinkFamilyView() {
     const container = document.getElementById("view-container");
     const { patientId, patientName } = window.AppState.tempData || {};
 
     try {
-        const response = await secureFetch("/auth/profiles?role=FAMILLE");
-        const families = await response.json();
+        const families = await secureFetch("/auth/profiles?role=FAMILLE");
 
         if (!families?.length) {
-            container.innerHTML = `<div class="max-w-2xl mx-auto text-center py-20 bg-white rounded-2xl"><p class="text-sm font-bold text-slate-500">Aucun compte famille trouvé</p><button onclick="window.switchView('patients')" class="mt-4 text-[10px] font-black text-blue-500">Retour</button></div>`;
+            container.innerHTML = `
+                <div class="max-w-2xl mx-auto text-center py-20 bg-white rounded-2xl">
+                    <p class="text-sm font-bold text-slate-500">Aucun compte famille trouvé</p>
+                    <button onclick="window.switchView('patients')" class="mt-4 text-[10px] font-black text-blue-500">Retour</button>
+                </div>`;
             return;
         }
 
         container.innerHTML = `
             <div class="animate-fadeIn max-w-2xl mx-auto pb-32">
                 <div class="flex items-center gap-4 mb-8">
-                    <button onclick="window.switchView('patients')" class="w-10 h-10 rounded-xl bg-white shadow-sm border flex items-center justify-center"><i class="fa-solid fa-arrow-left"></i></button>
-                    <div><h3 class="font-black text-2xl text-slate-800">Lier une Famille</h3><p class="text-[10px] text-slate-400 mt-1">Dossier : ${patientName}</p></div>
+                    <button onclick="window.switchView('patients')" class="w-10 h-10 rounded-xl bg-white shadow-sm border flex items-center justify-center">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h3 class="font-black text-2xl text-slate-800">Lier une Famille</h3>
+                        <p class="text-[10px] text-slate-400 mt-1">Dossier : ${escapeHtml(patientName)}</p>
+                    </div>
                 </div>
                 <div class="bg-white rounded-2xl p-6 shadow-sm border">
                     <p class="text-sm font-bold text-slate-500 mb-4">Sélectionnez le responsable :</p>
                     <div class="space-y-2 max-h-96 overflow-y-auto mb-6">
                         ${families.map(f => `
                             <label class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border cursor-pointer hover:border-blue-300">
-                                <div><p class="font-bold text-slate-800">${f.nom}</p><p class="text-[10px] text-slate-500">${f.email}</p></div>
+                                <div>
+                                    <p class="font-bold text-slate-800">${escapeHtml(f.nom)}</p>
+                                    <p class="text-[10px] text-slate-500">${escapeHtml(f.email)}</p>
+                                </div>
                                 <input type="radio" name="family_select" value="${f.id}" class="w-5 h-5 accent-blue-500">
                             </label>
                         `).join('')}
                     </div>
-                    <button onclick="window.submitLinkFamily('${patientId}')" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-md">Confirmer la liaison</button>
+                    <button onclick="window.submitLinkFamily('${patientId}')" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-md">
+                        Confirmer la liaison
+                    </button>
                 </div>
             </div>
         `;
     } catch (err) {
-        container.innerHTML = `<p class="text-center text-rose-500 p-10">Erreur : ${err.message}</p>`;
+        container.innerHTML = `<p class="text-center text-rose-500 p-10">Erreur : ${escapeHtml(err.message)}</p>`;
     }
 }
 
@@ -555,9 +655,9 @@ window.submitLinkFamily = async (patientId) => {
     }
 };
 
-/**
- * 🎯 FIXATION GPS
- */
+// ============================================================
+// 8. FIXATION GPS DU DOMICILE
+// ============================================================
 
 export async function setPatientHomeDirect(patientId) {
     try {
@@ -602,25 +702,9 @@ export async function setPatientHomeDirect(patientId) {
 }
 
 // ============================================================
-// 🧭 SÉLECTION D'UN PATIENT ACTIF
+// 9. OUVRIR LE JOURNAL D'UN PATIENT
 // ============================================================
-function setActivePatient(patientId) {
-    if (!patientId) {
-        console.warn("patientId manquant dans setActivePatient");
-        return false;
-    }
 
-    AppState.currentPatient = patientId;
-    localStorage.setItem("current_patient_id", patientId);
-    localStorage.setItem("active_patient_id", patientId);
-
-    console.log("✅ Patient actif sélectionné:", patientId);
-    return true;
-}
-
-// ============================================================
-// 📰 OUVRIR LE JOURNAL D'UN PATIENT
-// ============================================================
 window.viewPatientFeed = async (patientId) => {
     if (!setActivePatient(patientId)) return;
 
@@ -630,8 +714,9 @@ window.viewPatientFeed = async (patientId) => {
 };
 
 // ============================================================
-// 💬 OUVRIR LES MESSAGES D'UN PATIENT
+// 10. OUVRIR LES MESSAGES D'UN PATIENT
 // ============================================================
+
 window.viewPatientMessages = async (patientId) => {
     if (!setActivePatient(patientId)) return;
 
@@ -641,31 +726,75 @@ window.viewPatientMessages = async (patientId) => {
 };
 
 // ============================================================
-// 📄 OUVRIR LA FICHE DÉTAIL D'UN PATIENT
+// 11. OUVRIR LA FICHE DÉTAIL D'UN PATIENT
 // ============================================================
+
 window.viewPatientDetails = async (patientId) => {
     if (!setActivePatient(patientId)) return;
 
     await renderPatientDetailsView(patientId);
 };
 
-function updatePatientBadges() {
-    document.querySelectorAll(".patient-card-modern").forEach(el => {
-        const patientId = el.dataset.patientId;
-        const badge = el.querySelector(".patient-badge");
+// ============================================================
+// 12. HISTORIQUE DES VISITES POUR LA FAMILLE
+// ============================================================
 
-        if (!badge) return;
-
-        const count = AppState.unreadByPatient?.[patientId] || 0;
-
-        if (count > 0) {
-            badge.textContent = count > 99 ? "99+" : count;
-            badge.classList.remove("hidden");
-            badge.classList.add("inline-flex");
-        } else {
-            badge.classList.add("hidden");
-            badge.classList.remove("inline-flex");
+window.viewVisitHistory = async (patientId) => {
+    try {
+        const history = await secureFetch(`/visites/history/${patientId}?limit=30`);
+        
+        if (!history || history.length === 0) {
+            Swal.fire({
+                title: "Aucun historique",
+                text: "Aucune visite enregistrée pour le moment.",
+                icon: "info",
+                confirmButtonColor: "#10B981"
+            });
+            return;
         }
-    });
-}
 
+        const html = history.map(v => `
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <div>
+                    <p class="font-bold text-slate-800 text-xs">${escapeHtml(v.patient?.nom_complet || 'Patient')}</p>
+                    <p class="text-[9px] text-slate-400">${v.heure_debut_formatted || 'Date inconnue'}</p>
+                    <p class="text-[9px] font-bold ${v.statut === 'Validé' ? 'text-emerald-600' : v.statut === 'En attente' ? 'text-amber-600' : 'text-slate-400'}">
+                        ${v.statut}
+                    </p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[9px] text-slate-400">${escapeHtml(v.aidant?.nom || 'Aidant inconnu')}</p>
+                    ${v.photo_url ? `<button onclick="window.open('${v.photo_url}')" class="text-[8px] text-blue-500">📸 Voir photo</button>` : ''}
+                </div>
+            </div>
+        `).join('');
+
+        Swal.fire({
+            title: "📋 Historique des visites",
+            html: `<div class="space-y-2 max-h-96 overflow-y-auto">${html}</div>`,
+            confirmButtonText: "Fermer",
+            confirmButtonColor: "#10B981",
+            width: '90%',
+            maxWidth: '500px',
+            customClass: { popup: 'rounded-2xl p-4' }
+        });
+
+    } catch (err) {
+        console.error(err);
+        UI.error("Impossible de charger l'historique");
+    }
+};
+
+// ============================================================
+// EXPORTS
+// ============================================================
+
+export { 
+    loadPatients, 
+    renderPatients, 
+    renderAddPatientView, 
+    renderPatientDetailsView, 
+    renderLinkFamilyView,
+    setPatientHomeDirect,
+    updatePatientBadges
+};
