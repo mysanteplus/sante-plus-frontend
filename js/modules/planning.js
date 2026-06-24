@@ -77,7 +77,7 @@ function formatScheduleDisplay(item) {
     }
     
     // CAS 3: Assignation permanente (DEFAULT)
-    const isMaman = localStorage.getItem("user_is_maman") === "true";
+    // ✅ SUPPRIMER LA REDÉCLARATION DE isMaman
     return `
         <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-full ${isMaman ? 'bg-pink-100' : 'bg-emerald-100'} flex items-center justify-center">
