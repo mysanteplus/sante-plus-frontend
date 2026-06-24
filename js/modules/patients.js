@@ -795,6 +795,5 @@ export {
     renderAddPatientView, 
     renderPatientDetailsView, 
     renderLinkFamilyView,
-    setPatientHomeDirect,
-    updatePatientBadges
+     updatePatientBadges
 };
