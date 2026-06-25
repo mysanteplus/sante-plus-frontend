@@ -2,24 +2,45 @@
 // TEMPS RÉEL GLOBAL — Supabase postgres_changes sur toutes tables
 // ============================================================
 
-// Récupérer la configuration depuis les variables globales ou localStorage
+// ✅ Récupérer la configuration depuis CONFIG (injecté par le backend)
 const getSupabaseConfig = () => {
-    // Essayer de récupérer depuis window.CONFIG (si défini dans config.js)
+    // 1. Essayer depuis window.CONFIG (config.js)
     if (window.CONFIG && window.CONFIG.SUPABASE_URL && window.CONFIG.SUPABASE_KEY) {
+        console.log('✅ [Realtime] Configuration Supabase depuis CONFIG');
         return {
             url: window.CONFIG.SUPABASE_URL,
             key: window.CONFIG.SUPABASE_KEY
         };
     }
     
-    // Fallback : valeurs par défaut (à remplacer par tes vraies valeurs)
+    // 2. Essayer depuis window._env_ (injecté par le backend via /api/config)
+    if (window._env_ && window._env_.SUPABASE_URL && window._env_.SUPABASE_KEY) {
+        console.log('✅ [Realtime] Configuration Supabase depuis _env_');
+        return {
+            url: window._env_.SUPABASE_URL,
+            key: window._env_.SUPABASE_KEY
+        };
+    }
+    
+    // 3. ⚠️ Fallback UNIQUEMENT en développement local
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.warn('⚠️ [Realtime] Utilisation des valeurs par défaut (développement uniquement)');
+        return {
+            url: 'https://bcliieqhymeubmsdkqyn.supabase.co',
+            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjbGlpZXFoeW1ldWJtc2RrcXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTY1NDksImV4cCI6MjA5MjI5MjU0OX0.wohWAn4emeWqZicjYv7jDq8xzZFNVZlEhZRWr1xEog8'
+        };
+    }
+    
+    // 4. ❌ En production, on ne peut pas continuer sans configuration
+    console.error('❌ [Realtime] Configuration Supabase manquante!');
+    console.error('   Assurez-vous que le backend injecte la config via /api/config');
+    console.error('   Ou que window.CONFIG est défini avec SUPABASE_URL et SUPABASE_KEY');
+    
     return {
-        url: 'https://bcliieqhymeubmsdkqyn.supabase.co',
-        key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjbGlpZXFoeW1ldWJtc2RrcXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTY1NDksImV4cCI6MjA5MjI5MjU0OX0.wohWAn4emeWqZicjYv7jDq8xzZFNVZlEhZRWr1xEog8'
+        url: '',
+        key: ''
     };
 };
-
-const REALTIME_CONFIG = getSupabaseConfig();
 
 // ── État interne ──────────────────────────────────────────────
 let supabaseClient = null;
@@ -47,13 +68,31 @@ function initClient() {
     if (window._supabaseInstance) return (supabaseClient = window._supabaseInstance);
     if (!window.supabase) return null;
 
+    const config = getSupabaseConfig();
+    
+    if (!config.url || !config.key) {
+        console.error('❌ [Realtime] Impossible d\'initialiser Supabase: configuration manquante');
+        return null;
+    }
+
     supabaseClient = window.supabase.createClient(
-        REALTIME_CONFIG.url,
-        REALTIME_CONFIG.key,
-        { realtime: { params: { eventsPerSecond: 10 } } }
+        config.url,
+        config.key,
+        { 
+            realtime: { 
+                params: { 
+                    eventsPerSecond: 10 
+                } 
+            },
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true
+            }
+        }
     );
 
     window._supabaseInstance = supabaseClient;
+    console.log('✅ [Realtime] Supabase client initialisé');
     return supabaseClient;
 }
 
@@ -61,7 +100,8 @@ function initClient() {
 function dispatch(type, event, row) {
     const list = callbacks[type] || [];
     list.forEach(cb => {
-        try { cb(event, row); } catch (e) { console.error(e); }
+        try { cb(event, row); } 
+        catch (e) { console.error('❌ [Realtime] Erreur callback:', e); }
     });
 }
 
@@ -70,6 +110,8 @@ function initGlobalChannel() {
     const client = initClient();
     if (!client) return;
     if (globalChannel) return;
+
+    console.log('📡 [Realtime] Initialisation du canal global...');
 
     globalChannel = client
         .channel('sps-global')
@@ -92,14 +134,18 @@ function initGlobalChannel() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'commandes_meds' },
             ({ eventType, new: row, old }) => dispatch('commandes', eventType, row || old)
         )
-        .subscribe();
+        .subscribe((status) => {
+            console.log(`📡 [Realtime] Canal global: ${status}`);
+        });
 }
 
-// ── Canal MESSAGES GLOBAL (créé une seule fois) ─────────────
+// ── Canal MESSAGES GLOBAL ────────────────────────────────────
 function initMessagesChannel() {
     const client = initClient();
     if (!client) return;
     if (messagesChannel) return;
+
+    console.log('📡 [Realtime] Initialisation du canal messages...');
 
     messagesChannel = client
         .channel('global-messages')
@@ -116,7 +162,7 @@ function initMessagesChannel() {
             }
         )
         .subscribe((status) => {
-            console.log(`📡 Canal global messages: ${status}`);
+            console.log(`📡 [Realtime] Canal messages: ${status}`);
         });
 }
 
@@ -124,13 +170,13 @@ function initMessagesChannel() {
 function subscribeToMessages(patientId, callback) {
     if (!patientId) return;
     messageCallbacks.push({ patientId, callback });
-    console.log(`📡 Callback enregistré pour patient ${patientId}, total: ${messageCallbacks.length}`);
+    console.log(`📡 [Realtime] Callback enregistré pour patient ${patientId}, total: ${messageCallbacks.length}`);
 }
 
 // ── Unsubscribe des messages ────────────────────────────────
 function unsubscribeFromMessages() {
     messageCallbacks = [];
-    console.log("🧹 Callbacks messages nettoyés");
+    console.log("🧹 [Realtime] Callbacks messages nettoyés");
 }
 
 // ── API helpers ─────────────────────────────────────────────
@@ -157,9 +203,9 @@ async function fetchSenderInfo(senderId) {
             .single();
 
         return {
-            nom: data.nom || 'Utilisateur',
-            role: data.role || 'COORDINATEUR',
-            photo_url: data.photo_url || null
+            nom: data?.nom || 'Utilisateur',
+            role: data?.role || 'COORDINATEUR',
+            photo_url: data?.photo_url || null
         };
     } catch {
         return { nom: 'Utilisateur', role: 'COORDINATEUR', photo_url: null };
@@ -168,9 +214,14 @@ async function fetchSenderInfo(senderId) {
 
 // ── START ────────────────────────────────────────────────────
 function start() {
-    initClient();
+    const client = initClient();
+    if (!client) {
+        console.error('❌ [Realtime] Impossible de démarrer: client non initialisé');
+        return;
+    }
     initGlobalChannel();
     initMessagesChannel();
+    console.log('✅ [Realtime] Tous les canaux sont actifs');
 }
 
 // ── EXPORT GLOBAL ────────────────────────────────────────────
