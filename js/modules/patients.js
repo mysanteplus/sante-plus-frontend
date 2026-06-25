@@ -73,10 +73,19 @@ export async function loadPatients() {
         
         let filteredPatients = allPatients;
         
+        // Famille : ne garder que SES patients (sécurité supplémentaire)
         if (userRole === "FAMILLE") {
             filteredPatients = allPatients.filter(patient => patient.famille_user_id === userId);
             console.log(`👨‍👩‍👧 Famille ${userId}: ${filteredPatients.length} patient(s) visible(s) sur ${allPatients.length} total`);
         }
+        // ✅ Aidant : le backend a déjà filtré, mais on vérifie
+        else if (userRole === "AIDANT") {
+            // Le backend ne renvoie que les patients assignés
+            // On garde tel quel
+            filteredPatients = allPatients;
+            console.log(`🩺 Aidant ${userId}: ${filteredPatients.length} patient(s) assigné(s)`);
+        }
+
         
         AppState.patients = filteredPatients;
         
