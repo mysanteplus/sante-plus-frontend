@@ -1029,7 +1029,7 @@ window.deliverCommand = async (commandeId) => {
             fd.append("photos", photo);
         }
         
-        const response = await fetch(`${CONFIG.API_URL}/commandes/${commandeId}/deliver`, {
+        const response = await fetch(`${CONFIG.API_URL}/api/commandes/${commandeId}/deliver`, {
             method: "POST",
             headers: { 
                 "Authorization": `Bearer ${localStorage.getItem("token")}`
@@ -1142,7 +1142,7 @@ export async function markAsDelivered(commandeId) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-        const response = await fetch(`${CONFIG.API_URL}/commandes/${commandeId}/deliver`, {
+        const response = await fetch(`${CONFIG.API_URL}/api/commandes/${commandeId}/deliver`, {
             method: "POST",
             headers: { 
                 "Authorization": `Bearer ${localStorage.getItem("token")}`
