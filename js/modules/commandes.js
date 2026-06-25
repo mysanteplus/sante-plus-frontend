@@ -841,7 +841,7 @@ export async function openOrderModal() {
             const formData = new FormData();
             formData.append("image", file);
             
-            const uploadRes = await fetch(`${CONFIG.API_URL}/commandes/upload-image`, {
+            const uploadRes = await fetch(`${CONFIG.API_URL}/api/commandes/upload-image`, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${localStorage.getItem("token")}`
