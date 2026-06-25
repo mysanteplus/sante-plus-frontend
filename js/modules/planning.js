@@ -1,4 +1,4 @@
-// modules/planning.js - VERSION COMPLÈTE CORRIGÉE
+// modules/planning.js
 
 import { secureFetch } from "../core/api.js";
 import { UI } from "../core/utils.js";
