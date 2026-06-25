@@ -169,7 +169,7 @@ export async function startVisit(patientId) {
                 .single();
             
             if (patient && patient.famille_user_id) {
-                await fetch(`${CONFIG.API_URL}/notifications/send`, {
+                await fetch(`${CONFIG.API_URL}/api/notifications/send`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -403,7 +403,7 @@ export async function submitEndVisit() {
         fd.append("gps_end", gpsEnd);
         fd.append("photo_visite", fileToUpload);
 
-        const response = await fetch(`${CONFIG.API_URL}/visites/end`, {
+        const response = await fetch(`${CONFIG.API_URL}/api/visites/end`, {
             method: "POST",
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
             body: fd,
@@ -441,7 +441,7 @@ export async function submitEndVisit() {
                 .single();
             
             if (patient && patient.famille_user_id) {
-                await fetch(`${CONFIG.API_URL}/notifications/send`, {
+                await fetch(`${CONFIG.API_URL}/api/notifications/send`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -776,7 +776,7 @@ window.submitEndVisitWithContext = async (isMaman) => {
         fd.append("gps_end", gpsEnd);
         fd.append("photo_visite", fileToUpload);
 
-        const response = await fetch(`${CONFIG.API_URL}/visites/end`, {
+        const response = await fetch(`${CONFIG.API_URL}/api/visites/end`, {
             method: "POST",
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
             body: fd,
@@ -1154,7 +1154,7 @@ async function sendPosition(position, visiteId) {
     lastSentPosition = { lat: latitude, lng: longitude };
 
     try {
-        await fetch(`${CONFIG.API_URL}/visites/track`, {
+        await fetch(`${CONFIG.API_URL}/api/visites/track`, {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json",
