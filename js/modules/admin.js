@@ -894,7 +894,7 @@ window.unassignPatientFromPatient = async (assignmentId, patientName, aidantName
     Swal.fire({ title: "Suppression...", didOpen: () => Swal.showLoading() });
     
     try {
-        const response = await fetch(`${CONFIG.API_URL}/planning/${assignmentId}`, {
+        const response = await fetch(`${CONFIG.API_URL}/api/planning/${assignmentId}`, {
             method: "DELETE",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("token")}`,
