@@ -1057,22 +1057,5 @@ window.viewVisitHistory = async (patientId) => {
     }
 };
 
-// ============================================================
-// 12. FONCTION RETOUR VERS LA VUE PRÉCÉDENTE
-// ============================================================
 
-window.goBack = function() {
-    const previousView = localStorage.getItem("previous_view") || "patients";
-    console.log("🔙 Retour vers:", previousView);
-    window.switchView(previousView);
-};
 
-// Sauvegarder la vue précédente avant de changer
-const originalSwitchView = window.switchView;
-window.switchView = async function(viewName) {
-    if (AppState.currentView && AppState.currentView !== viewName) {
-        localStorage.setItem("previous_view", AppState.currentView);
-        console.log("📌 Vue précédente sauvegardée:", AppState.currentView);
-    }
-    return originalSwitchView.call(this, viewName);
-};
