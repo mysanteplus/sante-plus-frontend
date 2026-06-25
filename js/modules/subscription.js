@@ -278,7 +278,7 @@ function getMedicalPacks(isMaman) {
 }
 
 // ============================================================
-// PAGE D'ABONNEMENT
+// PAGE D'ABONNEMENT (PRODUCTION READY)
 // ============================================================
 
 export async function renderSubscriptionPage() {
@@ -421,8 +421,9 @@ export async function renderSubscriptionPage() {
     
     container.innerHTML = `
         <div class="animate-fadeIn max-w-2xl mx-auto pb-32">
+            <!-- BOUTON RETOUR -->
             <div class="flex items-center gap-4 mb-8">
-                <button onclick="window.switchView('home')" 
+                <button onclick="window.goBack()" 
                         class="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all active:scale-95">
                     <i class="fa-solid fa-arrow-left text-lg"></i>
                 </button>
@@ -451,6 +452,7 @@ export async function renderSubscriptionPage() {
                 </div>
             ` : ''}
             
+            <!-- ✅ LISTE DES PACKS -->
             <div class="space-y-4" id="packs-container">
                 ${packs.map(pack => `
                     <div onclick="window.selectSubscriptionPack('${pack.id}', ${pack.price}, ${pack.duration})" 
@@ -487,6 +489,7 @@ export async function renderSubscriptionPage() {
                 `).join('')}
             </div>
             
+            <!-- ✅ SECTION INFORMATIONS -->
             <div class="mt-8 p-5 bg-slate-50 rounded-2xl border border-slate-100">
                 <div class="flex items-center gap-3 mb-3">
                     <i class="fa-solid fa-shield-heart text-emerald-500 text-xl"></i>
@@ -510,6 +513,11 @@ export async function renderSubscriptionPage() {
                     `}
                 </ul>
             </div>
+            
+            <!-- ✅ BOUTON RETOUR EN BAS -->
+            <button onclick="window.goBack()" class="w-full mt-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-arrow-left text-xs"></i> Retour
+            </button>
         </div>
     `;
 }
@@ -945,4 +953,13 @@ window.retryPayment = async (abonnementId, montant, patientNom, packId, duration
             confirmButtonText: "OK"
         });
     }
+};
+
+// ============================================================
+// EXPORTS
+// ============================================================
+
+export { 
+     getConfortPacks,
+    getMedicalPacks
 };
