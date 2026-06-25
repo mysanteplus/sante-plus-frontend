@@ -47,8 +47,9 @@ export const CONFIG = {
     // ============================================================
     // SUPABASE - UNIQUEMENT depuis les variables d'environnement
     // ============================================================
-    SUPABASE_URL: getEnv('SUPABASE_URL'),
-    SUPABASE_KEY: getEnv('SUPABASE_KEY'),
+    // ✅ Valeurs par défaut pour que l'application démarre même sans config
+    SUPABASE_URL: getEnv('SUPABASE_URL', 'https://bcliieqhymeubmsdkqyn.supabase.co'),
+    SUPABASE_KEY: getEnv('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjbGlpZXFoeW1ldWJtc2RrcXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTY1NDksImV4cCI6MjA5MjI5MjU0OX0.wohWAn4emeWqZicjYv7jDq8xzZFNVZlEhZRWr1xEog8'),
 
     // ============================================================
     // FIREBASE
