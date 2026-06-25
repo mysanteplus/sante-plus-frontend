@@ -1,4 +1,4 @@
-// modules/patients.js - VERSION COMPLÈTE CORRIGÉE
+// modules/patients.js 
 
 import { secureFetch } from "../core/api.js";
 import { AppState } from "../core/state.js";
@@ -64,28 +64,22 @@ export async function loadPatients() {
     showSkeleton(container, 'patient-card');
 
     try {
-        // Récupérer les patients depuis le backend
         const patients = await secureFetch("/patients");
         
-        // Sécuriser les données : s'assurer que c'est un tableau
         let allPatients = Array.isArray(patients) ? patients : (patients?.data || []);
         
-        // 🔒 FILTRAGE CÔTÉ FRONTEND (SÉCURITÉ SUPPLÉMENTAIRE)
         const userRole = localStorage.getItem("user_role");
         const userId = localStorage.getItem("user_id");
         
         let filteredPatients = allPatients;
         
-        // Si c'est une famille, ne garder que SES patients
         if (userRole === "FAMILLE") {
             filteredPatients = allPatients.filter(patient => patient.famille_user_id === userId);
             console.log(`👨‍👩‍👧 Famille ${userId}: ${filteredPatients.length} patient(s) visible(s) sur ${allPatients.length} total`);
         }
         
-        // Stocker les patients filtrés dans l'état global
         AppState.patients = filteredPatients;
         
-        // Définir le patient courant seulement si c'est clair
         if (filteredPatients && filteredPatients.length === 1) {
             AppState.currentPatient = filteredPatients[0].id;
             localStorage.setItem("current_patient_id", filteredPatients[0].id);
@@ -109,7 +103,6 @@ export async function loadPatients() {
             }
         }
         
-        // Afficher la liste des patients
         renderPatients();
         
     } catch (err) {
@@ -156,7 +149,6 @@ export function renderPatients() {
         let actionButtons = '';
 
         if (userRole === "AIDANT") {
-            // ✅ AIDANT : Briefing + Journal + Messages
             actionButtons = `
                 <div class="grid grid-cols-3 gap-2 mt-3">
                     ${isVisitActive ? `
@@ -177,17 +169,16 @@ export function renderPatients() {
                             style="background: #EEF2FF; color: #4F46E5;">
                         <i class="fa-solid fa-newspaper mr-1"></i> Journal
                     </button>
-                    <button onclick="event.stopPropagation(); window.viewPatientMessages('${p.id}')"
+                    <button onclick="event.stopPropagation(); window.switchView('planning')"
                             class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
                             style="background: #F3E8FF; color: #7C3AED;">
-                        <i class="fa-solid fa-comments mr-1"></i> Messages
+                        <i class="fa-solid fa-calendar-days mr-1"></i> Planning
                     </button>
                 </div>
             `;
         } else if (userRole === "COORDINATEUR") {
-            // ✅ COORDINATEUR : Dossier + Journal + Messages + Historique
             actionButtons = `
-                <div class="grid grid-cols-4 gap-2 mt-3">
+                <div class="grid grid-cols-3 gap-2 mt-3">
                     <button onclick="event.stopPropagation(); window.viewPatientDetails('${p.id}')"
                             class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
                             style="background: ${primaryLight}; color: ${primaryColor};">
@@ -198,31 +189,20 @@ export function renderPatients() {
                             style="background: #EEF2FF; color: #4F46E5;">
                         <i class="fa-solid fa-newspaper mr-1"></i> Journal
                     </button>
-                    <button onclick="event.stopPropagation(); window.viewPatientMessages('${p.id}')"
-                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
-                            style="background: #F3E8FF; color: #7C3AED;">
-                        <i class="fa-solid fa-comments mr-1"></i> Messages
-                    </button>
-                    <button onclick="event.stopPropagation(); window.viewVisitHistory('${p.id}')"
+                    <button onclick="event.stopPropagation(); window.switchView('map')"
                             class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
                             style="background: #FEF3C7; color: #D97706;">
-                        <i class="fa-solid fa-clock-rotate-left mr-1"></i> Historique
+                        <i class="fa-solid fa-location-dot mr-1"></i> Radar
                     </button>
                 </div>
             `;
         } else if (userRole === "FAMILLE") {
-            // ✅ FAMILLE : Journal + Messages + Suivre + Historique
             actionButtons = `
                 <div class="grid grid-cols-4 gap-2 mt-3">
                     <button onclick="event.stopPropagation(); window.viewPatientFeed('${p.id}')"
                             class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
                             style="background: ${primaryLight}; color: ${primaryColor};">
                         <i class="fa-solid fa-newspaper mr-1"></i> Journal
-                    </button>
-                    <button onclick="event.stopPropagation(); window.viewPatientMessages('${p.id}')"
-                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
-                            style="background: #EEF2FF; color: #4F46E5;">
-                        <i class="fa-solid fa-comments mr-1"></i> Messages
                     </button>
                     <button onclick="event.stopPropagation(); window.switchView('map')"
                             class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
@@ -234,6 +214,11 @@ export function renderPatients() {
                             style="background: #F3E8FF; color: #7C3AED;">
                         <i class="fa-solid fa-clock-rotate-left mr-1"></i> Historique
                     </button>
+                    <button onclick="event.stopPropagation(); window.switchView('billing')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: #FEF3C7; color: #B45309;">
+                        <i class="fa-solid fa-file-invoice mr-1"></i> Factures
+                    </button>
                 </div>
             `;
         }
@@ -243,7 +228,6 @@ export function renderPatients() {
                  data-patient-id="${p.id}"
                  style="animation: fadeInUp 0.25s ease ${index * 0.03}s forwards; opacity: 0;">
                 
-                <!-- En-tête avec avatar et infos -->
                 <div class="flex items-center gap-3" onclick="window.viewPatientDetails('${p.id}')" style="cursor: pointer;">
                     <div class="patient-avatar" style="background: ${primaryLight}; color: ${primaryColor};">
                         ${initials}
@@ -266,7 +250,6 @@ export function renderPatients() {
                     </div>
                 </div>
                 
-                <!-- Footer avec infos supplémentaires -->
                 <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
                     <div class="flex items-center gap-2">
                         <span class="badge-dynamic">
@@ -287,10 +270,8 @@ export function renderPatients() {
                     </span>
                 </div>
 
-                <!-- ✅ ACTIONS ADAPTÉES AU RÔLE -->
                 ${actionButtons}
                 
-                <!-- ✅ ACTION LIER FAMILLE (coordinateur uniquement) -->
                 ${userRole === "COORDINATEUR" && !p.famille_user_id ? `
                     <div class="mt-3">
                         <button onclick="event.stopPropagation(); window.openLinkFamilyModal('${p.id}', '${escapeHtml(p.nom_complet || '')}')" 
@@ -330,7 +311,6 @@ export async function renderAddPatientView() {
 
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                 <div class="space-y-4">
-                    <!-- Identité -->
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-2 mb-2 block">Prénom</label>
@@ -342,7 +322,6 @@ export async function renderAddPatientView() {
                         </div>
                     </div>
 
-                    <!-- Âge et sexe -->
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-2 mb-2 block">Âge</label>
@@ -358,7 +337,6 @@ export async function renderAddPatientView() {
                         </div>
                     </div>
 
-                    <!-- Contact -->
                     <div>
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-2 mb-2 block">Téléphone</label>
                         <div class="relative">
@@ -367,7 +345,6 @@ export async function renderAddPatientView() {
                         </div>
                     </div>
 
-                    <!-- Adresse -->
                     <div>
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-2 mb-2 block">Adresse</label>
                         <div class="relative">
@@ -376,7 +353,6 @@ export async function renderAddPatientView() {
                         </div>
                     </div>
 
-                    <!-- Contact urgence -->
                     <div>
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-2 mb-2 block">Contact urgence</label>
                         <div class="relative">
@@ -385,7 +361,6 @@ export async function renderAddPatientView() {
                         </div>
                     </div>
 
-                    <!-- Formule -->
                     <div>
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-2 mb-2 block">Formule d'accompagnement</label>
                         <div id="formule-selector-trigger" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between cursor-pointer">
@@ -523,7 +498,7 @@ async function openFormuleSelector() {
 }
 
 // ============================================================
-// 6. VUE : FICHE PATIENT (DÉTAIL)
+// 6. VUE : FICHE PATIENT (DÉTAIL) - CORRIGÉE
 // ============================================================
 
 export async function renderPatientDetailsView(patientId) {
@@ -540,13 +515,11 @@ export async function renderPatientDetailsView(patientId) {
         
         console.log("📋 Patient reçu (brut):", p);
         
-        // Si c'est un tableau, prendre le premier élément
         if (Array.isArray(p) && p.length > 0) {
             p = p[0];
             console.log("📋 Patient après extraction:", p);
         }
         
-        // Vérifier que p est un objet valide
         if (!p || typeof p !== 'object' || !p.id) {
             console.error("❌ Patient invalide:", p);
             throw new Error("Patient non trouvé ou format invalide");
@@ -557,19 +530,73 @@ export async function renderPatientDetailsView(patientId) {
         const isPremium = p.formule === 'Premium' || p.type_pack === 'Premium';
         const initials = p.nom_complet?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || '??';
         
-        // Actions supplémentaires pour la famille
-        const familyActions = userRole === "FAMILLE" ? `
-            <div class="grid grid-cols-2 gap-2 mt-4">
-                <button onclick="window.switchView('map')" 
-                        class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
-                    <i class="fa-solid fa-location-dot mr-2"></i> Suivre l'aidant
-                </button>
-                <button onclick="window.viewVisitHistory('${p.id}')" 
-                        class="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
-                    <i class="fa-solid fa-clock-rotate-left mr-2"></i> Historique
-                </button>
-            </div>
-        ` : '';
+        // ============================================================
+        // ✅ ACTIONS SPÉCIFIQUES AU RÔLE DANS LA FICHE PATIENT
+        // ============================================================
+        let actionButtons = '';
+        
+        if (userRole === "AIDANT") {
+            const isVisitActive = localStorage.getItem("active_visit_id") !== null;
+            actionButtons = `
+                <div class="grid grid-cols-2 gap-2 mt-4">
+                    ${isVisitActive ? `
+                        <button onclick="window.openEndVisit()" 
+                                class="w-full py-3 bg-rose-500 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                            <i class="fa-solid fa-stop-circle mr-2"></i> Clôturer la visite
+                        </button>
+                    ` : `
+                        <button onclick="window.startVisit('${p.id}')" 
+                                class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                            <i class="fa-solid fa-play mr-2"></i> Démarrer la visite
+                        </button>
+                    `}
+                    <button onclick="window.switchView('planning')" 
+                            class="w-full py-3 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                        <i class="fa-solid fa-calendar-days mr-2"></i> Planning
+                    </button>
+                </div>
+            `;
+        } else if (userRole === "COORDINATEUR") {
+            actionButtons = `
+                <div class="grid grid-cols-3 gap-2 mt-4">
+                    <button onclick="window.viewPatientFeed('${p.id}')" 
+                            class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                        <i class="fa-solid fa-newspaper mr-2"></i> Journal
+                    </button>
+                    <button onclick="window.switchView('planning')" 
+                            class="w-full py-3 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                        <i class="fa-solid fa-calendar-days mr-2"></i> Planning
+                    </button>
+                    <button onclick="window.switchView('map')" 
+                            class="w-full py-3 bg-amber-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                        <i class="fa-solid fa-location-dot mr-2"></i> Radar
+                    </button>
+                </div>
+            `;
+        } else if (userRole === "FAMILLE") {
+            actionButtons = `
+                <div class="grid grid-cols-2 gap-2 mt-4">
+                    <button onclick="window.viewPatientFeed('${p.id}')" 
+                            class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                        <i class="fa-solid fa-newspaper mr-2"></i> Journal
+                    </button>
+                    <button onclick="window.switchView('map')" 
+                            class="w-full py-3 bg-amber-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                        <i class="fa-solid fa-location-dot mr-2"></i> Suivre l'aidant
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button onclick="window.viewVisitHistory('${p.id}')" 
+                            class="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                        <i class="fa-solid fa-clock-rotate-left mr-2"></i> Historique
+                    </button>
+                    <button onclick="window.switchView('billing')" 
+                            class="w-full py-3 bg-slate-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                        <i class="fa-solid fa-file-invoice mr-2"></i> Factures
+                    </button>
+                </div>
+            `;
+        }
         
         container.innerHTML = `
             <div class="animate-fadeIn max-w-lg mx-auto pb-32">
@@ -609,7 +636,7 @@ export async function renderPatientDetailsView(patientId) {
 
                 <div id="aidant-active-area" class="mt-4"></div>
 
-                ${familyActions}
+                ${actionButtons}
 
                 <button onclick="window.switchView('patients')" class="w-full mt-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-arrow-left text-xs"></i> Retour
@@ -617,7 +644,6 @@ export async function renderPatientDetailsView(patientId) {
             </div>
         `;
 
-        // Rafraîchir l'UI aidant
         setTimeout(() => {
             if (typeof Visites !== 'undefined' && Visites.refreshAidantUI) {
                 Visites.refreshAidantUI(p.id);
@@ -768,19 +794,7 @@ window.viewPatientFeed = async (patientId) => {
 };
 
 // ============================================================
-// 10. OUVRIR LES MESSAGES D'UN PATIENT
-// ============================================================
-
-window.viewPatientMessages = async (patientId) => {
-    if (!setActivePatient(patientId)) return;
-
-    if (window.switchView) {
-        await window.switchView("messages");
-    }
-};
-
-// ============================================================
-// 11. OUVRIR LA FICHE DÉTAIL D'UN PATIENT
+// 10. OUVRIR LA FICHE DÉTAIL D'UN PATIENT
 // ============================================================
 
 window.viewPatientDetails = async (patientId) => {
@@ -790,7 +804,7 @@ window.viewPatientDetails = async (patientId) => {
 };
 
 // ============================================================
-// 12. HISTORIQUE DES VISITES POUR LA FAMILLE
+// 11. HISTORIQUE DES VISITES POUR LA FAMILLE
 // ============================================================
 
 window.viewVisitHistory = async (patientId) => {
