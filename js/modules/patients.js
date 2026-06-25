@@ -1,4 +1,4 @@
-// modules/patients.js 
+// modules/patients.js - VERSION COMPLÈTE PRODUCTION
 
 import { secureFetch } from "../core/api.js";
 import { AppState } from "../core/state.js";
@@ -73,19 +73,13 @@ export async function loadPatients() {
         
         let filteredPatients = allPatients;
         
-        // Famille : ne garder que SES patients (sécurité supplémentaire)
         if (userRole === "FAMILLE") {
             filteredPatients = allPatients.filter(patient => patient.famille_user_id === userId);
             console.log(`👨‍👩‍👧 Famille ${userId}: ${filteredPatients.length} patient(s) visible(s) sur ${allPatients.length} total`);
-        }
-        // ✅ Aidant : le backend a déjà filtré, mais on vérifie
-        else if (userRole === "AIDANT") {
-            // Le backend ne renvoie que les patients assignés
-            // On garde tel quel
+        } else if (userRole === "AIDANT") {
             filteredPatients = allPatients;
             console.log(`🩺 Aidant ${userId}: ${filteredPatients.length} patient(s) assigné(s)`);
         }
-
         
         AppState.patients = filteredPatients;
         
@@ -555,30 +549,32 @@ export async function renderPatientDetailsView(patientId) {
         try {
             const subscriptions = await secureFetch(`/billing`);
             if (Array.isArray(subscriptions) && subscriptions.length > 0) {
-                // Chercher un abonnement actif (Payé) pour ce patient
-                const activeSub = subscriptions.find(s => s.patient_id === p.id && s.statut === "Payé");
-                if (activeSub) {
-                    subscriptionInfo = activeSub;
+                // ✅ UNIQUEMENT les abonnements PAYÉS du patient
+                const patientSubs = subscriptions.filter(s => 
+                    s.patient_id === p.id && 
+                    s.statut === "Payé"
+                );
+                
+                if (patientSubs.length > 0) {
+                    const latest = patientSubs.sort((a, b) => 
+                        new Date(b.created_at) - new Date(a.created_at)
+                    )[0];
+                    
+                    subscriptionInfo = latest;
                     hasSubscription = true;
-                } else {
-                    // Sinon, prendre le dernier abonnement de ce patient
-                    const lastSub = subscriptions.filter(s => s.patient_id === p.id).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-                    if (lastSub) {
-                        subscriptionInfo = lastSub;
-                        hasSubscription = true;
+                    
+                    // ✅ VÉRIFIER LA DATE D'EXPIRATION
+                    if (latest.date_fin_abonnement) {
+                        endDate = new Date(latest.date_fin_abonnement);
+                        isActive = new Date() <= endDate;
+                        daysRemaining = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24));
+                    } else {
+                        isActive = false;
                     }
                 }
             }
         } catch (err) {
             console.warn("Erreur chargement abonnement:", err);
-            // On continue sans abonnement
-        }
-        
-        // ✅ Calculer le statut UNIQUEMENT si on a un abonnement avec date de fin
-        if (subscriptionInfo?.date_fin_abonnement) {
-            endDate = new Date(subscriptionInfo.date_fin_abonnement);
-            isActive = new Date() <= endDate;
-            daysRemaining = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24));
         }
         
         // ============================================================
@@ -676,16 +672,14 @@ export async function renderPatientDetailsView(patientId) {
             }
         }
 
-        // 4. Abonnement et paiement (pour ADMIN et FAMILLE) - UNIQUEMENT SI EXISTE
+        // 4. Abonnement - UNIQUEMENT SI EXISTE ET PAYÉ
         if (userRole === "COORDINATEUR" || userRole === "FAMILLE") {
-            if (hasSubscription && subscriptionInfo) {
-                const statusColor = isActive ? 'emerald' : 'rose';
-                const statusText = isActive ? '✅ Actif' : '❌ Expiré';
-                
+            if (hasSubscription && isActive) {
+                // ✅ Abonnement actif
                 dossierContent += `
-                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-4">
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-emerald-100 mb-4">
                         <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
-                            <i class="fa-solid fa-crown text-amber-500"></i> Abonnement
+                            <i class="fa-solid fa-crown text-emerald-500"></i> Abonnement
                         </h4>
                         <div class="grid grid-cols-2 gap-3 text-sm">
                             <div>
@@ -694,13 +688,13 @@ export async function renderPatientDetailsView(patientId) {
                             </div>
                             <div>
                                 <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Statut</p>
-                                <p class="font-bold text-${statusColor}-600">${statusText}</p>
+                                <p class="font-bold text-emerald-600">✅ Actif</p>
                             </div>
                             ${endDate ? `
                                 <div class="col-span-2">
                                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Date d'expiration</p>
                                     <p class="font-bold text-slate-800">${endDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                                    ${isActive ? `<p class="text-[9px] ${daysRemaining <= 5 ? 'text-amber-500' : 'text-emerald-500'} font-bold">Plus que ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}</p>` : ''}
+                                    <p class="text-[9px] ${daysRemaining <= 5 ? 'text-amber-500' : 'text-emerald-500'} font-bold">Plus que ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}</p>
                                 </div>
                             ` : ''}
                             ${subscriptionInfo.montant_du ? `
@@ -710,22 +704,66 @@ export async function renderPatientDetailsView(patientId) {
                                 </div>
                                 <div>
                                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Statut paiement</p>
-                                    <p class="font-bold ${subscriptionInfo.statut === 'Payé' ? 'text-emerald-600' : 'text-amber-600'}">
-                                        ${subscriptionInfo.statut === 'Payé' ? '✅ Payé' : '⏳ En attente'}
-                                    </p>
+                                    <p class="font-bold text-emerald-600">✅ Payé</p>
                                 </div>
                             ` : ''}
                         </div>
                     </div>
                 `;
+            } else if (hasSubscription && !isActive) {
+                // ❌ Abonnement expiré
+                dossierContent += `
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-rose-100 mb-4">
+                        <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-crown text-rose-500"></i> Abonnement
+                        </h4>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Pack</p>
+                                <p class="font-bold text-slate-800">${escapeHtml(subscriptionInfo.type_pack || p.formule || 'Standard')}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Statut</p>
+                                <p class="font-bold text-rose-600">❌ Expiré</p>
+                            </div>
+                            ${endDate ? `
+                                <div class="col-span-2">
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Date d'expiration</p>
+                                    <p class="font-bold text-slate-800">${endDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                    <p class="text-[9px] text-rose-500 font-bold">Expiré depuis ${Math.abs(daysRemaining)} jour${Math.abs(daysRemaining) > 1 ? 's' : ''}</p>
+                                </div>
+                            ` : ''}
+                            ${subscriptionInfo.montant_du ? `
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Montant</p>
+                                    <p class="font-bold text-slate-800">${subscriptionInfo.montant_du.toLocaleString()} CFA</p>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Statut paiement</p>
+                                    <p class="font-bold text-amber-600">⏳ En attente</p>
+                                </div>
+                            ` : ''}
+                            <div class="col-span-2">
+                                <button onclick="window.switchView('subscription')" 
+                                        class="w-full py-2 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                                    🔄 Renouveler l'abonnement
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
             } else {
-                // Pas d'abonnement - message neutre
+                // ❌ PAS D'ABONNEMENT DU TOUT
                 dossierContent += `
                     <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-4">
                         <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
-                            <i class="fa-solid fa-crown text-amber-500"></i> Abonnement
+                            <i class="fa-solid fa-crown text-slate-300"></i> Abonnement
                         </h4>
                         <p class="text-sm text-slate-500">Aucun abonnement actif pour ce patient</p>
+                        <button onclick="window.switchView('subscription')" 
+                                class="mt-3 w-full py-2 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                            🎁 Souscrire un abonnement
+                        </button>
                     </div>
                 `;
             }
@@ -1065,6 +1103,3 @@ window.viewVisitHistory = async (patientId) => {
         UI.error("Impossible de charger l'historique");
     }
 };
-
-
-
