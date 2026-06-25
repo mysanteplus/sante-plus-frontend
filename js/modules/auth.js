@@ -15,10 +15,10 @@ export async function handleLogin() {
   }
 
   btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Authentification...';
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> CONNEXION...';
 
   try {
-    const response = await fetch(`${window.CONFIG.API_URL}/auth/login`, {
+    const response = await fetch(`${window.CONFIG.API_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
