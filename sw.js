@@ -1,6 +1,6 @@
 // ============================================================
 // SERVICE WORKER - SANTÉ PLUS SERVICES
-// Version: 2.0 - Production Ready
+// Version: 2.0.2 - Production Ready
 // Description: Offline-first + Push Notifications + Auto-update
 // ============================================================
 
@@ -8,14 +8,13 @@
 // CONFIGURATION
 // ============================================================
 
-const CACHE_VERSION = 'v2.0.1';
+const CACHE_VERSION = 'v2.0.2';
 const CACHE_NAME = `sps-${CACHE_VERSION}`;
 const STATIC_CACHE = `sps-static-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sps-images-${CACHE_VERSION}`;
 const API_CACHE = `sps-api-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sps-dynamic-${CACHE_VERSION}`;
 
-// Dernière modification du build (incrémenter à chaque déploiement)
 const BUILD_TIMESTAMP = Date.now();
 
 // ============================================================
@@ -78,18 +77,15 @@ self.addEventListener('install', (event) => {
   
   event.waitUntil(
     Promise.all([
-      // Cache des ressources statiques
       caches.open(STATIC_CACHE).then((cache) => {
         console.log('📦 [SW] Mise en cache des ressources statiques...');
         return cache.addAll(STATIC_URLS).catch((err) => {
           console.warn('⚠️ [SW] Erreur cache statique:', err.message);
         });
       }),
-      // Cache de la page d'accueil dynamique
       caches.open(DYNAMIC_CACHE).then((cache) => {
         return cache.add('/').catch(() => {});
       }),
-      // Forcer l'activation immédiate
       self.skipWaiting()
     ])
   );
@@ -104,18 +100,15 @@ self.addEventListener('activate', (event) => {
   
   event.waitUntil(
     Promise.all([
-      // 1. Nettoyer les anciens caches
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            // Garder uniquement les caches de la version actuelle
             const isCurrentVersion = cacheName.includes(CACHE_VERSION);
             const isStatic = cacheName.includes('sps-static');
             const isImages = cacheName.includes('sps-images');
             const isApi = cacheName.includes('sps-api');
             const isDynamic = cacheName.includes('sps-dynamic');
             
-            // Supprimer les caches qui ne correspondent pas à la version actuelle
             if (!isCurrentVersion && (isStatic || isImages || isApi || isDynamic)) {
               console.log(`🗑️ [SW] Suppression ancien cache: ${cacheName}`);
               return caches.delete(cacheName);
@@ -124,9 +117,7 @@ self.addEventListener('activate', (event) => {
           })
         );
       }),
-      // 2. Prendre le contrôle de tous les clients
       self.clients.claim(),
-      // 3. Notifier les clients de la mise à jour
       self.clients.matchAll().then((clients) => {
         clients.forEach((client) => {
           client.postMessage({
@@ -145,14 +136,12 @@ self.addEventListener('activate', (event) => {
 // ============================================================
 
 function shouldCache(url) {
-  // Ne pas cacher les URLs sensibles
   for (const pattern of NO_CACHE_URLS) {
     if (url.pathname.includes(pattern)) {
       return false;
     }
   }
   
-  // Ne pas cacher les requêtes avec paramètres de timestamp (pour éviter le cache stale)
   if (url.search.includes('_=') || url.search.includes('t=')) {
     return false;
   }
@@ -161,7 +150,7 @@ function shouldCache(url) {
 }
 
 // ============================================================
-// FONCTION : NETTOYER LE CACHE API (pour éviter le remplissage)
+// FONCTION : NETTOYER LE CACHE API
 // ============================================================
 
 async function cleanApiCache() {
@@ -169,7 +158,7 @@ async function cleanApiCache() {
     const cache = await caches.open(API_CACHE);
     const keys = await cache.keys();
     const now = Date.now();
-    const MAX_AGE = 24 * 60 * 60 * 1000; // 24 heures
+    const MAX_AGE = 24 * 60 * 60 * 1000;
     
     for (const request of keys) {
       const response = await cache.match(request);
@@ -197,18 +186,15 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
   
-  // Ignorer les requêtes non-GET
   if (request.method !== 'GET') {
     event.respondWith(fetch(request));
     return;
   }
   
-  // Ignorer les requêtes non-HTTP
   if (!url.protocol.startsWith('http')) {
     return;
   }
   
-  // Ignorer les requêtes vers les extensions
   if (url.pathname.startsWith('/chrome-extension')) {
     return;
   }
@@ -218,7 +204,6 @@ self.addEventListener('fetch', (event) => {
   // ============================================================
   
   if (url.pathname.includes('/api/')) {
-    // Ne pas mettre en cache les endpoints sensibles
     if (!shouldCache(url)) {
       event.respondWith(fetch(request));
       return;
@@ -233,26 +218,21 @@ self.addEventListener('fetch', (event) => {
         }
       })
       .then((response) => {
-        // Mettre en cache UNIQUEMENT les réponses 200
         if (response && response.status === 200) {
           try {
             const responseToCache = response.clone();
             caches.open(API_CACHE).then((cache) => {
               cache.put(request, responseToCache).catch(() => {});
             });
-          } catch (e) {
-            // Ignorer les erreurs de clonage
-          }
+          } catch (e) {}
         }
         return response;
       })
       .catch(async () => {
-        // Fallback: récupérer depuis le cache
         const cachedResponse = await caches.match(request);
         if (cachedResponse) {
           return cachedResponse;
         }
-        // Si pas de cache, retourner une réponse hors-ligne
         return new Response(
           JSON.stringify({
             offline: true,
@@ -293,7 +273,6 @@ self.addEventListener('fetch', (event) => {
           });
         })
         .catch(() => {
-          // Fallback: image par défaut
           return caches.match('/assets/images/logo-general-icon.png');
         })
     );
@@ -427,7 +406,6 @@ self.addEventListener('notificationclick', (event) => {
       type: 'window',
       includeUncontrolled: true
     }).then((windowClients) => {
-      // Si une fenêtre est déjà ouverte, la focus
       for (const client of windowClients) {
         if ('focus' in client) {
           client.focus();
@@ -437,7 +415,6 @@ self.addEventListener('notificationclick', (event) => {
           return;
         }
       }
-      // Sinon, ouvrir une nouvelle fenêtre
       if (clients.openWindow) {
         return clients.openWindow(finalUrl);
       }
@@ -457,18 +434,15 @@ self.addEventListener('notificationclose', (event) => {
 // MISE À JOUR AUTOMATIQUE - VÉRIFICATION PÉRIODIQUE
 // ============================================================
 
-// Vérifier les mises à jour toutes les heures
 setInterval(() => {
   self.registration.update();
   console.log('🔄 [SW] Vérification automatique des mises à jour');
-}, 60 * 60 * 1000); // 1 heure
+}, 60 * 60 * 1000);
 
-// Vérifier les mises à jour au retour en ligne
 self.addEventListener('online', () => {
   console.log('📶 [SW] Connexion rétablie - vérification des mises à jour');
   self.registration.update();
   
-  // Notifier les clients
   self.clients.matchAll().then((clients) => {
     clients.forEach((client) => {
       client.postMessage({
@@ -537,15 +511,13 @@ self.addEventListener('message', (event) => {
 });
 
 // ============================================================
-// NETTOYAGE AUTOMATIQUE DU CACHE (exécution périodique)
+// NETTOYAGE AUTOMATIQUE DU CACHE
 // ============================================================
 
-// Nettoyer le cache API toutes les 6 heures
 setInterval(() => {
   cleanApiCache();
 }, 6 * 60 * 60 * 1000);
 
-// Nettoyer le cache au démarrage
 cleanApiCache();
 
 // ============================================================
