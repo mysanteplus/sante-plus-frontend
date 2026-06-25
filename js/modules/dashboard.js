@@ -1,10 +1,130 @@
+// modules/dashboard.js - VERSION COMPLÈTE CORRIGÉE
+
 import { secureFetch } from "../core/api.js";
 import { UI } from "../core/utils.js";
 import { loadRegistrations } from "../modules/admin.js";
 
+// ============================================================
+// FONCTIONS UTILITAIRES
+// ============================================================
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 /**
- * 🚀 DASHBOARD ÉLITE : Gestionnaire de Dossiers & KPIs
+ * 🔍 VÉRIFIER ET AFFICHER LE STATUT D'ABONNEMENT
  */
+export async function checkAndDisplaySubscriptionStatus() {
+    try {
+        const status = await secureFetch("/billing/subscription-status", { noCache: true });
+        
+        console.log("📊 Statut abonnement:", status);
+        
+        if (status) {
+            localStorage.setItem("subscription_active", status.active ? "true" : "false");
+            localStorage.setItem("subscription_type", status.type || "");
+            localStorage.setItem("subscription_end_date", status.endDate || "");
+            localStorage.setItem("subscription_days_remaining", String(status.daysRemaining || 0));
+            localStorage.setItem("subscription_type_compte", status.type_compte || "AVEC_PATIENT");
+        }
+        
+        return status;
+    } catch (err) {
+        console.error("❌ Erreur statut abonnement:", err);
+        return null;
+    }
+}
+
+/**
+ * 🎨 CARTE DE STATUT D'ABONNEMENT POUR LE DASHBOARD FAMILLE
+ */
+export function renderSubscriptionStatusCard() {
+    const isActive = localStorage.getItem("subscription_active") === "true";
+    const daysRemaining = parseInt(localStorage.getItem("subscription_days_remaining") || "0");
+    const endDate = localStorage.getItem("subscription_end_date");
+    const type = localStorage.getItem("subscription_type") || "";
+    const typeCompte = localStorage.getItem("subscription_type_compte") || "AVEC_PATIENT";
+    const isSansPatient = typeCompte === "SANS_PATIENT";
+    
+    const endDateFormatted = endDate ? new Date(endDate).toLocaleDateString('fr-FR', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+    }) : '';
+    
+    if (isActive) {
+        let statusColor = 'text-emerald-600';
+        let statusBg = 'bg-emerald-50';
+        let statusIcon = '✅';
+        let statusMessage = `Actif jusqu'au ${endDateFormatted}`;
+        
+        if (daysRemaining <= 5 && daysRemaining > 0) {
+            statusColor = 'text-amber-600';
+            statusBg = 'bg-amber-50';
+            statusIcon = '⚠️';
+            statusMessage = `Expire dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''} (le ${endDateFormatted})`;
+        } else if (daysRemaining <= 0) {
+            statusColor = 'text-rose-600';
+            statusBg = 'bg-rose-50';
+            statusIcon = '🔴';
+            statusMessage = 'Abonnement expiré';
+        }
+        
+        return `
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl ${statusBg} flex items-center justify-center">
+                            <span class="text-2xl">${statusIcon}</span>
+                        </div>
+                        <div>
+                            <p class="font-black text-slate-800">${type || (isSansPatient ? 'Pack Confort 24/7' : 'Abonnement médical')}</p>
+                            <p class="text-[10px] ${statusColor} font-bold">${statusMessage}</p>
+                            ${isSansPatient ? `<p class="text-[8px] text-slate-400">Commandes illimitées • Support prioritaire</p>` : ''}
+                        </div>
+                    </div>
+                    <button onclick="window.switchView('subscription')" 
+                            class="text-[9px] font-bold ${statusColor} hover:underline">
+                        Gérer →
+                    </button>
+                </div>
+            </div>
+        `;
+    } else {
+        return `
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+                            <span class="text-2xl">⚠️</span>
+                        </div>
+                        <div>
+                            <p class="font-black text-slate-800">Aucun abonnement actif</p>
+                            <p class="text-[10px] text-amber-600 font-bold">Service limité</p>
+                            ${isSansPatient ? `<p class="text-[8px] text-slate-400">Activez le Pack Confort pour des commandes illimitées</p>` : ''}
+                        </div>
+                    </div>
+                    <button onclick="window.switchView('subscription')" 
+                            class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
+                        Souscrire
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// ============================================================
+// DASHBOARD ADMIN
+// ============================================================
+
 export async function loadAdminDashboard() {
     const container = document.getElementById('view-container');
     
@@ -75,9 +195,10 @@ export async function loadAdminDashboard() {
     loadVisitsToValidate();
 }
 
-/**
- * 📊 CARTE STATISTIQUE
- */
+// ============================================================
+// CARTE STATISTIQUE
+// ============================================================
+
 function renderStatCard(label, id, icon, color) {
     return `
         <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
@@ -92,12 +213,12 @@ function renderStatCard(label, id, icon, color) {
     `;
 }
 
-/**
- * 📈 RÉCUPÉRER LES STATISTIQUES
- */
+// ============================================================
+// STATISTIQUES
+// ============================================================
+
 async function fetchStats() {
     try {
-        // ✅ Correction : secureFetch retourne déjà les données
         const stats = await secureFetch('/dashboard/stats');
         
         const patientsEl = document.getElementById('stat-patients');
@@ -114,15 +235,16 @@ async function fetchStats() {
         console.error("Stats Error:", e); 
     }
 }
-/**
- * 📋 CHARGER LES VISITES À VALIDER
- */
+
+// ============================================================
+// VISITES À VALIDER
+// ============================================================
+
 async function loadVisitsToValidate() {
     const list = document.getElementById('pending-visits-list');
     if (!list) return;
     
     try {
-        // ✅ Correction : secureFetch retourne déjà les données, pas besoin de .json()
         const visits = await secureFetch('/visites?statut=En attente');
         const pending = Array.isArray(visits) ? visits.filter(v => v.statut === 'En attente') : [];
 
@@ -160,9 +282,10 @@ async function loadVisitsToValidate() {
     }
 }
 
-/**
- * ✅ VALIDATION RAPIDE D'UNE VISITE
- */
+// ============================================================
+// VALIDATION RAPIDE D'UNE VISITE
+// ============================================================
+
 async function quickValidate(visiteId, statut) {
     const result = await Swal.fire({
         title: "Validation",
@@ -177,13 +300,11 @@ async function quickValidate(visiteId, statut) {
     
     if (!result.isConfirmed) return;
     
-    const loadingAlert = Swal.fire({
+    Swal.fire({
         title: "Validation...",
         html: "Veuillez patienter",
         allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
+        didOpen: () => Swal.showLoading()
     });
     
     try {
@@ -192,10 +313,8 @@ async function quickValidate(visiteId, statut) {
             body: JSON.stringify({ visite_id: visiteId, statut: statut })
         });
         
-        // ✅ Fermer le loader
         Swal.close();
         
-        // ✅ Afficher le succès
         await Swal.fire({
             icon: "success",
             title: "Succès !",
@@ -204,15 +323,12 @@ async function quickValidate(visiteId, statut) {
             showConfirmButton: false
         });
         
-        // ✅ Rafraîchir les données
         await loadVisitsToValidate();
         await fetchStats();
         
     } catch (err) {
-        // ✅ Fermer le loader
         Swal.close();
         
-        // ✅ Afficher l'erreur
         await Swal.fire({
             icon: "error",
             title: "Erreur",
@@ -222,12 +338,10 @@ async function quickValidate(visiteId, statut) {
     }
 }
 
-/**
- * 📋 CHARGER LES ASSIGNATIONS RH (Pour le planning)
- */
-/**
- * 📋 CHARGER LES ASSIGNATIONS RH (Pour le planning)
- */
+// ============================================================
+// ASSIGNATIONS RH
+// ============================================================
+
 export async function loadRHAssignments() {
     const container = document.getElementById('view-container');
     if (!container) return;
@@ -249,7 +363,6 @@ export async function loadRHAssignments() {
             return;
         }
         
-        // Grouper par patient
         const groupedByPatient = assignments.reduce((acc, a) => {
             const patientId = a.patient?.id;
             if (!acc[patientId]) {
@@ -324,27 +437,19 @@ export async function loadRHAssignments() {
     }
 }
 
-// Fonction escapeHtml si pas déjà présente
-function escapeHtml(str) {
-    if (!str) return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
+// ============================================================
+// DASHBOARD SENIOR (pour les familles non-maman)
+// ============================================================
 
-
-
-/**
- * 📊 DASHBOARD SENIOR (pour les familles non-maman)
- */
 export async function loadSeniorDashboard() {
     const container = document.getElementById("view-container");
     if (!container) return;
 
     const userName = localStorage.getItem("user_name") || "Utilisateur";
+    
+    // ✅ Récupérer le statut d'abonnement
+    const status = await checkAndDisplaySubscriptionStatus();
+    const isActive = status?.active === true;
     
     container.innerHTML = `
         <div class="animate-fadeIn pb-32">
@@ -354,6 +459,9 @@ export async function loadSeniorDashboard() {
                 <h2 class="text-2xl font-black">${escapeHtml(userName)}</h2>
                 <p class="text-sm opacity-90 mt-1">Suivi de votre proche</p>
             </div>
+            
+            <!-- ✅ CARTE STATUT ABONNEMENT -->
+            ${renderSubscriptionStatusCard()}
             
             <!-- Statistiques rapides -->
             <div class="grid grid-cols-2 gap-4 mb-6">
@@ -392,16 +500,30 @@ export async function loadSeniorDashboard() {
                     <i class="fa-solid fa-box mr-2"></i> Commander
                 </button>
             </div>
+            
+            ${!isActive ? `
+                <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-center">
+                    <p class="text-xs text-amber-700 font-medium">
+                        ⚠️ Votre abonnement n'est pas actif. Certaines fonctionnalités sont limitées.
+                    </p>
+                    <button onclick="window.switchView('subscription')" 
+                            class="mt-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
+                        Activer mon abonnement
+                    </button>
+                </div>
+            ` : ''}
         </div>
     `;
     
-    // Charger les données
     await loadSeniorStats();
 }
 
+// ============================================================
+// STATS SENIOR
+// ============================================================
+
 async function loadSeniorStats() {
     try {
-        // Récupérer le patient
         const { data: patients } = await supabase
             .from("patients")
             .select("id")
@@ -410,7 +532,6 @@ async function loadSeniorStats() {
         
         if (!patients) return;
         
-        // Compter les visites du mois
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
@@ -423,7 +544,6 @@ async function loadSeniorStats() {
         
         document.getElementById("senior-visits-count").innerText = visites?.length || 0;
         
-        // Compter les commandes en cours
         const { data: commandes } = await supabase
             .from("commandes_meds")
             .select("id")
@@ -432,7 +552,6 @@ async function loadSeniorStats() {
         
         document.getElementById("senior-orders-count").innerText = commandes?.length || 0;
         
-        // Derniers messages
         const { data: messages } = await supabase
             .from("messages")
             .select("content, created_at, sender:profiles!sender_id(nom)")
@@ -462,12 +581,226 @@ async function loadSeniorStats() {
     }
 }
 
-// ✅ Exposer la fonction globalement pour les appels HTML
+// ============================================================
+// DASHBOARD SANS PATIENT
+// ============================================================
+
+export async function renderSansPatientDashboard() {
+    const container = document.getElementById("view-container");
+    if (!container) return;
+    
+    const userName = localStorage.getItem("user_name") || "Utilisateur";
+    const isMaman = localStorage.getItem("user_is_maman") === "true";
+    const themeColor = isMaman ? 'pink' : 'emerald';
+    const themeBgClass = isMaman ? 'bg-pink-50' : 'bg-emerald-50';
+    const themeTextClass = isMaman ? 'text-pink-600' : 'text-emerald-600';
+    const primaryColor = isMaman ? '#E11D48' : '#059669';
+    
+    // ✅ Récupérer le statut du Pack Confort
+    const status = await checkAndDisplaySubscriptionStatus();
+    const isActive = status?.active === true;
+    const daysRemaining = status?.daysRemaining || 0;
+    
+    let commandesEnCours = [];
+    let commandesRecentes = [];
+    
+    try {
+        const commandes = await secureFetch("/commandes/mes-commandes");
+        commandesEnCours = commandes.filter(c => c.statut === "En attente" || c.statut === "En cours de livraison");
+        commandesRecentes = commandes.slice(0, 3);
+    } catch (err) {
+        console.error("Erreur chargement dashboard:", err);
+    }
+    
+    container.innerHTML = `
+        <div class="animate-fadeIn pb-24">
+            <!-- Bannière de bienvenue -->
+            <div class="relative rounded-2xl overflow-hidden mb-6" style="background: linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%);">
+                <div class="relative z-10 p-6 text-white">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[10px] font-bold opacity-80">Bienvenue</p>
+                            <h2 class="text-2xl font-black">${escapeHtml(userName.split(' ')[0])}</h2>
+                            <p class="text-sm opacity-90 mt-1">Espace personnel</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                            <i class="fa-solid fa-user text-white text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ✅ CARTE STATUT PACK CONFORT -->
+            <div class="bg-white rounded-2xl p-5 mb-6 shadow-sm border border-slate-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl ${isActive ? themeBgClass : 'bg-amber-50'} flex items-center justify-center">
+                            <i class="fa-solid fa-crown ${isActive ? themeTextClass : 'text-amber-600'} text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="font-black text-slate-800">Pack Confort 24/7</p>
+                            ${isActive ? `
+                                <p class="text-[10px] text-emerald-600 font-bold">✅ Actif</p>
+                                ${daysRemaining > 0 ? `<p class="text-[9px] text-slate-400">Plus que ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}</p>` : '<p class="text-[9px] text-rose-500">⚠️ Expiré</p>'}
+                            ` : `
+                                <p class="text-[10px] text-amber-600 font-bold">⚠️ Inactif</p>
+                                <p class="text-[9px] text-slate-400">Souscrivez pour bénéficier des avantages</p>
+                            `}
+                        </div>
+                    </div>
+                    ${!isActive ? `
+                        <button onclick="window.switchView('subscription')" 
+                                class="px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-${themeColor}-500 text-white shadow-md active:scale-95 transition-all">
+                            Souscrire
+                        </button>
+                    ` : `
+                        <button onclick="window.switchView('subscription')" 
+                                class="text-[9px] font-bold ${themeTextClass} hover:underline">
+                            Gérer →
+                        </button>
+                    `}
+                </div>
+                ${isActive ? `
+                    <div class="mt-3 pt-3 border-t border-slate-100">
+                        <p class="text-[8px] text-slate-400 flex items-center gap-2">
+                            <i class="fa-solid fa-check-circle text-emerald-500"></i>
+                            Commandes illimitées • Support prioritaire 24/7 • Historique conservé
+                        </p>
+                    </div>
+                ` : `
+                    <div class="mt-3 pt-3 border-t border-slate-100">
+                        <p class="text-[8px] text-slate-400 flex items-center gap-2">
+                            <i class="fa-solid fa-info-circle text-amber-500"></i>
+                            Activez le Pack Confort pour des commandes illimitées et un support prioritaire
+                        </p>
+                    </div>
+                `}
+            </div>
+            
+            <!-- Commandes en cours -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-black text-slate-800 text-sm">
+                        <i class="fa-solid fa-box mr-2 ${themeTextClass}"></i>
+                        Commandes en cours
+                    </h3>
+                    <button onclick="window.switchView('commandes')" class="text-[9px] font-bold ${themeTextClass}">
+                        Voir tout →
+                    </button>
+                </div>
+                
+                ${commandesEnCours.length === 0 ? `
+                    <div class="bg-white rounded-2xl p-6 text-center border border-slate-100">
+                        <i class="fa-solid fa-box-open text-3xl text-slate-300 mb-2"></i>
+                        <p class="text-xs text-slate-400">Aucune commande en cours</p>
+                        ${isActive ? `
+                            <button onclick="window.openOrderModal()" 
+                                    class="mt-3 px-4 py-2 rounded-xl text-[9px] font-black uppercase ${themeBgClass} ${themeTextClass} active:scale-95 transition-all">
+                                + Nouvelle commande
+                            </button>
+                        ` : `
+                            <p class="text-[8px] text-amber-500 mt-2">Activez le Pack Confort pour commander</p>
+                        `}
+                    </div>
+                ` : `
+                    <div class="space-y-2">
+                        ${commandesEnCours.map(cmd => `
+                            <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="font-bold text-slate-800 text-sm">#${cmd.id.substring(0, 8)}</p>
+                                        <p class="text-[10px] text-slate-400 mt-0.5">${cmd.liste_medocs?.substring(0, 60)}${cmd.liste_medocs?.length > 60 ? '...' : ''}</p>
+                                    </div>
+                                    <span class="px-2 py-1 rounded-full text-[9px] font-bold ${
+                                        cmd.statut === 'En attente' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'
+                                    }">
+                                        ${cmd.statut === 'En attente' ? '⏳ En attente' : '🚚 En cours'}
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between mt-3 pt-2 border-t border-slate-50">
+                                    <p class="text-[8px] text-slate-400">📅 ${new Date(cmd.created_at).toLocaleDateString('fr-FR')}</p>
+                                    <button onclick="window.switchView('commandes')" class="text-[9px] font-bold ${themeTextClass}">
+                                        Détails →
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `}
+            </div>
+            
+            <!-- Dernières commandes -->
+            ${commandesRecentes.length > 0 && commandesEnCours.length !== commandesRecentes.length ? `
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-black text-slate-800 text-sm">
+                            <i class="fa-solid fa-clock mr-2 ${themeTextClass}"></i>
+                            Dernières commandes
+                        </h3>
+                    </div>
+                    <div class="space-y-2">
+                        ${commandesRecentes.filter(c => c.statut !== 'En attente' && c.statut !== 'En cours de livraison').slice(0, 3).map(cmd => `
+                            <div class="bg-white rounded-xl p-3 border border-slate-100">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex-1">
+                                        <p class="text-[10px] font-bold text-slate-700">${cmd.liste_medocs?.substring(0, 50)}${cmd.liste_medocs?.length > 50 ? '...' : ''}</p>
+                                        <p class="text-[8px] text-slate-400 mt-0.5">${new Date(cmd.created_at).toLocaleDateString('fr-FR')}</p>
+                                    </div>
+                                    <span class="px-2 py-1 rounded-full text-[8px] font-bold ${
+                                        cmd.statut === 'Livrée' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                                    }">
+                                        ${cmd.statut === 'Livrée' ? '✅ Livrée' : cmd.statut}
+                                    </span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <!-- Actions rapides -->
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <button onclick="window.openOrderModal()" 
+                        class="flex flex-col items-center gap-2 py-4 bg-white rounded-xl border border-slate-100 shadow-sm active:scale-95 transition-all">
+                    <i class="fa-solid fa-cart-plus text-2xl ${themeTextClass}"></i>
+                    <span class="text-[10px] font-black text-slate-700">Nouvelle commande</span>
+                </button>
+                <button onclick="window.switchView('profile')" 
+                        class="flex flex-col items-center gap-2 py-4 bg-white rounded-xl border border-slate-100 shadow-sm active:scale-95 transition-all">
+                    <i class="fa-solid fa-user-circle text-2xl ${themeTextClass}"></i>
+                    <span class="text-[10px] font-black text-slate-700">Mon profil</span>
+                </button>
+            </div>
+            
+            <!-- Section Ajouter un patient -->
+            <div class="bg-gradient-to-r from-${themeColor}-50 to-white rounded-2xl p-5 border border-${themeColor}-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full ${themeBgClass} flex items-center justify-center">
+                        <i class="fa-solid fa-user-plus ${themeTextClass} text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-bold text-slate-800 text-sm">Ajouter un patient</p>
+                        <p class="text-[9px] text-slate-400">Vous pourrez bénéficier des visites à domicile</p>
+                    </div>
+                    <button onclick="window.addPatientAfterRegistration()" 
+                            class="px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-${themeColor}-500 text-white shadow-md active:scale-95 transition-all">
+                        Ajouter
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================
+// EXPORTS
+// ============================================================
+
 window.quickValidate = quickValidate;
 window.fetchStats = fetchStats;
-window.loadRHAssignments = loadRHAssignments; 
+window.loadRHAssignments = loadRHAssignments;
 
-
-// ✅ Exporter la fonction pour l'import dans main.js
-export { quickValidate, fetchStats};
-
+export { 
+    quickValidate, 
+    fetchStats,
+ };
