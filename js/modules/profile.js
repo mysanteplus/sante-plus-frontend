@@ -560,7 +560,7 @@ window.updatePatientPhoto = async (file) => {
         }
         
         // ✅ Utiliser fetch au lieu de secureFetch pour FormData
-        const response = await fetch(`${CONFIG.API_URL}/patients/update-photo`, {
+        const response = await fetch(`${CONFIG.API_URL}/api/patients/update-photo`, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("token")}`
