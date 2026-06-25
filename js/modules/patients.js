@@ -1,4 +1,4 @@
-// modules/patients.js -
+// modules/patients.js - VERSION COMPLÈTE PRODUCTION
 
 import { secureFetch } from "../core/api.js";
 import { AppState } from "../core/state.js";
@@ -113,7 +113,7 @@ export async function loadPatients() {
 }
 
 // ============================================================
-// 2. RENDU DE LA LISTE DES PATIENTS (CORRIGÉ - UNIFIÉ)
+// 2. RENDU DE LA LISTE DES PATIENTS
 // ============================================================
 
 export function renderPatients() {
@@ -143,9 +143,6 @@ export function renderPatients() {
         const hasGps = p.lat && p.lng;
         const isVisitActive = localStorage.getItem("active_visit_id") !== null;
         
-        // ============================================================
-        // ✅ ACTIONS UNIFIÉES - UN SEUL BOUTON PRINCIPAL PAR RÔLE
-        // ============================================================
         let actionButtons = '';
 
         if (userRole === "AIDANT") {
@@ -509,7 +506,7 @@ async function openFormuleSelector() {
 }
 
 // ============================================================
-// 6. VUE : FICHE PATIENT (DOSSIER COMPLET)
+// 6. VUE : FICHE PATIENT (DOSSIER COMPLET) - PRODUCTION READY
 // ============================================================
 
 export async function renderPatientDetailsView(patientId) {
@@ -537,31 +534,50 @@ export async function renderPatientDetailsView(patientId) {
         const isPremium = p.formule === 'Premium' || p.type_pack === 'Premium';
         const initials = p.nom_complet?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || '??';
         
-        // Récupérer l'abonnement du patient
+        // ============================================================
+        // ✅ RÉCUPÉRATION DE L'ABONNEMENT - UNIQUEMENT SI EXISTE
+        // ============================================================
         let subscriptionInfo = null;
+        let isActive = false;
+        let daysRemaining = 0;
+        let endDate = null;
+        let hasSubscription = false;
+        
         try {
             const subscriptions = await secureFetch(`/billing`);
             if (Array.isArray(subscriptions) && subscriptions.length > 0) {
-                // Trouver l'abonnement actif du patient
+                // Chercher un abonnement actif (Payé) pour ce patient
                 const activeSub = subscriptions.find(s => s.patient_id === p.id && s.statut === "Payé");
                 if (activeSub) {
                     subscriptionInfo = activeSub;
+                    hasSubscription = true;
                 } else {
-                    // Prendre le dernier abonnement
+                    // Sinon, prendre le dernier abonnement de ce patient
                     const lastSub = subscriptions.filter(s => s.patient_id === p.id).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-                    subscriptionInfo = lastSub || null;
+                    if (lastSub) {
+                        subscriptionInfo = lastSub;
+                        hasSubscription = true;
+                    }
                 }
             }
         } catch (err) {
             console.warn("Erreur chargement abonnement:", err);
+            // On continue sans abonnement
+        }
+        
+        // ✅ Calculer le statut UNIQUEMENT si on a un abonnement avec date de fin
+        if (subscriptionInfo?.date_fin_abonnement) {
+            endDate = new Date(subscriptionInfo.date_fin_abonnement);
+            isActive = new Date() <= endDate;
+            daysRemaining = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24));
         }
         
         // ============================================================
-        // ✅ DOSSIER COMPLET - TOUTES LES INFOS DU PATIENT
+        // ✅ DOSSIER COMPLET - UNIQUEMENT LES DONNÉES DISPONIBLES
         // ============================================================
         let dossierContent = '';
 
-        // Informations personnelles
+        // 1. Identité
         dossierContent += `
             <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-4">
                 <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
@@ -588,7 +604,7 @@ export async function renderPatientDetailsView(patientId) {
             </div>
         `;
 
-        // Adresse
+        // 2. Adresse
         dossierContent += `
             <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-4">
                 <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
@@ -610,91 +626,100 @@ export async function renderPatientDetailsView(patientId) {
             </div>
         `;
 
-        // Informations médicales (pour ADMIN et AIDANT)
+        // 3. Informations médicales (pour ADMIN et AIDANT)
         if (userRole === "COORDINATEUR" || userRole === "AIDANT") {
-            dossierContent += `
-                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-4">
-                    <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
-                        <i class="fa-solid fa-heartbeat text-rose-500"></i> Informations médicales
-                    </h4>
-                    ${p.pathologies && p.pathologies.length > 0 ? `
-                        <div class="mb-2">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Pathologies</p>
-                            <div class="flex flex-wrap gap-1 mt-1">
-                                ${p.pathologies.map(path => `<span class="px-2 py-1 bg-rose-50 text-rose-600 rounded-full text-[9px] font-bold">${escapeHtml(path)}</span>`).join('')}
-                            </div>
-                        </div>
-                    ` : ''}
-                    ${p.traitements ? `
-                        <div class="mb-2">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Traitements</p>
-                            <p class="text-sm text-slate-700">${escapeHtml(p.traitements)}</p>
-                        </div>
-                    ` : ''}
-                    ${p.allergies ? `
-                        <div class="mb-2">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Allergies</p>
-                            <p class="text-sm text-slate-700">${escapeHtml(p.allergies)}</p>
-                        </div>
-                    ` : ''}
-                    ${p.notes_medicales ? `
-                        <div>
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Notes médicales</p>
-                            <p class="text-sm text-slate-700 italic">"${escapeHtml(p.notes_medicales)}"</p>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        // Abonnement et paiement (pour ADMIN et FAMILLE)
-        if (userRole === "COORDINATEUR" || userRole === "FAMILLE") {
-            const endDate = subscriptionInfo?.date_fin_abonnement ? new Date(subscriptionInfo.date_fin_abonnement) : null;
-            const isActive = endDate ? new Date() <= endDate : false;
-            const daysRemaining = endDate ? Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24)) : 0;
+            const hasMedicalInfo = (p.pathologies && p.pathologies.length > 0) || p.traitements || p.allergies || p.notes_medicales;
             
-            dossierContent += `
-                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-4">
-                    <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
-                        <i class="fa-solid fa-crown text-amber-500"></i> Abonnement
-                    </h4>
-                    <div class="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Pack</p>
-                            <p class="font-bold text-slate-800">${escapeHtml(p.type_pack || p.formule || 'Standard')}</p>
-                        </div>
-                        <div>
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Statut</p>
-                            <p class="font-bold ${isActive ? 'text-emerald-600' : 'text-rose-600'}">
-                                ${isActive ? '✅ Actif' : '❌ Expiré'}
-                            </p>
-                        </div>
-                        ${endDate ? `
-                            <div class="col-span-2">
-                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Date d'expiration</p>
-                                <p class="font-bold text-slate-800">${endDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                                ${isActive ? `<p class="text-[9px] ${daysRemaining <= 5 ? 'text-amber-500' : 'text-emerald-500'} font-bold">Plus que ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}</p>` : ''}
+            if (hasMedicalInfo) {
+                dossierContent += `
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-4">
+                        <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-heartbeat text-rose-500"></i> Informations médicales
+                        </h4>
+                        ${p.pathologies && p.pathologies.length > 0 ? `
+                            <div class="mb-2">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Pathologies</p>
+                                <div class="flex flex-wrap gap-1 mt-1">
+                                    ${p.pathologies.map(path => `<span class="px-2 py-1 bg-rose-50 text-rose-600 rounded-full text-[9px] font-bold">${escapeHtml(path)}</span>`).join('')}
+                                </div>
                             </div>
-                        ` : `
-                            <div class="col-span-2">
-                                <p class="text-[9px] text-amber-500">⚠️ Aucun abonnement actif</p>
+                        ` : ''}
+                        ${p.traitements ? `
+                            <div class="mb-2">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Traitements</p>
+                                <p class="text-sm text-slate-700">${escapeHtml(p.traitements)}</p>
                             </div>
-                        `}
-                        ${subscriptionInfo?.montant_du ? `
+                        ` : ''}
+                        ${p.allergies ? `
+                            <div class="mb-2">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Allergies</p>
+                                <p class="text-sm text-slate-700">${escapeHtml(p.allergies)}</p>
+                            </div>
+                        ` : ''}
+                        ${p.notes_medicales ? `
                             <div>
-                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Montant</p>
-                                <p class="font-bold text-slate-800">${subscriptionInfo.montant_du.toLocaleString()} CFA</p>
-                            </div>
-                            <div>
-                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Statut paiement</p>
-                                <p class="font-bold ${subscriptionInfo.statut === 'Payé' ? 'text-emerald-600' : 'text-amber-600'}">
-                                    ${subscriptionInfo.statut === 'Payé' ? '✅ Payé' : '⏳ En attente'}
-                                </p>
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Notes médicales</p>
+                                <p class="text-sm text-slate-700 italic">"${escapeHtml(p.notes_medicales)}"</p>
                             </div>
                         ` : ''}
                     </div>
-                </div>
-            `;
+                `;
+            }
+        }
+
+        // 4. Abonnement et paiement (pour ADMIN et FAMILLE) - UNIQUEMENT SI EXISTE
+        if (userRole === "COORDINATEUR" || userRole === "FAMILLE") {
+            if (hasSubscription && subscriptionInfo) {
+                const statusColor = isActive ? 'emerald' : 'rose';
+                const statusText = isActive ? '✅ Actif' : '❌ Expiré';
+                
+                dossierContent += `
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-4">
+                        <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-crown text-amber-500"></i> Abonnement
+                        </h4>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Pack</p>
+                                <p class="font-bold text-slate-800">${escapeHtml(subscriptionInfo.type_pack || p.formule || 'Standard')}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Statut</p>
+                                <p class="font-bold text-${statusColor}-600">${statusText}</p>
+                            </div>
+                            ${endDate ? `
+                                <div class="col-span-2">
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Date d'expiration</p>
+                                    <p class="font-bold text-slate-800">${endDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                    ${isActive ? `<p class="text-[9px] ${daysRemaining <= 5 ? 'text-amber-500' : 'text-emerald-500'} font-bold">Plus que ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}</p>` : ''}
+                                </div>
+                            ` : ''}
+                            ${subscriptionInfo.montant_du ? `
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Montant</p>
+                                    <p class="font-bold text-slate-800">${subscriptionInfo.montant_du.toLocaleString()} CFA</p>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Statut paiement</p>
+                                    <p class="font-bold ${subscriptionInfo.statut === 'Payé' ? 'text-emerald-600' : 'text-amber-600'}">
+                                        ${subscriptionInfo.statut === 'Payé' ? '✅ Payé' : '⏳ En attente'}
+                                    </p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Pas d'abonnement - message neutre
+                dossierContent += `
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-4">
+                        <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-crown text-amber-500"></i> Abonnement
+                        </h4>
+                        <p class="text-sm text-slate-500">Aucun abonnement actif pour ce patient</p>
+                    </div>
+                `;
+            }
         }
 
         // ============================================================
@@ -773,6 +798,10 @@ export async function renderPatientDetailsView(patientId) {
             `;
         }
         
+        // ✅ Statut de l'abonnement pour l'affichage
+        const statusColor = isActive ? 'emerald' : 'rose';
+        const statusText = isActive ? '✅ Actif' : '❌ Expiré';
+        
         container.innerHTML = `
             <div class="animate-fadeIn max-w-lg mx-auto pb-32">
                 <!-- ✅ BOUTON RETOUR VERS LA VUE PRÉCÉDENTE -->
@@ -798,9 +827,11 @@ export async function renderPatientDetailsView(patientId) {
                     <div class="flex flex-wrap gap-2 mt-2">
                         ${isMaman ? `<span class="badge-pink px-3 py-1 rounded-full text-[10px] font-bold"><i class="fa-solid fa-baby-carriage mr-1"></i> Maman & Bébé</span>` : `<span class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-bold"><i class="fa-solid fa-user-plus mr-1"></i> Dossier Sénior</span>`}
                         ${isPremium ? `<span class="badge-gold px-3 py-1 rounded-full text-[10px] font-bold"><i class="fa-solid fa-crown mr-1"></i> Premium</span>` : ''}
-                        <span class="bg-${isActive ? 'emerald' : 'rose'}-50 text-${isActive ? 'emerald' : 'rose'}-600 px-3 py-1 rounded-full text-[10px] font-bold">
-                            ${isActive ? '✅ Actif' : '❌ Expiré'}
-                        </span>
+                        ${hasSubscription ? `
+                            <span class="bg-${statusColor}-50 text-${statusColor}-600 px-3 py-1 rounded-full text-[10px] font-bold">
+                                ${statusText}
+                            </span>
+                        ` : ''}
                     </div>
                 </div>
 
