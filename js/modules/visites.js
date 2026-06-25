@@ -1,4 +1,4 @@
-// modules/visites.js - VERSION COMPLÈTE CORRIGÉE
+// modules/visites.js 
 
 import { secureFetch } from "../core/api.js";
 import { CONFIG } from "../core/config.js";
@@ -956,14 +956,47 @@ export function resumeTrackingIfActive() {
     }
 }
 
+
 // ============================================================
-// 11. RAFRAÎCHIR L'UI AIDANT
+// 11. RAFRAÎCHIR L'UI AIDANT (AVEC VÉRIFICATION D'ASSIGNATION)
 // ============================================================
 
 let refreshAttempts = 0;
 const MAX_REFRESH_ATTEMPTS = 20;
 
-export function refreshAidantUI(patientId) {
+export async function refreshAidantUI(patientId) {
+    // ✅ VÉRIFIER SI L'AIDANT EST ASSIGNÉ À CE PATIENT
+    try {
+        const { data: planning, error } = await supabase
+            .from("planning")
+            .select("id")
+            .eq("patient_id", patientId)
+            .eq("aidant_id", localStorage.getItem("user_id"))
+            .eq("est_actif", true)
+            .maybeSingle();
+        
+        // ❌ SI L'AIDANT N'EST PAS ASSIGNÉ → NE RIEN AFFICHER
+        if (error || !planning) {
+            console.log(`🚫 Aidant non assigné au patient ${patientId}, aucun bouton affiché`);
+            const container = document.getElementById("aidant-active-area");
+            if (container) {
+                container.innerHTML = `
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                        <p class="text-[10px] text-amber-600 font-medium">
+                            <i class="fa-solid fa-info-circle mr-1"></i> 
+                            Vous n'êtes pas assigné à ce patient
+                        </p>
+                    </div>
+                `;
+            }
+            return;
+        }
+    } catch (err) {
+        console.warn("⚠️ Erreur vérification assignation:", err);
+        // On continue au cas où
+    }
+    
+    // ✅ SI L'AIDANT EST ASSIGNÉ → AFFICHER LES BOUTONS
     const tryRefresh = () => {
         const container = document.getElementById("aidant-active-area");
         
@@ -1006,7 +1039,6 @@ export function refreshAidantUI(patientId) {
     
     tryRefresh();
 }
-
 // ============================================================
 // 12. NOTATION DE LA VISITE
 // ============================================================
