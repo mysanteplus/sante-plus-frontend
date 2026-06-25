@@ -593,7 +593,49 @@ const ONBOARDING_STEPS_BABY = [
 let ONBOARDING_STEPS = ONBOARDING_STEPS_GENERAL;
 
 
- 
+ // ============================================================
+// CHARGEMENT DE LA CONFIGURATION DEPUIS LE BACKEND
+// ============================================================
+
+async function loadBackendConfig() {
+    try {
+        console.log('🔧 Chargement de la configuration depuis le backend...');
+        const response = await fetch('/api/config', { 
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache' }
+        });
+        
+        if (!response.ok) {
+            console.warn(`⚠️ /api/config a répondu ${response.status}, utilisation des valeurs par défaut`);
+            return;
+        }
+        
+        const config = await response.json();
+        
+        // ✅ Injecter les variables dans window._env_
+        window._env_ = {
+            SUPABASE_URL: config.supabaseUrl,
+            SUPABASE_KEY: config.supabaseKey,
+            API_URL: config.apiUrl,
+            ENVIRONMENT: config.environment
+        };
+        
+        console.log('✅ Configuration chargée depuis le backend');
+        console.log(`   Environnement: ${config.environment}`);
+        console.log(`   Supabase: ${config.supabaseUrl ? '✅' : '❌'}`);
+        
+        // ✅ Mettre à jour window.CONFIG si besoin
+        if (window.CONFIG) {
+            if (config.supabaseUrl) window.CONFIG.SUPABASE_URL = config.supabaseUrl;
+            if (config.supabaseKey) window.CONFIG.SUPABASE_KEY = config.supabaseKey;
+        }
+        
+    } catch (err) {
+        console.warn('⚠️ Impossible de charger la config depuis le backend:', err.message);
+        console.warn('   Utilisation des valeurs par défaut');
+    }
+}
+
 
 async function initApp() {
     // ✅ ÉVITER LES INITIALISATIONS MULTIPLES
@@ -604,6 +646,7 @@ async function initApp() {
     isAppInitializing = true;
 
     try {
+         await loadBackendConfig();
         // Nettoyer les classes de fond au chargement
         document.body.classList.remove('auth-page', 'maman', 'senior', 'aidant', 'coordinateur');
         
