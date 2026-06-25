@@ -8,15 +8,15 @@ const isCapacitor = typeof window !== 'undefined' && window.hasOwnProperty('Capa
 // ✅ Fonction pour construire l'URL de l'API
 function getApiUrl() {
     if (isCapacitor) {
-        return "https://sante-plus-backend-main.onrender.com/api";
+        return "https://sante-plus-backend-main.onrender.com";
     }
     
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return "http://localhost:4000/api";
+        return "http://localhost:4000";
     }
     
-    // Production
-    return "https://sante-plus-backend-main.onrender.com/api";
+    // ✅ Production - SANS /api à la fin (car les routes commencent par /api)
+    return "https://sante-plus-backend-main.onrender.com";
 }
 
 // ============================================================
@@ -25,7 +25,7 @@ function getApiUrl() {
 
 export const CONFIG = {
     // ============================================================
-    // API
+    // API - URL de base SANS /api (les routes ajoutent /api)
     // ============================================================
     API_URL: getApiUrl(),
 
@@ -77,5 +77,7 @@ export const CONFIG = {
 
 if (typeof window !== 'undefined') {
     window.CONFIG = CONFIG;
+    
+    // ✅ Vérifier que API_URL est correct
     console.log('✅ [CONFIG] Chargé, API_URL:', CONFIG.API_URL);
 }
