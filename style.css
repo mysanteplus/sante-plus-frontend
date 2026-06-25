@@ -3545,6 +3545,565 @@ a, .text-link, .text-emerald-600, .text-pink-600 { color: var(--role-primary) !i
 
 .auth-pack-card * { pointer-events: none; }
 
+
+
+/* ============================================
+   2. FONTS & ICÔNES
+   ============================================ */
+
+/* --- Font Awesome 6 - Polices --- */
+@font-face {
+    font-family: 'Font Awesome 6 Free';
+    font-style: normal;
+    font-weight: 900;
+    src: url('/assets/fontawesome/webfonts/fa-solid-900.woff2') format('woff2'),
+         url('/assets/fontawesome/webfonts/fa-solid-900.ttf') format('truetype');
+    font-display: block;
+}
+
+@font-face {
+    font-family: 'Font Awesome 6 Free';
+    font-style: normal;
+    font-weight: 400;
+    src: url('/assets/fontawesome/webfonts/fa-regular-400.woff2') format('woff2'),
+         url('/assets/fontawesome/webfonts/fa-regular-400.ttf') format('truetype');
+    font-display: block;
+}
+
+@font-face {
+    font-family: 'Font Awesome 6 Brands';
+    font-style: normal;
+    font-weight: 400;
+    src: url('/assets/fontawesome/webfonts/fa-brands-400.woff2') format('woff2'),
+         url('/assets/fontawesome/webfonts/fa-brands-400.ttf') format('truetype');
+    font-display: block;
+}
+
+/* --- Classes de base Font Awesome --- */
+.fa,
+.fas,
+.fa-solid {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+}
+
+.far,
+.fa-regular {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 400 !important;
+}
+
+.fab,
+.fa-brands {
+    font-family: "Font Awesome 6 Brands" !important;
+    font-weight: 400 !important;
+}
+
+/* --- Normalisation commune à toutes les icônes --- */
+.fa,
+.fas,
+.far,
+.fab,
+.fa-solid,
+.fa-regular,
+.fa-brands {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    display: inline-block;
+    font-style: normal;
+    font-variant: normal;
+    line-height: 1;
+    text-rendering: auto;
+}
+
+/* --- Forcer l'affichage immédiat des icônes --- */
+i,
+.fa,
+.fas,
+.far,
+.fab,
+.fa-solid,
+.fa-regular,
+.fa-brands,
+[class*="fa-"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* ============================================
+   FALLBACKS - ICÔNES FONT AWESOME (UNICODE)
+   ============================================
+   Ces règles garantissent que les icônes 
+   s'affichent même si la classe n'est pas 
+   reconnue, en utilisant directement l'unicode.
+   ============================================ */
+
+/* --- Navigation & Menu --- */
+.fa-home::before,
+.fa-house::before { content: "\f015" !important; }
+
+.fa-user::before { content: "\f007" !important; }
+.fa-user-circle::before { content: "\f2bd" !important; }
+
+.fa-calendar::before,
+.fa-calendar-days::before { content: "\f073" !important; }
+.fa-calendar-check::before { content: "\f274" !important; }
+.fa-calendar-alt::before { content: "\f073" !important; }
+
+.fa-clock::before { content: "\f017" !important; }
+
+.fa-map::before { content: "\f279" !important; }
+.fa-map-marker::before,
+.fa-map-marker-alt::before,
+.fa-location-dot::before { content: "\f3c5" !important; }
+.fa-location::before { content: "\f041" !important; }
+
+.fa-chart-bar::before { content: "\f080" !important; }
+.fa-chart-line::before { content: "\f201" !important; }
+.fa-chart-pie::before { content: "\f200" !important; }
+
+.fa-cog::before,
+.fa-gear::before { content: "\f013" !important; }
+
+.fa-bell::before { content: "\f0f3" !important; }
+
+.fa-search::before { content: "\f002" !important; }
+
+/* --- Actions --- */
+.fa-plus::before { content: "\2b" !important; }
+.fa-plus-circle::before { content: "\f055" !important; }
+.fa-minus::before { content: "\f068" !important; }
+.fa-minus-circle::before { content: "\f056" !important; }
+
+.fa-edit::before,
+.fa-pen::before,
+.fa-pen-to-square::before { content: "\f044" !important; }
+
+.fa-trash::before,
+.fa-trash-alt::before,
+.fa-trash-can::before { content: "\f2ed" !important; }
+
+.fa-save::before,
+.fa-floppy-disk::before { content: "\f0c7" !important; }
+
+.fa-download::before { content: "\f019" !important; }
+.fa-upload::before { content: "\f093" !important; }
+
+.fa-share::before { content: "\f064" !important; }
+.fa-share-alt::before,
+.fa-share-nodes::before { content: "\f1e0" !important; }
+
+.fa-print::before { content: "\f02f" !important; }
+
+.fa-copy::before { content: "\f0c5" !important; }
+.fa-paste::before { content: "\f0ea" !important; }
+
+.fa-link::before { content: "\f0c1" !important; }
+.fa-unlink::before { content: "\f127" !important; }
+
+.fa-lock::before { content: "\f023" !important; }
+.fa-unlock::before { content: "\f09c" !important; }
+
+.fa-key::before { content: "\f084" !important; }
+
+.fa-sign-in::before,
+.fa-sign-in-alt::before { content: "\f2f6" !important; }
+.fa-sign-out::before,
+.fa-sign-out-alt::before { content: "\f2f5" !important; }
+
+/* --- Santé & Médical --- */
+.fa-heart::before { content: "\f004" !important; }
+.fa-heartbeat::before,
+.fa-heart-pulse::before { content: "\f21e" !important; }
+
+.fa-user-md::before,
+.fa-user-doctor::before { content: "\f0f0" !important; }
+.fa-user-nurse::before { content: "\f82f" !important; }
+.fa-users::before { content: "\f0c0" !important; }
+
+.fa-hospital::before { content: "\f0f8" !important; }
+.fa-clinic-medical::before,
+.fa-house-medical::before { content: "\f7f2" !important; }
+
+.fa-stethoscope::before { content: "\f0f1" !important; }
+
+.fa-pills::before { content: "\f484" !important; }
+.fa-capsules::before { content: "\f46b" !important; }
+
+.fa-prescription::before { content: "\f5b1" !important; }
+.fa-prescription-bottle::before { content: "\f485" !important; }
+.fa-prescription-bottle-medical::before { content: "\f486" !important; }
+
+.fa-syringe::before { content: "\f48e" !important; }
+.fa-vial::before { content: "\f492" !important; }
+.fa-vials::before { content: "\f493" !important; }
+
+.fa-ambulance::before { content: "\f0f9" !important; }
+.fa-wheelchair::before { content: "\f193" !important; }
+
+.fa-notes-medical::before { content: "\f481" !important; }
+.fa-file-medical::before { content: "\f477" !important; }
+.fa-file-medical-alt::before { content: "\f478" !important; }
+
+.fa-procedures::before { content: "\f487" !important; }
+
+.fa-x-ray::before { content: "\f497" !important; }
+
+.fa-lungs::before { content: "\f604" !important; }
+.fa-lungs-virus::before { content: "\e067" !important; }
+
+.fa-brain::before { content: "\f5dc" !important; }
+
+.fa-tooth::before { content: "\f5c9" !important; }
+
+.fa-eye::before { content: "\f06e" !important; }
+.fa-eye-slash::before { content: "\f070" !important; }
+
+.fa-ear-listen::before,
+.fa-ear-deaf::before { content: "\f2a2" !important; }
+
+.fa-hand-holding-heart::before { content: "\f4be" !important; }
+.fa-hand-holding-medical::before { content: "\e05c" !important; }
+
+.fa-hands::before { content: "\f2a7" !important; }
+
+/* --- Fichiers & Documents --- */
+.fa-file::before { content: "\f15b" !important; }
+.fa-file-alt::before,
+.fa-file-lines::before { content: "\f15c" !important; }
+.fa-file-pdf::before { content: "\f1c1" !important; }
+.fa-file-image::before { content: "\f1c5" !important; }
+.fa-file-word::before { content: "\f1c2" !important; }
+.fa-file-excel::before { content: "\f1c3" !important; }
+.fa-file-powerpoint::before { content: "\f1c4" !important; }
+.fa-file-video::before { content: "\f1c8" !important; }
+.fa-file-audio::before { content: "\f1c7" !important; }
+.fa-file-archive::before { content: "\f1c6" !important; }
+.fa-file-code::before { content: "\f1c9" !important; }
+.fa-file-csv::before { content: "\f6dd" !important; }
+.fa-file-signature::before { content: "\f573" !important; }
+.fa-file-contract::before { content: "\f56c" !important; }
+.fa-file-invoice::before { content: "\f570" !important; }
+.fa-file-prescription::before { content: "\f572" !important; }
+
+.fa-folder::before { content: "\f07b" !important; }
+.fa-folder-open::before { content: "\f07c" !important; }
+
+.fa-paperclip::before { content: "\f0c6" !important; }
+
+.fa-image::before { content: "\f03e" !important; }
+.fa-images::before { content: "\f302" !important; }
+.fa-camera::before { content: "\f030" !important; }
+.fa-video::before { content: "\f03d" !important; }
+
+/* --- Communication --- */
+.fa-comment::before { content: "\f075" !important; }
+.fa-comment-dots::before { content: "\f4ad" !important; }
+.fa-comment-medical::before { content: "\f7f5" !important; }
+.fa-comments::before { content: "\f086" !important; }
+
+.fa-envelope::before { content: "\f0e0" !important; }
+.fa-envelope-open::before { content: "\f2b6" !important; }
+
+.fa-phone::before { content: "\f095" !important; }
+.fa-phone-alt::before,
+.fa-phone-flip::before { content: "\f879" !important; }
+.fa-phone-volume::before { content: "\f2a0" !important; }
+
+.fa-mobile::before { content: "\f3ce" !important; }
+.fa-mobile-alt::before,
+.fa-mobile-screen::before { content: "\f3cd" !important; }
+
+.fa-video-camera::before,
+.fa-video-camera-alt::before { content: "\f03d" !important; }
+
+.fa-microphone::before { content: "\f130" !important; }
+.fa-microphone-slash::before { content: "\f131" !important; }
+
+.fa-headset::before { content: "\f590" !important; }
+
+.fa-paper-plane::before { content: "\f1d8" !important; }
+
+/* --- Flèches & Navigation --- */
+.fa-arrow-left::before { content: "\f060" !important; }
+.fa-arrow-right::before { content: "\f061" !important; }
+.fa-arrow-up::before { content: "\f062" !important; }
+.fa-arrow-down::before { content: "\f063" !important; }
+
+.fa-chevron-left::before { content: "\f053" !important; }
+.fa-chevron-right::before { content: "\f054" !important; }
+.fa-chevron-up::before { content: "\f077" !important; }
+.fa-chevron-down::before { content: "\f078" !important; }
+
+.fa-angle-left::before { content: "\f104" !important; }
+.fa-angle-right::before { content: "\f105" !important; }
+.fa-angle-up::before { content: "\f106" !important; }
+.fa-angle-down::before { content: "\f107" !important; }
+
+.fa-caret-left::before { content: "\f0d9" !important; }
+.fa-caret-right::before { content: "\f0da" !important; }
+.fa-caret-up::before { content: "\f0d8" !important; }
+.fa-caret-down::before { content: "\f0d7" !important; }
+
+.fa-arrow-circle-left::before { content: "\f0a8" !important; }
+.fa-arrow-circle-right::before { content: "\f0a9" !important; }
+
+.fa-long-arrow-alt-left::before { content: "\f30a" !important; }
+.fa-long-arrow-alt-right::before { content: "\f30b" !important; }
+
+/* --- Statut & Notifications --- */
+.fa-check::before { content: "\f00c" !important; }
+.fa-check-circle::before { content: "\f058" !important; }
+.fa-check-double::before { content: "\f560" !important; }
+
+.fa-times::before,
+.fa-xmark::before { content: "\f00d" !important; }
+.fa-times-circle::before,
+.fa-xmark-circle::before { content: "\f057" !important; }
+
+.fa-exclamation::before { content: "\21" !important; }
+.fa-exclamation-circle::before { content: "\f06a" !important; }
+.fa-exclamation-triangle::before { content: "\f071" !important; }
+
+.fa-info::before { content: "\f129" !important; }
+.fa-info-circle::before { content: "\f05a" !important; }
+
+.fa-question::before { content: "\3f" !important; }
+.fa-question-circle::before { content: "\f059" !important; }
+
+.fa-ban::before { content: "\f05e" !important; }
+
+.fa-spinner::before { content: "\f110" !important; }
+.fa-circle-notch::before { content: "\f1ce" !important; }
+
+.fa-sync::before,
+.fa-sync-alt::before { content: "\f2f1" !important; }
+
+.fa-redo::before { content: "\f01e" !important; }
+.fa-undo::before { content: "\f0e2" !important; }
+
+/* --- Étoiles & Évaluations --- */
+.fa-star::before { content: "\f005" !important; }
+.fa-star-half::before,
+.fa-star-half-stroke::before { content: "\f5c0" !important; }
+.fa-star-half-alt::before { content: "\f5c0" !important; }
+.fa-star-of-life::before { content: "\f621" !important; }
+
+/* --- Divers --- */
+.fa-box::before { content: "\f466" !important; }
+.fa-boxes::before { content: "\f468" !important; }
+.fa-box-open::before { content: "\f49e" !important; }
+
+.fa-receipt::before { content: "\f543" !important; }
+.fa-ticket::before { content: "\f3ff" !important; }
+.fa-ticket-alt::before { content: "\f3ff" !important; }
+
+.fa-tag::before { content: "\f02b" !important; }
+.fa-tags::before { content: "\f02c" !important; }
+
+.fa-shopping-cart::before { content: "\f07a" !important; }
+.fa-shopping-bag::before { content: "\f290" !important; }
+.fa-shopping-basket::before { content: "\f291" !important; }
+.fa-cart-plus::before { content: "\f217" !important; }
+.fa-cart-arrow-down::before { content: "\f218" !important; }
+
+.fa-credit-card::before { content: "\f09d" !important; }
+
+.fa-gift::before { content: "\f06b" !important; }
+
+.fa-newspaper::before { content: "\f1ea" !important; }
+
+.fa-list::before { content: "\f03a" !important; }
+.fa-list-ol::before { content: "\f0cb" !important; }
+.fa-list-ul::before { content: "\f0ca" !important; }
+.fa-list-check::before,
+.fa-tasks::before { content: "\f0ae" !important; }
+
+.fa-clipboard::before { content: "\f328" !important; }
+.fa-clipboard-list::before { content: "\f46d" !important; }
+.fa-clipboard-check::before { content: "\f46c" !important; }
+
+.fa-filter::before { content: "\f0b0" !important; }
+
+.fa-sort::before { content: "\f0dc" !important; }
+.fa-sort-up::before { content: "\f0de" !important; }
+.fa-sort-down::before { content: "\f0dd" !important; }
+
+.fa-database::before { content: "\f1c0" !important; }
+
+.fa-cloud::before { content: "\f0c2" !important; }
+.fa-cloud-upload::before { content: "\f0ee" !important; }
+.fa-cloud-download::before { content: "\f0ed" !important; }
+
+.fa-wifi::before { content: "\f1eb" !important; }
+
+.fa-bluetooth::before { content: "\f293" !important; }
+
+.fa-battery-full::before { content: "\f240" !important; }
+.fa-battery-three-quarters::before { content: "\f241" !important; }
+.fa-battery-half::before { content: "\f242" !important; }
+.fa-battery-quarter::before { content: "\f243" !important; }
+.fa-battery-empty::before { content: "\f244" !important; }
+
+.fa-sun::before { content: "\f185" !important; }
+.fa-moon::before { content: "\f186" !important; }
+
+.fa-globe::before { content: "\f0ac" !important; }
+
+.fa-flag::before { content: "\f024" !important; }
+
+.fa-book::before { content: "\f02d" !important; }
+.fa-book-medical::before { content: "\f7e6" !important; }
+.fa-book-open::before { content: "\f518" !important; }
+
+.fa-address-book::before { content: "\f2b9" !important; }
+.fa-address-card::before { content: "\f2bb" !important; }
+.fa-id-card::before { content: "\f2c2" !important; }
+.fa-id-card-alt::before { content: "\f47f" !important; }
+
+.fa-venus::before { content: "\f221" !important; }
+.fa-mars::before { content: "\f222" !important; }
+
+.fa-baby::before { content: "\f77c" !important; }
+.fa-child::before { content: "\f1ae" !important; }
+.fa-person::before { content: "\f183" !important; }
+.fa-person-booth::before { content: "\f756" !important; }
+
+.fa-seedling::before { content: "\f4d8" !important; }
+.fa-leaf::before { content: "\f06c" !important; }
+.fa-tree::before { content: "\f1bb" !important; }
+
+.fa-crown::before { content: "\f521" !important; }
+.fa-award::before { content: "\f559" !important; }
+.fa-medal::before { content: "\f5a2" !important; }
+.fa-trophy::before { content: "\f091" !important; }
+.fa-certificate::before { content: "\f0a3" !important; }
+
+.fa-shield::before { content: "\f132" !important; }
+.fa-shield-alt::before,
+.fa-shield-halved::before { content: "\f3ed" !important; }
+.fa-shield-virus::before { content: "\e06c" !important; }
+
+.fa-handshake::before { content: "\f2b5" !important; }
+
+.fa-thumbs-up::before { content: "\f164" !important; }
+.fa-thumbs-down::before { content: "\f165" !important; }
+
+.fa-smile::before { content: "\f118" !important; }
+.fa-frown::before { content: "\f119" !important; }
+.fa-meh::before { content: "\f11a" !important; }
+
+.fa-ellipsis-h::before { content: "\f141" !important; }
+.fa-ellipsis-v::before { content: "\f142" !important; }
+
+.fa-bars::before { content: "\f0c9" !important; }
+.fa-grip::before { content: "\f58d" !important; }
+
+.fa-external-link::before,
+.fa-external-link-alt::before { content: "\f35d" !important; }
+
+.fa-history::before { content: "\f1da" !important; }
+
+.fa-expand::before { content: "\f065" !important; }
+.fa-compress::before { content: "\f066" !important; }
+
+.fa-expand-arrows-alt::before { content: "\f31e" !important; }
+
+.fa-qrcode::before { content: "\f029" !important; }
+.fa-barcode::before { content: "\f02a" !important; }
+
+.fa-palette::before { content: "\f53f" !important; }
+.fa-paint-brush::before { content: "\f1fc" !important; }
+
+.fa-theater-masks::before { content: "\f630" !important; }
+
+.fa-language::before { content: "\f1ab" !important; }
+
+.fa-circle::before { content: "\f111" !important; }
+.fa-dot-circle::before { content: "\f192" !important; }
+
+.fa-play::before { content: "\f04b" !important; }
+.fa-pause::before { content: "\f04c" !important; }
+.fa-stop::before { content: "\f04d" !important; }
+
+.fa-volume-up::before { content: "\f028" !important; }
+.fa-volume-down::before { content: "\f027" !important; }
+.fa-volume-mute::before { content: "\f6a9" !important; }
+.fa-volume-off::before { content: "\f026" !important; }
+
+.fa-music::before { content: "\f001" !important; }
+
+.fa-toggle-on::before { content: "\f205" !important; }
+.fa-toggle-off::before { content: "\f204" !important; }
+
+.fa-table::before { content: "\f0ce" !important; }
+
+.fa-chart-area::before { content: "\f1fe" !important; }
+
+.fa-percent::before { content: "\25" !important; }
+.fa-percentage::before { content: "\f541" !important; }
+
+.fa-hashtag::before { content: "\23" !important; }
+.fa-at::before { content: "\40" !important; }
+
+.fa-graduation-cap::before { content: "\f19d" !important; }
+
+.fa-paw::before { content: "\f1b0" !important; }
+
+/* ============================================
+   CORRECTION EMPÊCHANT L'AFFICHAGE 
+   DE CARACTÈRES ÉTRANGES
+   ============================================ */
+
+/* Empêche l'affichage de rectangles vides ou symboles inconnus */
+.fa:not(:defined)::before,
+.fas:not(:defined)::before,
+.far:not(:defined)::before,
+.fab:not(:defined)::before {
+    display: inline-block;
+    content: " ";  /* espace de secours */
+    width: 1em;
+    height: 1em;
+}
+
+/* Forcer la taille minimale pour éviter le collapse */
+i.fa, i.fas, i.far, i.fab {
+    min-width: 1em;
+    min-height: 1em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============================================
+   GESTION DES EMOJIS
+   ============================================ */
+
+/* Support multi-plateforme des emojis */
+* {
+    font-variant-emoji: emoji;
+}
+
+/* Forcer l'affichage des emojis en couleur */
+span[role="img"],
+span.emoji,
+.emoji {
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "EmojiOne Color", "Android Emoji", sans-serif;
+}
+
+/* ============================================
+   RÈGLES DE COMPATIBILITÉ SUPPLÉMENTAIRES
+   ============================================ */
+
+/* Si Font Awesome n'est pas chargé du tout, ces règles garantissent un fallback minimal */
+@supports not (font-family: "Font Awesome 6 Free") {
+    i.fa-solid::before,
+    i.fas::before {
+        font-family: system-ui, sans-serif;
+        content: "•";
+    }
+}
+
 /* ============================================
    FIN DU CSS
    ============================================ */
