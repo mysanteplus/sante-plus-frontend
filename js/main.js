@@ -4184,13 +4184,18 @@ let isTransitioning = false;
 let pendingView = null;
 
 window.switchView = async function(viewName) {
+    // ✅ Sauvegarder la vue précédente AVANT tout changement
+    if (AppState.currentView && AppState.currentView !== viewName) {
+        localStorage.setItem("previous_view", AppState.currentView);
+        console.log("📌 Vue précédente sauvegardée:", AppState.currentView);
+    }
+
     if (isTransitioning) {
         pendingView = viewName;
         return;
     }
 
-
-     if (AppState.currentView === viewName) {
+    if (AppState.currentView === viewName) {
         console.log(`ℹ️ Déjà sur la vue ${viewName}`);
         return;
     }
@@ -6211,5 +6216,24 @@ window.forgotPassword = async () => {
 
 // Appeler dans initApp()
 initPullToRefresh();
+
+
+// ============================================================
+// FONCTION RETOUR VERS LA VUE PRÉCÉDENTE
+// ============================================================
+
+window.goBack = function() {
+    const previousView = localStorage.getItem("previous_view");
+    
+    // Si pas de vue précédente ou c'est la même, aller sur patients
+    if (!previousView || previousView === AppState.currentView) {
+        console.log("🔙 Pas de vue précédente, retour vers patients");
+        window.switchView("patients");
+        return;
+    }
+    
+    console.log("🔙 Retour vers:", previousView);
+    window.switchView(previousView);
+};
 
 initApp();
