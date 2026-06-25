@@ -4269,8 +4269,6 @@ const ROLE_VIEWS = {
         "add-patient",
         "add-aidant",
         "link-family",
-        "end-visit",
-        "start-visit",
          "admin",
         "admin-setup",
         "admin-users",
