@@ -43,6 +43,143 @@ window.db = db;
 
 const messaging = window.messaging;
 
+// ============================================================
+// SERVICE WORKER - MISE À JOUR AUTOMATIQUE
+// ============================================================
+
+async function setupServiceWorkerUpdate() {
+  if (!('serviceWorker' in navigator)) return;
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    
+    // Vérifier les mises à jour toutes les 5 minutes
+    setInterval(() => {
+      registration.update();
+      console.log('🔄 [SW] Vérification automatique des mises à jour');
+    }, 5 * 60 * 1000);
+
+    // Écouter les messages du SW
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.type === 'SW_UPDATED') {
+        console.log('🔄 [SW] Nouvelle version disponible:', event.data.version);
+        showUpdateNotification(event.data.version);
+      }
+    });
+
+    // Détecter la mise à jour du SW
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
+      
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          console.log('🔄 [SW] Mise à jour disponible');
+          showUpdateNotification();
+        }
+      });
+    });
+
+    console.log('✅ [SW] Mise à jour automatique configurée');
+
+  } catch (err) {
+    console.error('❌ [SW] Erreur configuration:', err);
+  }
+}
+
+// ============================================================
+// AFFICHER LA NOTIFICATION DE MISE À JOUR
+// ============================================================
+
+function showUpdateNotification(version) {
+  // Vérifier si la notification a déjà été affichée
+  const lastNotified = localStorage.getItem('sw_update_notified');
+  const now = Date.now();
+  
+  // Ne pas afficher plus d'une fois par heure
+  if (lastNotified && (now - parseInt(lastNotified)) < 3600000) {
+    return;
+  }
+  
+  localStorage.setItem('sw_update_notified', now.toString());
+  
+  Swal.fire({
+    icon: 'info',
+    title: '🔄 Mise à jour disponible',
+    html: `
+      <div class="text-center">
+        <p class="text-sm text-slate-600">
+          Une nouvelle version de l'application est disponible.
+        </p>
+        <p class="text-[10px] text-slate-400 mt-2">
+          Version: ${version || 'nouvelle'}
+        </p>
+      </div>
+    `,
+    confirmButtonText: '🔄 Mettre à jour maintenant',
+    confirmButtonColor: '#10B981',
+    showCancelButton: true,
+    cancelButtonText: 'Plus tard',
+    cancelButtonColor: '#94A3B8',
+    customClass: { popup: 'rounded-2xl p-6' }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.removeItem('sw_update_notified');
+      window.location.reload();
+    }
+  });
+}
+
+// ============================================================
+// FORCER LA MISE À JOUR (bouton caché ou accessible)
+// ============================================================
+
+window.forceSWUpdate = async () => {
+  if (!('serviceWorker' in navigator)) return;
+  
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    await registration.update();
+    showToast("Vérification des mises à jour...", "info", 2000);
+    
+    // Vérifier si une nouvelle version est trouvée
+    const newWorker = registration.installing || registration.waiting;
+    if (newWorker) {
+      newWorker.postMessage({ type: 'SKIP_WAITING' });
+      showToast("Mise à jour en cours...", "info", 1500);
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      showToast("✅ Application à jour", "success", 1500);
+    }
+  } catch (err) {
+    console.error('❌ Erreur mise à jour:', err);
+    showToast("Erreur lors de la mise à jour", "error", 2000);
+  }
+};
+
+// ============================================================
+// INITIALISATION DU SW
+// ============================================================
+
+// Appeler dans initApp() ou au démarrage
+if ('serviceWorker' in navigator) {
+  // Enregistrer le SW
+  navigator.serviceWorker.register('/sw.js', {
+    scope: '/'
+  }).then((registration) => {
+    console.log('✅ [SW] Enregistré avec succès');
+    
+    // Vérifier les mises à jour au démarrage
+    setTimeout(() => {
+      registration.update();
+    }, 3000);
+    
+    // Configurer la mise à jour automatique
+    setupServiceWorkerUpdate();
+    
+  }).catch((err) => {
+    console.error('❌ [SW] Erreur enregistrement:', err);
+  });
+}
 
 
 // ============================================================
@@ -270,7 +407,54 @@ function updatePWAIcon(isMaman) {
         favicon.href = iconUrl;
     }
 }
+
+
+
+
 // ============================================================
+// VÉRIFICATION DE VERSION AU DÉMARRAGE
+// ============================================================
+
+async function checkAppVersion() {
+  try {
+    const response = await fetch('/version.json', { 
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+    
+    if (!response.ok) return;
+    
+    const data = await response.json();
+    const currentVersion = data.version;
+    
+    // Récupérer la version stockée localement
+    const storedVersion = localStorage.getItem('app_version');
+    
+    if (!storedVersion) {
+      // Première visite, stocker la version
+      localStorage.setItem('app_version', currentVersion);
+      return;
+    }
+    
+    if (storedVersion !== currentVersion) {
+      console.log(`🔄 Nouvelle version détectée: ${storedVersion} → ${currentVersion}`);
+      localStorage.setItem('app_version', currentVersion);
+      
+      // Vider le cache IndexedDB (db)
+      if (window.db && db.clearAll) {
+        await db.clearAll();
+      }
+      
+      // Afficher la notification de mise à jour
+      showUpdateNotification(currentVersion);
+    }
+    
+  } catch (err) {
+    console.warn('⚠️ Erreur vérification version:', err.message);
+  }
+}
+
+ // ============================================================
 // VARIABLES GLOBALES
 // ============================================================
 // Stocke l'invite d'installation PWA
@@ -454,6 +638,8 @@ async function initApp() {
     initPushNotifications();
     applyUserTheme();
     await refreshSubscriptionStatus();
+    await checkAppVersion();
+
 
 // Écouter les changements de visites en temps réel
 if (window.Realtime && window.Realtime.subscribeToVisites) {
