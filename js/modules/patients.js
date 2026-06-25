@@ -1,4 +1,4 @@
-// modules/patients.js 
+// modules/patients.js -
 
 import { secureFetch } from "../core/api.js";
 import { AppState } from "../core/state.js";
@@ -113,7 +113,7 @@ export async function loadPatients() {
 }
 
 // ============================================================
-// 2. RENDU DE LA LISTE DES PATIENTS (CORRIGÉ)
+// 2. RENDU DE LA LISTE DES PATIENTS (CORRIGÉ - UNIFIÉ)
 // ============================================================
 
 export function renderPatients() {
@@ -144,13 +144,13 @@ export function renderPatients() {
         const isVisitActive = localStorage.getItem("active_visit_id") !== null;
         
         // ============================================================
-        // ✅ ACTIONS ADAPTÉES À CHAQUE RÔLE
+        // ✅ ACTIONS UNIFIÉES - UN SEUL BOUTON PRINCIPAL PAR RÔLE
         // ============================================================
         let actionButtons = '';
 
         if (userRole === "AIDANT") {
             actionButtons = `
-                <div class="grid grid-cols-3 gap-2 mt-3">
+                <div class="grid grid-cols-2 gap-2 mt-3">
                     ${isVisitActive ? `
                         <button onclick="event.stopPropagation(); window.openEndVisit()"
                                 class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
@@ -161,33 +161,42 @@ export function renderPatients() {
                         <button onclick="event.stopPropagation(); window.viewPatientDetails('${p.id}')"
                                 class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
                                 style="background: ${primaryLight}; color: ${primaryColor};">
-                            <i class="fa-solid fa-eye mr-1"></i> Briefing
+                            <i class="fa-solid fa-eye mr-1"></i> Dossier
                         </button>
                     `}
-                    <button onclick="event.stopPropagation(); window.viewPatientFeed('${p.id}')"
-                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
-                            style="background: #EEF2FF; color: #4F46E5;">
-                        <i class="fa-solid fa-newspaper mr-1"></i> Journal
-                    </button>
                     <button onclick="event.stopPropagation(); window.switchView('planning')"
                             class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
-                            style="background: #F3E8FF; color: #7C3AED;">
+                            style="background: #EEF2FF; color: #4F46E5;">
                         <i class="fa-solid fa-calendar-days mr-1"></i> Planning
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 gap-2 mt-2">
+                    <button onclick="event.stopPropagation(); window.viewPatientFeed('${p.id}')"
+                            class="w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: #F3E8FF; color: #7C3AED;">
+                        <i class="fa-solid fa-newspaper mr-1"></i> 📖 Journal
                     </button>
                 </div>
             `;
         } else if (userRole === "COORDINATEUR") {
             actionButtons = `
-                <div class="grid grid-cols-3 gap-2 mt-3">
+                <div class="grid grid-cols-2 gap-2 mt-3">
                     <button onclick="event.stopPropagation(); window.viewPatientDetails('${p.id}')"
                             class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
                             style="background: ${primaryLight}; color: ${primaryColor};">
                         <i class="fa-solid fa-folder-open mr-1"></i> Dossier
                     </button>
-                    <button onclick="event.stopPropagation(); window.viewPatientFeed('${p.id}')"
+                    <button onclick="event.stopPropagation(); window.switchView('planning')"
                             class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
                             style="background: #EEF2FF; color: #4F46E5;">
-                        <i class="fa-solid fa-newspaper mr-1"></i> Journal
+                        <i class="fa-solid fa-calendar-days mr-1"></i> Planning
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button onclick="event.stopPropagation(); window.viewPatientFeed('${p.id}')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: #F3E8FF; color: #7C3AED;">
+                        <i class="fa-solid fa-newspaper mr-1"></i> 📖 Journal
                     </button>
                     <button onclick="event.stopPropagation(); window.switchView('map')"
                             class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
@@ -198,26 +207,28 @@ export function renderPatients() {
             `;
         } else if (userRole === "FAMILLE") {
             actionButtons = `
-                <div class="grid grid-cols-4 gap-2 mt-3">
-                    <button onclick="event.stopPropagation(); window.viewPatientFeed('${p.id}')"
+                <div class="grid grid-cols-2 gap-2 mt-3">
+                    <button onclick="event.stopPropagation(); window.viewPatientDetails('${p.id}')"
                             class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
                             style="background: ${primaryLight}; color: ${primaryColor};">
-                        <i class="fa-solid fa-newspaper mr-1"></i> Journal
+                        <i class="fa-solid fa-folder-open mr-1"></i> Dossier
                     </button>
                     <button onclick="event.stopPropagation(); window.switchView('map')"
                             class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
                             style="background: #FEF3C7; color: #D97706;">
                         <i class="fa-solid fa-location-dot mr-1"></i> Suivre
                     </button>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button onclick="event.stopPropagation(); window.viewPatientFeed('${p.id}')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: #F3E8FF; color: #7C3AED;">
+                        <i class="fa-solid fa-newspaper mr-1"></i> 📖 Journal
+                    </button>
                     <button onclick="event.stopPropagation(); window.viewVisitHistory('${p.id}')"
                             class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
                             style="background: #F3E8FF; color: #7C3AED;">
                         <i class="fa-solid fa-clock-rotate-left mr-1"></i> Historique
-                    </button>
-                    <button onclick="event.stopPropagation(); window.switchView('billing')"
-                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
-                            style="background: #FEF3C7; color: #B45309;">
-                        <i class="fa-solid fa-file-invoice mr-1"></i> Factures
                     </button>
                 </div>
             `;
@@ -300,7 +311,7 @@ export async function renderAddPatientView() {
     container.innerHTML = `
         <div class="animate-fadeIn max-w-2xl mx-auto pb-32">
             <div class="flex items-center gap-4 mb-8">
-                <button onclick="window.switchView('patients')" class="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 active:scale-95">
+                <button onclick="window.goBack()" class="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 active:scale-95">
                     <i class="fa-solid fa-arrow-left"></i>
                 </button>
                 <div>
@@ -498,7 +509,7 @@ async function openFormuleSelector() {
 }
 
 // ============================================================
-// 6. VUE : FICHE PATIENT (DÉTAIL) - CORRIGÉE
+// 6. VUE : FICHE PATIENT (DOSSIER COMPLET)
 // ============================================================
 
 export async function renderPatientDetailsView(patientId) {
@@ -513,15 +524,11 @@ export async function renderPatientDetailsView(patientId) {
     try {
         let p = await secureFetch(`/patients/${patientId}`);
         
-        console.log("📋 Patient reçu (brut):", p);
-        
         if (Array.isArray(p) && p.length > 0) {
             p = p[0];
-            console.log("📋 Patient après extraction:", p);
         }
         
         if (!p || typeof p !== 'object' || !p.id) {
-            console.error("❌ Patient invalide:", p);
             throw new Error("Patient non trouvé ou format invalide");
         }
         
@@ -530,8 +537,168 @@ export async function renderPatientDetailsView(patientId) {
         const isPremium = p.formule === 'Premium' || p.type_pack === 'Premium';
         const initials = p.nom_complet?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || '??';
         
+        // Récupérer l'abonnement du patient
+        let subscriptionInfo = null;
+        try {
+            const subscriptions = await secureFetch(`/billing`);
+            if (Array.isArray(subscriptions) && subscriptions.length > 0) {
+                // Trouver l'abonnement actif du patient
+                const activeSub = subscriptions.find(s => s.patient_id === p.id && s.statut === "Payé");
+                if (activeSub) {
+                    subscriptionInfo = activeSub;
+                } else {
+                    // Prendre le dernier abonnement
+                    const lastSub = subscriptions.filter(s => s.patient_id === p.id).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+                    subscriptionInfo = lastSub || null;
+                }
+            }
+        } catch (err) {
+            console.warn("Erreur chargement abonnement:", err);
+        }
+        
         // ============================================================
-        // ✅ ACTIONS SPÉCIFIQUES AU RÔLE DANS LA FICHE PATIENT
+        // ✅ DOSSIER COMPLET - TOUTES LES INFOS DU PATIENT
+        // ============================================================
+        let dossierContent = '';
+
+        // Informations personnelles
+        dossierContent += `
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-4">
+                <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-user text-emerald-500"></i> Identité
+                </h4>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Nom complet</p>
+                        <p class="font-bold text-slate-800">${escapeHtml(p.nom_complet || 'Non renseigné')}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Âge / Sexe</p>
+                        <p class="font-bold text-slate-800">${p.age || '?'} ans • ${p.sexe || 'Non renseigné'}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Téléphone</p>
+                        <p class="font-bold text-slate-800">${escapeHtml(p.telephone || 'Non renseigné')}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Contact urgence</p>
+                        <p class="font-bold text-slate-800">${escapeHtml(p.contact_urgence || 'Non renseigné')}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Adresse
+        dossierContent += `
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-4">
+                <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-location-dot text-blue-500"></i> Adresse
+                </h4>
+                <p class="text-sm text-slate-700">${escapeHtml(p.adresse || 'Adresse non renseignée')}</p>
+                ${p.lat && p.lng ? `
+                    <div class="mt-2 flex items-center gap-2">
+                        <span class="text-[9px] bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full font-bold">
+                            <i class="fa-solid fa-check-circle"></i> Géolocalisé
+                        </span>
+                        <button onclick="window.switchView('map')" class="text-[9px] text-blue-500 font-bold hover:underline">
+                            Voir sur la carte →
+                        </button>
+                    </div>
+                ` : `
+                    <p class="text-[9px] text-amber-500 mt-1">⚠️ Position GPS non enregistrée</p>
+                `}
+            </div>
+        `;
+
+        // Informations médicales (pour ADMIN et AIDANT)
+        if (userRole === "COORDINATEUR" || userRole === "AIDANT") {
+            dossierContent += `
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-4">
+                    <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-heartbeat text-rose-500"></i> Informations médicales
+                    </h4>
+                    ${p.pathologies && p.pathologies.length > 0 ? `
+                        <div class="mb-2">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Pathologies</p>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                ${p.pathologies.map(path => `<span class="px-2 py-1 bg-rose-50 text-rose-600 rounded-full text-[9px] font-bold">${escapeHtml(path)}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${p.traitements ? `
+                        <div class="mb-2">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Traitements</p>
+                            <p class="text-sm text-slate-700">${escapeHtml(p.traitements)}</p>
+                        </div>
+                    ` : ''}
+                    ${p.allergies ? `
+                        <div class="mb-2">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Allergies</p>
+                            <p class="text-sm text-slate-700">${escapeHtml(p.allergies)}</p>
+                        </div>
+                    ` : ''}
+                    ${p.notes_medicales ? `
+                        <div>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Notes médicales</p>
+                            <p class="text-sm text-slate-700 italic">"${escapeHtml(p.notes_medicales)}"</p>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Abonnement et paiement (pour ADMIN et FAMILLE)
+        if (userRole === "COORDINATEUR" || userRole === "FAMILLE") {
+            const endDate = subscriptionInfo?.date_fin_abonnement ? new Date(subscriptionInfo.date_fin_abonnement) : null;
+            const isActive = endDate ? new Date() <= endDate : false;
+            const daysRemaining = endDate ? Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24)) : 0;
+            
+            dossierContent += `
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-4">
+                    <h4 class="font-black text-slate-800 text-sm mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-crown text-amber-500"></i> Abonnement
+                    </h4>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Pack</p>
+                            <p class="font-bold text-slate-800">${escapeHtml(p.type_pack || p.formule || 'Standard')}</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Statut</p>
+                            <p class="font-bold ${isActive ? 'text-emerald-600' : 'text-rose-600'}">
+                                ${isActive ? '✅ Actif' : '❌ Expiré'}
+                            </p>
+                        </div>
+                        ${endDate ? `
+                            <div class="col-span-2">
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Date d'expiration</p>
+                                <p class="font-bold text-slate-800">${endDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                ${isActive ? `<p class="text-[9px] ${daysRemaining <= 5 ? 'text-amber-500' : 'text-emerald-500'} font-bold">Plus que ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}</p>` : ''}
+                            </div>
+                        ` : `
+                            <div class="col-span-2">
+                                <p class="text-[9px] text-amber-500">⚠️ Aucun abonnement actif</p>
+                            </div>
+                        `}
+                        ${subscriptionInfo?.montant_du ? `
+                            <div>
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Montant</p>
+                                <p class="font-bold text-slate-800">${subscriptionInfo.montant_du.toLocaleString()} CFA</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Statut paiement</p>
+                                <p class="font-bold ${subscriptionInfo.statut === 'Payé' ? 'text-emerald-600' : 'text-amber-600'}">
+                                    ${subscriptionInfo.statut === 'Payé' ? '✅ Payé' : '⏳ En attente'}
+                                </p>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============================================================
+        // ✅ ACTIONS SPÉCIFIQUES AU RÔLE
         // ============================================================
         let actionButtons = '';
         
@@ -555,14 +722,16 @@ export async function renderPatientDetailsView(patientId) {
                         <i class="fa-solid fa-calendar-days mr-2"></i> Planning
                     </button>
                 </div>
+                <div class="grid grid-cols-1 gap-2 mt-2">
+                    <button onclick="window.viewPatientFeed('${p.id}')" 
+                            class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                        <i class="fa-solid fa-newspaper mr-2"></i> 📖 Journal de soins
+                    </button>
+                </div>
             `;
         } else if (userRole === "COORDINATEUR") {
             actionButtons = `
-                <div class="grid grid-cols-3 gap-2 mt-4">
-                    <button onclick="window.viewPatientFeed('${p.id}')" 
-                            class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
-                        <i class="fa-solid fa-newspaper mr-2"></i> Journal
-                    </button>
+                <div class="grid grid-cols-2 gap-2 mt-4">
                     <button onclick="window.switchView('planning')" 
                             class="w-full py-3 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
                         <i class="fa-solid fa-calendar-days mr-2"></i> Planning
@@ -572,23 +741,29 @@ export async function renderPatientDetailsView(patientId) {
                         <i class="fa-solid fa-location-dot mr-2"></i> Radar
                     </button>
                 </div>
+                <div class="grid grid-cols-1 gap-2 mt-2">
+                    <button onclick="window.viewPatientFeed('${p.id}')" 
+                            class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                        <i class="fa-solid fa-newspaper mr-2"></i> 📖 Journal de soins
+                    </button>
+                </div>
             `;
         } else if (userRole === "FAMILLE") {
             actionButtons = `
                 <div class="grid grid-cols-2 gap-2 mt-4">
-                    <button onclick="window.viewPatientFeed('${p.id}')" 
-                            class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
-                        <i class="fa-solid fa-newspaper mr-2"></i> Journal
-                    </button>
                     <button onclick="window.switchView('map')" 
                             class="w-full py-3 bg-amber-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
                         <i class="fa-solid fa-location-dot mr-2"></i> Suivre l'aidant
                     </button>
-                </div>
-                <div class="grid grid-cols-2 gap-2 mt-2">
                     <button onclick="window.viewVisitHistory('${p.id}')" 
                             class="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
                         <i class="fa-solid fa-clock-rotate-left mr-2"></i> Historique
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button onclick="window.viewPatientFeed('${p.id}')" 
+                            class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                        <i class="fa-solid fa-newspaper mr-2"></i> 📖 Journal de soins
                     </button>
                     <button onclick="window.switchView('billing')" 
                             class="w-full py-3 bg-slate-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
@@ -600,6 +775,18 @@ export async function renderPatientDetailsView(patientId) {
         
         container.innerHTML = `
             <div class="animate-fadeIn max-w-lg mx-auto pb-32">
+                <!-- ✅ BOUTON RETOUR VERS LA VUE PRÉCÉDENTE -->
+                <div class="flex items-center gap-4 mb-6">
+                    <button onclick="window.goBack()" class="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 active:scale-95">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h3 class="font-black text-xl text-slate-800">Dossier patient</h3>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Toutes les informations</p>
+                    </div>
+                </div>
+
+                <!-- En-tête avec photo -->
                 <div class="flex flex-col items-center text-center mb-6">
                     <div class="relative">
                         <div class="w-24 h-24 bg-white rounded-2xl flex items-center justify-center text-3xl font-black text-slate-300 shadow-xl border-4 border-white mb-4">
@@ -611,34 +798,20 @@ export async function renderPatientDetailsView(patientId) {
                     <div class="flex flex-wrap gap-2 mt-2">
                         ${isMaman ? `<span class="badge-pink px-3 py-1 rounded-full text-[10px] font-bold"><i class="fa-solid fa-baby-carriage mr-1"></i> Maman & Bébé</span>` : `<span class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-bold"><i class="fa-solid fa-user-plus mr-1"></i> Dossier Sénior</span>`}
                         ${isPremium ? `<span class="badge-gold px-3 py-1 rounded-full text-[10px] font-bold"><i class="fa-solid fa-crown mr-1"></i> Premium</span>` : ''}
+                        <span class="bg-${isActive ? 'emerald' : 'rose'}-50 text-${isActive ? 'emerald' : 'rose'}-600 px-3 py-1 rounded-full text-[10px] font-bold">
+                            ${isActive ? '✅ Actif' : '❌ Expiré'}
+                        </span>
                     </div>
                 </div>
 
-                <div class="${isMaman ? 'maman-banner' : 'premium-banner'} p-4 rounded-xl mb-6 text-center">
-                    <p class="text-[10px] font-black uppercase tracking-wider">${isMaman ? '👶 Programme Maman & Bébé' : '⭐ Programme Premium'}</p>
-                    <p class="text-sm font-bold mt-1 ${isMaman ? 'text-rose-primary' : 'text-slate-800'}">${isMaman ? 'Accompagnement personnalisé post-maternité' : 'Accès prioritaire et services exclusifs'}</p>
-                </div>
+                <!-- ✅ DOSSIER COMPLET -->
+                ${dossierContent}
 
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <div class="bg-white p-4 rounded-xl border border-slate-100">
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-phone mr-1"></i> Urgence</p>
-                        <p class="text-xs font-semibold text-slate-700 mt-1">${escapeHtml(p.contact_urgence || 'Non renseigné')}</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl border border-slate-100">
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-box mr-1"></i> Pack</p>
-                        <p class="text-xs font-semibold text-slate-700 mt-1">${escapeHtml(p.type_pack || p.formule || 'Standard')}</p>
-                    </div>
-                    <div class="col-span-2 ${isMaman ? 'bg-pink-50 border-pink-100' : 'bg-amber-50 border-amber-100'} p-4 rounded-xl border">
-                        <p class="text-[9px] font-black ${isMaman ? 'text-pink-500' : 'text-amber-600'} uppercase tracking-wider"><i class="fa-solid fa-heartbeat mr-1"></i> Points d'attention</p>
-                        <p class="text-sm text-slate-700 mt-1">"${escapeHtml(p.notes_medicales || 'Aucune consigne')}"</p>
-                    </div>
-                </div>
-
-                <div id="aidant-active-area" class="mt-4"></div>
-
+                <!-- ✅ ACTIONS -->
                 ${actionButtons}
 
-                <button onclick="window.switchView('patients')" class="w-full mt-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 flex items-center justify-center gap-2">
+                <!-- ✅ BOUTON RETOUR EN BAS -->
+                <button onclick="window.goBack()" class="w-full mt-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-arrow-left text-xs"></i> Retour
                 </button>
             </div>
@@ -657,7 +830,7 @@ export async function renderPatientDetailsView(patientId) {
                 <i class="fa-solid fa-circle-exclamation text-rose-500 text-3xl mb-3"></i>
                 <p class="text-sm font-bold text-rose-500">Erreur de chargement</p>
                 <p class="text-xs text-slate-400 mt-1">${escapeHtml(err.message)}</p>
-                <button onclick="window.switchView('patients')" class="mt-4 px-4 py-2 bg-slate-800 text-white rounded-xl">Retour</button>
+                <button onclick="window.goBack()" class="mt-4 px-4 py-2 bg-slate-800 text-white rounded-xl">Retour</button>
             </div>
         `;
     }
@@ -678,7 +851,7 @@ export async function renderLinkFamilyView() {
             container.innerHTML = `
                 <div class="max-w-2xl mx-auto text-center py-20 bg-white rounded-2xl">
                     <p class="text-sm font-bold text-slate-500">Aucun compte famille trouvé</p>
-                    <button onclick="window.switchView('patients')" class="mt-4 text-[10px] font-black text-blue-500">Retour</button>
+                    <button onclick="window.goBack()" class="mt-4 text-[10px] font-black text-blue-500">Retour</button>
                 </div>`;
             return;
         }
@@ -686,7 +859,7 @@ export async function renderLinkFamilyView() {
         container.innerHTML = `
             <div class="animate-fadeIn max-w-2xl mx-auto pb-32">
                 <div class="flex items-center gap-4 mb-8">
-                    <button onclick="window.switchView('patients')" class="w-10 h-10 rounded-xl bg-white shadow-sm border flex items-center justify-center">
+                    <button onclick="window.goBack()" class="w-10 h-10 rounded-xl bg-white shadow-sm border flex items-center justify-center">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
                     <div>
@@ -729,7 +902,7 @@ window.submitLinkFamily = async (patientId) => {
             body: JSON.stringify({ patient_id: patientId, famille_user_id: selected.value })
         });
         UI.success("Famille liée avec succès");
-        window.switchView("patients");
+        window.goBack();
     } catch (err) {
         Swal.fire("Erreur", err.message, "error");
     }
@@ -794,7 +967,7 @@ window.viewPatientFeed = async (patientId) => {
 };
 
 // ============================================================
-// 10. OUVRIR LA FICHE DÉTAIL D'UN PATIENT
+// 10. OUVRIR LA FICHE DÉTAIL D'UN PATIENT (DOSSIER)
 // ============================================================
 
 window.viewPatientDetails = async (patientId) => {
@@ -804,7 +977,7 @@ window.viewPatientDetails = async (patientId) => {
 };
 
 // ============================================================
-// 11. HISTORIQUE DES VISITES POUR LA FAMILLE
+// 11. HISTORIQUE DES VISITES
 // ============================================================
 
 window.viewVisitHistory = async (patientId) => {
@@ -851,4 +1024,24 @@ window.viewVisitHistory = async (patientId) => {
         console.error(err);
         UI.error("Impossible de charger l'historique");
     }
+};
+
+// ============================================================
+// 12. FONCTION RETOUR VERS LA VUE PRÉCÉDENTE
+// ============================================================
+
+window.goBack = function() {
+    const previousView = localStorage.getItem("previous_view") || "patients";
+    console.log("🔙 Retour vers:", previousView);
+    window.switchView(previousView);
+};
+
+// Sauvegarder la vue précédente avant de changer
+const originalSwitchView = window.switchView;
+window.switchView = async function(viewName) {
+    if (AppState.currentView && AppState.currentView !== viewName) {
+        localStorage.setItem("previous_view", AppState.currentView);
+        console.log("📌 Vue précédente sauvegardée:", AppState.currentView);
+    }
+    return originalSwitchView.call(this, viewName);
 };
