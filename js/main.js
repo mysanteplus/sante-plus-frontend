@@ -1,13 +1,10 @@
- // ============================================================
-// SANTÉ PLUS SERVICES - APPLICATION PRINCIPALE
 // ============================================================
-// Version: 1.0
-// Description: Application de coordination de soins à domicile
-// Auteur: Santé Plus Services
+// SANTÉ PLUS SERVICES - APPLICATION PRINCIPALE
+// Version: 2.0.2
 // ============================================================
 
 // ============================================================
-// IMPORTS DES MODULES
+// IMPORTS
 // ============================================================
 import * as Maman from "./modules/maman.js";
 import * as Education from "./modules/education.js";
@@ -39,63 +36,61 @@ import ErrorHandler from './core/errorHandler.js';
 import { startKeepAlive } from './core/keepAlive.js';
 import * as Notifications from "./modules/notifications.js";
 import db from './core/db.js';
-window.db = db;
 
+window.db = db;
 const messaging = window.messaging;
 
 // ============================================================
 // SERVICE WORKER - MISE À JOUR AUTOMATIQUE
 // ============================================================
 
-async function setupServiceWorkerUpdate() {
-  if (!('serviceWorker' in navigator)) return;
-
+/**
+ * 🚀 VÉRIFICATION DE VERSION AU DÉMARRAGE
+ */
+async function checkAppVersion() {
   try {
-    const registration = await navigator.serviceWorker.ready;
+    const response = await fetch('/version.json', { 
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' }
+    });
     
-    // Vérifier les mises à jour toutes les 5 minutes
-    setInterval(() => {
-      registration.update();
-      console.log('🔄 [SW] Vérification automatique des mises à jour');
-    }, 5 * 60 * 1000);
-
-    // Écouter les messages du SW
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data?.type === 'SW_UPDATED') {
-        console.log('🔄 [SW] Nouvelle version disponible:', event.data.version);
-        showUpdateNotification(event.data.version);
-      }
-    });
-
-    // Détecter la mise à jour du SW
-    registration.addEventListener('updatefound', () => {
-      const newWorker = registration.installing;
+    if (!response.ok) return;
+    
+    const data = await response.json();
+    const currentVersion = data.version;
+    
+    const storedVersion = localStorage.getItem('app_version');
+    
+    if (!storedVersion) {
+      localStorage.setItem('app_version', currentVersion);
+      console.log(`📦 Version initiale: ${currentVersion}`);
+      return;
+    }
+    
+    if (storedVersion !== currentVersion) {
+      console.log(`🔄 Nouvelle version détectée: ${storedVersion} → ${currentVersion}`);
+      localStorage.setItem('app_version', currentVersion);
       
-      newWorker.addEventListener('statechange', () => {
-        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          console.log('🔄 [SW] Mise à jour disponible');
-          showUpdateNotification();
-        }
-      });
-    });
-
-    console.log('✅ [SW] Mise à jour automatique configurée');
-
+      if (window.db && typeof db.clearAll === 'function') {
+        await db.clearAll();
+        console.log('🗑️ Cache IndexedDB vidé');
+      }
+      
+      showUpdateNotification(currentVersion);
+    }
+    
   } catch (err) {
-    console.error('❌ [SW] Erreur configuration:', err);
+    console.warn('⚠️ Erreur vérification version:', err.message);
   }
 }
 
-// ============================================================
-// AFFICHER LA NOTIFICATION DE MISE À JOUR
-// ============================================================
-
+/**
+ * 🔄 AFFICHER LA NOTIFICATION DE MISE À JOUR
+ */
 function showUpdateNotification(version) {
-  // Vérifier si la notification a déjà été affichée
   const lastNotified = localStorage.getItem('sw_update_notified');
   const now = Date.now();
   
-  // Ne pas afficher plus d'une fois par heure
   if (lastNotified && (now - parseInt(lastNotified)) < 3600000) {
     return;
   }
@@ -113,6 +108,9 @@ function showUpdateNotification(version) {
         <p class="text-[10px] text-slate-400 mt-2">
           Version: ${version || 'nouvelle'}
         </p>
+        <p class="text-[9px] text-slate-300 mt-1">
+          L'application va se recharger automatiquement.
+        </p>
       </div>
     `,
     confirmButtonText: '🔄 Mettre à jour maintenant',
@@ -120,19 +118,61 @@ function showUpdateNotification(version) {
     showCancelButton: true,
     cancelButtonText: 'Plus tard',
     cancelButtonColor: '#94A3B8',
+    timer: 10000,
+    timerProgressBar: true,
     customClass: { popup: 'rounded-2xl p-6' }
   }).then((result) => {
-    if (result.isConfirmed) {
+    if (result.isConfirmed || result.dismiss === Swal.DismissReason.timer) {
       localStorage.removeItem('sw_update_notified');
       window.location.reload();
     }
   });
 }
 
-// ============================================================
-// FORCER LA MISE À JOUR (bouton caché ou accessible)
-// ============================================================
+/**
+ * 📡 CONFIGURER LA MISE À JOUR AUTOMATIQUE DU SERVICE WORKER
+ */
+async function setupServiceWorkerUpdate() {
+  if (!('serviceWorker' in navigator)) return;
 
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    
+    setInterval(() => {
+      registration.update();
+      console.log('🔄 [SW] Vérification automatique des mises à jour');
+    }, 5 * 60 * 1000);
+
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.type === 'SW_UPDATED') {
+        console.log(`🔄 [SW] Nouvelle version disponible: ${event.data.version}`);
+        showUpdateNotification(event.data.version);
+      }
+    });
+
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
+      
+      if (newWorker) {
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log('🔄 [SW] Mise à jour disponible');
+            showUpdateNotification();
+          }
+        });
+      }
+    });
+
+    console.log('✅ [SW] Mise à jour automatique configurée');
+
+  } catch (err) {
+    console.error('❌ [SW] Erreur configuration:', err);
+  }
+}
+
+/**
+ * 🔧 FORCER LA MISE À JOUR (appelable depuis la console)
+ */
 window.forceSWUpdate = async () => {
   if (!('serviceWorker' in navigator)) return;
   
@@ -141,7 +181,6 @@ window.forceSWUpdate = async () => {
     await registration.update();
     showToast("Vérification des mises à jour...", "info", 2000);
     
-    // Vérifier si une nouvelle version est trouvée
     const newWorker = registration.installing || registration.waiting;
     if (newWorker) {
       newWorker.postMessage({ type: 'SKIP_WAITING' });
@@ -157,31 +196,25 @@ window.forceSWUpdate = async () => {
 };
 
 // ============================================================
-// INITIALISATION DU SW
+// INITIALISATION DU SERVICE WORKER
 // ============================================================
 
-// Appeler dans initApp() ou au démarrage
 if ('serviceWorker' in navigator) {
-  // Enregistrer le SW
   navigator.serviceWorker.register('/sw.js', {
     scope: '/'
   }).then((registration) => {
     console.log('✅ [SW] Enregistré avec succès');
     
-    // Vérifier les mises à jour au démarrage
     setTimeout(() => {
       registration.update();
     }, 3000);
     
-    // Configurer la mise à jour automatique
     setupServiceWorkerUpdate();
     
   }).catch((err) => {
     console.error('❌ [SW] Erreur enregistrement:', err);
   });
 }
-
-
 // ============================================================
 // VÉRIFICATION ABONNEMENT POUR LES VUES PREMIUM
 // ============================================================
@@ -612,7 +645,6 @@ async function initApp() {
     const onboardingSeen = localStorage.getItem("onboarding_seen");
     const userRole = localStorage.getItem("user_role");
     
-    // ✅ CORRECTION : Réinitialiser le flag Maman pour les non-familles
     if (userRole && userRole !== 'FAMILLE') {
         localStorage.setItem("user_is_maman", "false");
     }
@@ -623,72 +655,68 @@ async function initApp() {
     console.log("👤 Rôle utilisateur:", userRole);
     console.log("🌸 Mode Maman:", localStorage.getItem("user_is_maman") === "true");
     
-    // 🔥 AFFICHER LE LOADER ET PRÉCHARGER
     loader.classList.remove('hidden');
     
-    // Précharger toutes les ressources
     await preloadResources();
     
-    // Initialisation des services (après préchargement)
-    initMicroInteractions();      // Feedback haptique
-    ErrorHandler.init();          // Gestion globale des erreurs
-    startKeepAlive();             // Ping
-    updateThemeColor();            // Color auto
+    // ✅ Initialisation des services (après préchargement)
+    initMicroInteractions();
+    ErrorHandler.init();
+    startKeepAlive();
+    updateThemeColor();
     preloadOnboardingImages();
     initPushNotifications();
     applyUserTheme();
     await refreshSubscriptionStatus();
-    await checkAppVersion();
+    
+    // ✅ VÉRIFICATION DE LA VERSION (AJOUTÉ)
+    try {
+        await checkAppVersion();
+    } catch (err) {
+        console.warn('⚠️ Erreur vérification version:', err);
+    }
 
-
-// Écouter les changements de visites en temps réel
-if (window.Realtime && window.Realtime.subscribeToVisites) {
-    window.Realtime.subscribeToVisites((visiteData) => {
-        console.log("📢 [MAIN] Changement visite reçu:", visiteData);
-        
-        const userRole = localStorage.getItem("user_role");
-        const currentView = AppState.currentView;
-        
-        // 1. Recharger les visites si on est sur la vue visites
-        if (currentView === 'visits' && window.loadVisits) {
-            window.loadVisits();
-            console.log("✅ Visites rechargées");
-        }
-        
-        // 2. Si c'est une visite qui commence et qu'on est sur le feed, recharger
-        if (currentView === 'feed' && visiteData.statut === 'En cours') {
-            if (window.renderFeed) window.renderFeed();
-        }
-        
-        // 3. Mettre à jour les badges du menu
-        if (window.refreshMenuBadges) {
-            setTimeout(() => window.refreshMenuBadges(), 500);
-        }
-        
-        // 4. Pour la famille : afficher une notification toast
-        if (userRole === 'FAMILLE') {
-            if (visiteData.statut === 'En cours') {
-                showToast("🔔 Une visite a commencé", "info", 3000);
-            } else if (visiteData.statut === 'En attente') {
-                showToast("📋 Un nouveau rapport de visite est disponible", "info", 3000);
-            } else if (visiteData.statut === 'Validé') {
-                showToast("✅ Une visite a été validée", "success", 3000);
+    // Écouter les changements de visites en temps réel
+    if (window.Realtime && window.Realtime.subscribeToVisites) {
+        window.Realtime.subscribeToVisites((visiteData) => {
+            console.log("📢 [MAIN] Changement visite reçu:", visiteData);
+            
+            const userRole = localStorage.getItem("user_role");
+            const currentView = AppState.currentView;
+            
+            if (currentView === 'visits' && window.loadVisits) {
+                window.loadVisits();
+                console.log("✅ Visites rechargées");
             }
-        }
-        
-        // 5. Pour le coordinateur : mettre à jour le dashboard
-        if (userRole === 'COORDINATEUR' && currentView === 'dashboard') {
-            if (window.fetchStats) window.fetchStats();
-            if (window.loadRegistrations) window.loadRegistrations();
-        }
+            
+            if (currentView === 'feed' && visiteData.statut === 'En cours') {
+                if (window.renderFeed) window.renderFeed();
+            }
+            
+            if (window.refreshMenuBadges) {
+                setTimeout(() => window.refreshMenuBadges(), 500);
+            }
+            
+            if (userRole === 'FAMILLE') {
+                if (visiteData.statut === 'En cours') {
+                    showToast("🔔 Une visite a commencé", "info", 3000);
+                } else if (visiteData.statut === 'En attente') {
+                    showToast("📋 Un nouveau rapport de visite est disponible", "info", 3000);
+                } else if (visiteData.statut === 'Validé') {
+                    showToast("✅ Une visite a été validée", "success", 3000);
+                }
+            }
+            
+            if (userRole === 'COORDINATEUR' && currentView === 'dashboard') {
+                if (window.fetchStats) window.fetchStats();
+                if (window.loadRegistrations) window.loadRegistrations();
+            }
 
-        handleRealtimeUpdate();
-    });
+            handleRealtimeUpdate();
+        });
 
-
-    console.log("✅ Écoute des visites en temps réel activée");
-}
-
+        console.log("✅ Écoute des visites en temps réel activée");
+    }
 
 // ============================================================
 // 🔔 REALTIME NOTIFICATIONS
@@ -913,6 +941,7 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
         hideLoader();
     }
 }
+
 
 /**
  * 🖼️ PRÉCHARGER LES IMAGES PNG D'ONBOARDING
