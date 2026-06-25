@@ -130,7 +130,7 @@ export async function verifyOTP(email) {
   btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Vérification...';
 
   try {
-    const verifyRes = await fetch(`${window.CONFIG.API_URL}/auth/verify-2fa`, {
+    const verifyRes = await fetch(`${window.CONFIG.API_URL}/api/auth/verify-2fa`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, code })
