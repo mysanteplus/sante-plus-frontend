@@ -1,4 +1,4 @@
-// modules/billing.js - VERSION COMPLÈTE CORRIGÉE
+// modules/billing.js  
 
 import { secureFetch, clearApiCache } from "../core/api.js";
 import { CONFIG } from "../core/config.js";
