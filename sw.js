@@ -8,7 +8,7 @@
 // CONFIGURATION
 // ============================================================
 
-const CACHE_VERSION = 'v2.0.2';
+const CACHE_VERSION = 'v2.0.3';
 const CACHE_NAME = `sps-${CACHE_VERSION}`;
 const STATIC_CACHE = `sps-static-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sps-images-${CACHE_VERSION}`;
