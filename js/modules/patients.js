@@ -120,7 +120,7 @@ export async function loadPatients() {
 }
 
 // ============================================================
-// 2. RENDU DE LA LISTE DES PATIENTS
+// 2. RENDU DE LA LISTE DES PATIENTS (CORRIGÉ)
 // ============================================================
 
 export function renderPatients() {
@@ -148,41 +148,111 @@ export function renderPatients() {
         const isPremium = p.formule === 'Premium';
         const initials = p.nom_complet?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || '??';
         const hasGps = p.lat && p.lng;
+        const isVisitActive = localStorage.getItem("active_visit_id") !== null;
         
-        // Ajouter le bouton "Suivre l'aidant" pour la famille
-        const familyActions = userRole === "FAMILLE" ? `
-            <div class="grid grid-cols-2 gap-2 mt-3">
-                <button onclick="event.stopPropagation(); window.switchView('map')"
-                        class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
-                        style="background: ${primaryLight}; color: ${primaryColor};">
-                    <i class="fa-solid fa-location-dot mr-1"></i> Suivre l'aidant
-                </button>
-                <button onclick="event.stopPropagation(); window.viewVisitHistory('${p.id}')"
-                        class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
-                        style="background: #EEF2FF; color: #4F46E5;">
-                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Historique
-                </button>
-            </div>
-        ` : '';
-        
+        // ============================================================
+        // ✅ ACTIONS ADAPTÉES À CHAQUE RÔLE
+        // ============================================================
+        let actionButtons = '';
+
+        if (userRole === "AIDANT") {
+            // ✅ AIDANT : Briefing + Journal + Messages
+            actionButtons = `
+                <div class="grid grid-cols-3 gap-2 mt-3">
+                    ${isVisitActive ? `
+                        <button onclick="event.stopPropagation(); window.openEndVisit()"
+                                class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                                style="background: #FEE2E2; color: #DC2626;">
+                            <i class="fa-solid fa-stop-circle mr-1"></i> Clôturer
+                        </button>
+                    ` : `
+                        <button onclick="event.stopPropagation(); window.viewPatientDetails('${p.id}')"
+                                class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                                style="background: ${primaryLight}; color: ${primaryColor};">
+                            <i class="fa-solid fa-eye mr-1"></i> Briefing
+                        </button>
+                    `}
+                    <button onclick="event.stopPropagation(); window.viewPatientFeed('${p.id}')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: #EEF2FF; color: #4F46E5;">
+                        <i class="fa-solid fa-newspaper mr-1"></i> Journal
+                    </button>
+                    <button onclick="event.stopPropagation(); window.viewPatientMessages('${p.id}')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: #F3E8FF; color: #7C3AED;">
+                        <i class="fa-solid fa-comments mr-1"></i> Messages
+                    </button>
+                </div>
+            `;
+        } else if (userRole === "COORDINATEUR") {
+            // ✅ COORDINATEUR : Dossier + Journal + Messages + Historique
+            actionButtons = `
+                <div class="grid grid-cols-4 gap-2 mt-3">
+                    <button onclick="event.stopPropagation(); window.viewPatientDetails('${p.id}')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: ${primaryLight}; color: ${primaryColor};">
+                        <i class="fa-solid fa-folder-open mr-1"></i> Dossier
+                    </button>
+                    <button onclick="event.stopPropagation(); window.viewPatientFeed('${p.id}')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: #EEF2FF; color: #4F46E5;">
+                        <i class="fa-solid fa-newspaper mr-1"></i> Journal
+                    </button>
+                    <button onclick="event.stopPropagation(); window.viewPatientMessages('${p.id}')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: #F3E8FF; color: #7C3AED;">
+                        <i class="fa-solid fa-comments mr-1"></i> Messages
+                    </button>
+                    <button onclick="event.stopPropagation(); window.viewVisitHistory('${p.id}')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: #FEF3C7; color: #D97706;">
+                        <i class="fa-solid fa-clock-rotate-left mr-1"></i> Historique
+                    </button>
+                </div>
+            `;
+        } else if (userRole === "FAMILLE") {
+            // ✅ FAMILLE : Journal + Messages + Suivre + Historique
+            actionButtons = `
+                <div class="grid grid-cols-4 gap-2 mt-3">
+                    <button onclick="event.stopPropagation(); window.viewPatientFeed('${p.id}')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: ${primaryLight}; color: ${primaryColor};">
+                        <i class="fa-solid fa-newspaper mr-1"></i> Journal
+                    </button>
+                    <button onclick="event.stopPropagation(); window.viewPatientMessages('${p.id}')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: #EEF2FF; color: #4F46E5;">
+                        <i class="fa-solid fa-comments mr-1"></i> Messages
+                    </button>
+                    <button onclick="event.stopPropagation(); window.switchView('map')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: #FEF3C7; color: #D97706;">
+                        <i class="fa-solid fa-location-dot mr-1"></i> Suivre
+                    </button>
+                    <button onclick="event.stopPropagation(); window.viewVisitHistory('${p.id}')"
+                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                            style="background: #F3E8FF; color: #7C3AED;">
+                        <i class="fa-solid fa-clock-rotate-left mr-1"></i> Historique
+                    </button>
+                </div>
+            `;
+        }
+
         return `
             <div class="patient-card-modern" 
                  data-patient-id="${p.id}"
                  style="animation: fadeInUp 0.25s ease ${index * 0.03}s forwards; opacity: 0;">
                 
+                <!-- En-tête avec avatar et infos -->
                 <div class="flex items-center gap-3" onclick="window.viewPatientDetails('${p.id}')" style="cursor: pointer;">
-                    <!-- Avatar avec fond coloré -->
                     <div class="patient-avatar" style="background: ${primaryLight}; color: ${primaryColor};">
                         ${initials}
                     </div>
                     
-                    <!-- Infos principales -->
                     <div class="flex-1">
                         <div class="flex items-center gap-2 flex-wrap">
                             <h4 class="font-bold text-slate-800 text-base">${escapeHtml(p.nom_complet || 'Inconnu')}</h4>
-                            
                             <span class="patient-badge hidden min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black items-center justify-center"></span>
-                            
                             ${isPremium ? '<i class="fa-solid fa-crown text-amber-500 text-xs"></i>' : ''}
                         </div>
                         <div class="flex items-center gap-1 mt-0.5">
@@ -191,7 +261,6 @@ export function renderPatients() {
                         </div>
                     </div>
                     
-                    <!-- Flèche -->
                     <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background: ${primaryLight};">
                         <i class="fa-solid fa-chevron-right" style="color: ${primaryColor}; font-size: 12px;"></i>
                     </div>
@@ -218,25 +287,10 @@ export function renderPatients() {
                     </span>
                 </div>
 
-                <!-- Actions principales -->
-                <div class="grid grid-cols-2 gap-2 mt-3">
-                    <button onclick="event.stopPropagation(); window.viewPatientFeed('${p.id}')"
-                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
-                            style="background: ${primaryLight}; color: ${primaryColor};">
-                        <i class="fa-solid fa-newspaper mr-1"></i> Journal
-                    </button>
+                <!-- ✅ ACTIONS ADAPTÉES AU RÔLE -->
+                ${actionButtons}
                 
-                    <button onclick="event.stopPropagation(); window.viewPatientMessages('${p.id}')"
-                            class="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
-                            style="background: #EEF2FF; color: #4F46E5;">
-                        <i class="fa-solid fa-comments mr-1"></i> Messages
-                    </button>
-                </div>
-                
-                <!-- Actions spécifiques famille -->
-                ${familyActions}
-                
-                <!-- Action lier famille (coordinateur uniquement) -->
+                <!-- ✅ ACTION LIER FAMILLE (coordinateur uniquement) -->
                 ${userRole === "COORDINATEUR" && !p.famille_user_id ? `
                     <div class="mt-3">
                         <button onclick="event.stopPropagation(); window.openLinkFamilyModal('${p.id}', '${escapeHtml(p.nom_complet || '')}')" 
@@ -784,4 +838,3 @@ window.viewVisitHistory = async (patientId) => {
         UI.error("Impossible de charger l'historique");
     }
 };
-
