@@ -1,4 +1,4 @@
-// modules/patients.js - VERSION COMPLÈTE PRODUCTION
+// modules/patients.js  
 
 import { secureFetch } from "../core/api.js";
 import { AppState } from "../core/state.js";
