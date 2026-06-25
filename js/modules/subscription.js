@@ -1,4 +1,4 @@
-// modules/subscription.js - VERSION PRODUCTION CORRIGÉE
+// modules/subscription.js - VERSION COMPLÈTE CORRIGÉE
 
 import { secureFetch } from "../core/api.js";
 import { UI } from "../core/utils.js";
@@ -70,6 +70,31 @@ async function getCurrentPatientForSubscription() {
 }
 
 // ============================================================
+// 📊 VÉRIFIER LE STATUT D'ABONNEMENT
+// ============================================================
+
+export async function checkAndDisplaySubscriptionStatus() {
+    try {
+        const status = await secureFetch("/billing/subscription-status", { noCache: true });
+        
+        console.log("📊 Statut abonnement:", status);
+        
+        if (status) {
+            localStorage.setItem("subscription_active", status.active ? "true" : "false");
+            localStorage.setItem("subscription_type", status.type || "");
+            localStorage.setItem("subscription_end_date", status.endDate || "");
+            localStorage.setItem("subscription_days_remaining", String(status.daysRemaining || 0));
+            localStorage.setItem("subscription_type_compte", status.type_compte || "AVEC_PATIENT");
+        }
+        
+        return status;
+    } catch (err) {
+        console.error("❌ Erreur statut abonnement:", err);
+        return null;
+    }
+}
+
+// ============================================================
 // PACKS CONFORT 24/7 (pour comptes SANS_PATIENT)
 // ============================================================
 
@@ -135,7 +160,7 @@ function getMedicalPacks(isMaman) {
                 id: 'ESSENTIEL_MAMAN', 
                 name: 'Essentiel', 
                 desc: '2 semaines', 
-                price: 100, //65000
+                price: 65000, 
                 priceDisplay: '65.000 CFA', 
                 duration: 0.5, 
                 durationText: '2 semaines',
@@ -195,7 +220,7 @@ function getMedicalPacks(isMaman) {
                 id: 'ESSENTIEL_SENIOR', 
                 name: 'Essentiel', 
                 desc: '4 visites / mois', 
-                price: 100, //45000
+                price: 45000, 
                 priceDisplay: '45.000 CFA', 
                 duration: 1, 
                 durationText: '1 mois',
@@ -263,6 +288,14 @@ export async function renderSubscriptionPage() {
     const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
     const isSansPatient = typeCompte === "SANS_PATIENT";
     
+    // ✅ RÉCUPÉRER LE STATUT ACTUEL
+    const status = await checkAndDisplaySubscriptionStatus();
+    const isActive = status?.active === true;
+    const daysRemaining = status?.daysRemaining || 0;
+    const endDate = status?.endDate;
+    const typePack = status?.type || '';
+    
+    // Récupérer le patient actuel (uniquement pour les comptes AVEC_PATIENT)
     let currentPatient = null;
 
     if (userRole === "FAMILLE" && !isSansPatient) {
@@ -315,12 +348,75 @@ export async function renderSubscriptionPage() {
         }
     }
     
+    // Définition des packs selon le type de compte
     let packs = [];
     
     if (isSansPatient) {
         packs = getConfortPacks();
     } else {
         packs = getMedicalPacks(isMaman);
+    }
+    
+    // ✅ BANDEAU DE STATUT
+    let statusBanner = '';
+    if (isActive) {
+        const endDateFormatted = endDate ? new Date(endDate).toLocaleDateString('fr-FR', { 
+            day: 'numeric', 
+            month: 'long', 
+            year: 'numeric' 
+        }) : '';
+        
+        let statusColor = 'emerald';
+        let statusIcon = '✅';
+        let statusMessage = `Votre abonnement est actif jusqu'au ${endDateFormatted}`;
+        
+        if (daysRemaining <= 5 && daysRemaining > 0) {
+            statusColor = 'amber';
+            statusIcon = '⚠️';
+            statusMessage = `Votre abonnement expire dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''} (le ${endDateFormatted})`;
+        } else if (daysRemaining <= 0) {
+            statusColor = 'rose';
+            statusIcon = '🔴';
+            statusMessage = 'Votre abonnement a expiré. Veuillez renouveler.';
+        }
+        
+        statusBanner = `
+            <div class="bg-${statusColor}-50 border border-${statusColor}-200 rounded-2xl p-4 mb-6 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-white border-2 border-${statusColor}-200 flex items-center justify-center">
+                        <span class="text-2xl">${statusIcon}</span>
+                    </div>
+                    <div>
+                        <p class="font-black text-slate-800 text-sm">${typePack || 'Abonnement'}</p>
+                        <p class="text-xs text-${statusColor}-600 font-medium">${statusMessage}</p>
+                    </div>
+                </div>
+                ${daysRemaining <= 5 ? `
+                    <button onclick="window.switchView('billing')" 
+                            class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
+                        Renouveler
+                    </button>
+                ` : ''}
+            </div>
+        `;
+    } else {
+        statusBanner = `
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-amber-100 border-2 border-amber-300 flex items-center justify-center">
+                        <span class="text-2xl">⚠️</span>
+                    </div>
+                    <div>
+                        <p class="font-black text-slate-800 text-sm">Aucun abonnement actif</p>
+                        <p class="text-xs text-amber-600 font-medium">Souscrivez à une formule pour accéder à tous les services</p>
+                    </div>
+                </div>
+                <button onclick="window.scrollToPacks()" 
+                        class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
+                    Voir les offres
+                </button>
+            </div>
+        `;
     }
     
     container.innerHTML = `
@@ -340,6 +436,9 @@ export async function renderSubscriptionPage() {
                 </div>
             </div>
             
+            <!-- ✅ BANDEAU DE STATUT -->
+            ${statusBanner}
+            
             ${currentPatient && !isSansPatient ? `
                 <div class="bg-slate-100 p-4 rounded-2xl mb-6 flex items-center justify-between">
                     <div>
@@ -352,10 +451,10 @@ export async function renderSubscriptionPage() {
                 </div>
             ` : ''}
             
-            <div class="space-y-4">
+            <div class="space-y-4" id="packs-container">
                 ${packs.map(pack => `
                     <div onclick="window.selectSubscriptionPack('${pack.id}', ${pack.price}, ${pack.duration})" 
-                         class="pack-card bg-white rounded-2xl border-2 border-slate-100 p-5 cursor-pointer transition-all active:scale-98 hover:border-emerald-300">
+                         class="pack-card bg-white rounded-2xl border-2 ${isActive && pack.id === typePack ? 'border-emerald-500 bg-emerald-50' : 'border-slate-100'} p-5 cursor-pointer transition-all active:scale-98 hover:border-emerald-300">
                         <div class="flex items-start gap-4">
                             <div class="w-14 h-14 rounded-xl ${pack.bg} flex items-center justify-center shrink-0">
                                 <i class="fa-solid ${pack.icon} ${pack.color} text-2xl"></i>
@@ -366,6 +465,7 @@ export async function renderSubscriptionPage() {
                                         <h4 class="font-black text-slate-800 text-lg">${pack.name}</h4>
                                         ${pack.popular ? '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[8px] font-black uppercase">Populaire</span>' : ''}
                                         ${pack.badge ? `<span class="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[8px] font-black uppercase">${pack.badge}</span>` : ''}
+                                        ${isActive && pack.id === typePack ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[8px] font-black uppercase">✓ Actif</span>' : ''}
                                     </div>
                                     <div class="text-right">
                                         ${pack.originalPrice ? `<span class="text-[10px] text-slate-400 line-through mr-2">${pack.originalPrice.toLocaleString()} CFA</span>` : ''}
@@ -414,6 +514,14 @@ export async function renderSubscriptionPage() {
     `;
 }
 
+// ✅ FONCTION POUR SCROLLER VERS LES PACKS
+window.scrollToPacks = () => {
+    const packsContainer = document.getElementById('packs-container');
+    if (packsContainer) {
+        packsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+};
+
 // ============================================================
 // SÉLECTION D'UN PACK ET PAIEMENT
 // ============================================================
@@ -423,6 +531,7 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
     const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
     const isSansPatient = typeCompte === "SANS_PATIENT";
     
+    // Sélectionner les bons packs selon le type de compte
     let selectedPack = null;
     let packs = [];
     
@@ -439,6 +548,7 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
         return;
     }
     
+    // Récupérer le patient ID (uniquement pour les comptes AVEC_PATIENT)
     let patientId = null;
 
     if (!isSansPatient) {
@@ -505,6 +615,7 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
     
     if (!confirm.isConfirmed) return;
     
+    // Créer la facture
     Swal.fire({
         title: "Préparation...",
         didOpen: () => Swal.showLoading(),
@@ -532,6 +643,7 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
         
             throw new Error("URL de paiement FedaPay non reçue");
         } else {
+            // Pour les comptes AVEC_PATIENT : créer une facture médicale
             facture = await secureFetch("/billing/generate", {
                 method: "POST",
                 body: JSON.stringify({
@@ -545,16 +657,19 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
         
         Swal.close();
         
+        // Préparer les données pour FedaPay
         const userEmail = localStorage.getItem("user_email");
         const userName = localStorage.getItem("user_name") || "Client";
         const firstName = userName.split(' ')[0];
         const lastName = userName.split(' ')[1] || "SPS";
         
+        // Créer un bouton temporaire pour FedaPay
         const tempBtn = document.createElement('button');
         tempBtn.id = 'temp-pay-btn';
         tempBtn.style.display = 'none';
         document.body.appendChild(tempBtn);
         
+        // Initialiser FedaPay en mode popup
         FedaPay.init('#temp-pay-btn', {
             public_key: 'pk_live_yUBTAv4LLN0V7WBMpfuXnPdD',
             transaction: {
@@ -605,10 +720,16 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
 
                     console.log("✅ Résultat de /billing/pay:", result);
 
+                    // ✅ METTRE À JOUR LE STATUT LOCAL
                     localStorage.setItem("subscription_active", "true");
-
-                    if (typeof window.refreshSubscriptionStatus === "function") {
-                        await window.refreshSubscriptionStatus();
+                    
+                    // ✅ METTRE À JOUR LE BADGE
+                    if (typeof checkAndDisplaySubscriptionStatus === 'function') {
+                        await checkAndDisplaySubscriptionStatus();
+                    }
+                    
+                    if (typeof window.renderSubscriptionBadge === 'function') {
+                        window.renderSubscriptionBadge();
                     }
 
                     Swal.fire({
@@ -618,7 +739,8 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
                         showConfirmButton: false
                     });
 
-                    window.switchView("billing");
+                    // ✅ RE-CHARGER LA PAGE D'ABONNEMENT
+                    await renderSubscriptionPage();
 
                 } catch (err) {
                     console.error("❌ Erreur lors de la validation:", err);
@@ -635,6 +757,7 @@ window.selectSubscriptionPack = async (packId, price, durationMonths) => {
             }
         });
         
+        // Déclencher l'ouverture du popup
         document.getElementById('temp-pay-btn').click();
         
     } catch (err) {
@@ -770,6 +893,15 @@ window.retryPayment = async (abonnementId, montant, patientNom, packId, duration
                             })
                         });
                         
+                        // ✅ METTRE À JOUR LE STATUT
+                        localStorage.setItem("subscription_active", "true");
+                        if (typeof checkAndDisplaySubscriptionStatus === 'function') {
+                            await checkAndDisplaySubscriptionStatus();
+                        }
+                        if (typeof window.renderSubscriptionBadge === 'function') {
+                            window.renderSubscriptionBadge();
+                        }
+                        
                         Swal.fire({
                             icon: "success",
                             title: "✅ Paiement confirmé !",
@@ -777,7 +909,7 @@ window.retryPayment = async (abonnementId, montant, patientNom, packId, duration
                             showConfirmButton: false
                         });
                         
-                        window.switchView("billing");
+                        await renderSubscriptionPage();
                         
                     } catch (err) {
                         console.error(err);
