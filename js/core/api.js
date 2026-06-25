@@ -1,3 +1,7 @@
+// ============================================================
+// API - REQUÊTES SÉCURISÉES
+// ============================================================
+
 import { CONFIG } from "./config.js";
 import ErrorHandler from './errorHandler.js';
 import db from './db.js';
@@ -30,6 +34,10 @@ function ensureArray(data, endpoint) {
     console.warn(`⚠️ [api.js] Données invalides pour ${endpoint}:`, data);
     return [];
 }
+
+// ============================================================
+// SECURE FETCH - REQUÊTE SÉCURISÉE AVEC CACHE ET RETRY
+// ============================================================
 
 export async function secureFetch(endpoint, options = {}) {
   const token = localStorage.getItem("token");
@@ -64,12 +72,12 @@ export async function secureFetch(endpoint, options = {}) {
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
-      const url = `${CONFIG.API_URL}${endpoint}`;
+      // ✅ URL CORRECTE : API_URL + /api + endpoint
+      const url = `${CONFIG.API_URL}/api${endpoint}`;
       console.log(`🌐 Requête vers: ${url}`);
       
-      // 🔧 SUPPRIMER cache-control pour éviter l'erreur CORS
       const fetchOptions = {
-        method: options.method,
+        method: options.method || 'GET',
         headers: headers,
         signal: controller.signal
       };
@@ -210,6 +218,10 @@ export async function secureFetch(endpoint, options = {}) {
   }
 }
 
+// ============================================================
+// VIDER LE CACHE
+// ============================================================
+
 export function clearApiCache() {
   apiCache.clear();
   console.log('🗑️ Cache mémoire vidé');
@@ -221,6 +233,10 @@ export function clearApiCache() {
     });
   }
 }
+
+// ============================================================
+// ÉTAT DE LA CONNEXION
+// ============================================================
 
 export function isOnline() {
     return navigator.onLine;
@@ -241,6 +257,10 @@ window.addEventListener('offline', () => {
     }
     window.dispatchEvent(new CustomEvent('connection-lost'));
 });
+
+// ============================================================
+// REPRENDRE LES REQUÊTES EN FILE D'ATTENTE
+// ============================================================
 
 export async function retryQueuedRequests() {
   await ErrorHandler.processRetryQueue();
