@@ -40,6 +40,8 @@ import db from './core/db.js';
 window.db = db;
 const messaging = window.messaging;
 
+let isAppInitializing = false; 
+
 // ============================================================
 // SERVICE WORKER - MISE À JOUR AUTOMATIQUE
 // ============================================================
@@ -591,176 +593,189 @@ const ONBOARDING_STEPS_BABY = [
 let ONBOARDING_STEPS = ONBOARDING_STEPS_GENERAL;
 
 
+ 
+
 async function initApp() {
-    // Nettoyer les classes de fond au chargement
-    document.body.classList.remove('auth-page', 'maman', 'senior', 'aidant', 'coordinateur');
-    
-    const loader = document.getElementById("initial-loader");
-    const token = localStorage.getItem("token");
-    const onboardingSeen = localStorage.getItem("onboarding_seen");
-    const userRole = localStorage.getItem("user_role");
-    
-    if (userRole && userRole !== 'FAMILLE') {
-        localStorage.setItem("user_is_maman", "false");
+    // ✅ ÉVITER LES INITIALISATIONS MULTIPLES
+    if (isAppInitializing) {
+        console.log('⏳ Initialisation déjà en cours, ignorée');
+        return;
     }
-    
-    updatePWAIcon(localStorage.getItem("user_is_maman") === "true");
+    isAppInitializing = true;
 
-    console.log("📝 Onboarding vu ?", onboardingSeen);
-    console.log("👤 Rôle utilisateur:", userRole);
-    console.log("🌸 Mode Maman:", localStorage.getItem("user_is_maman") === "true");
-    
-    loader.classList.remove('hidden');
-    
-    await preloadResources();
-    
-    // ✅ Initialisation des services (après préchargement)
-    initMicroInteractions();
-    ErrorHandler.init();
-    startKeepAlive();
-    updateThemeColor();
-    preloadOnboardingImages();
-    initPushNotifications();
-    applyUserTheme();
-    await refreshSubscriptionStatus();
-    
-    // ✅ VÉRIFICATION DE LA VERSION (AJOUTÉ)
     try {
-        await checkAppVersion();
-    } catch (err) {
-        console.warn('⚠️ Erreur vérification version:', err);
-    }
-
-    // Écouter les changements de visites en temps réel
-    if (window.Realtime && window.Realtime.subscribeToVisites) {
-        window.Realtime.subscribeToVisites((visiteData) => {
-            console.log("📢 [MAIN] Changement visite reçu:", visiteData);
-            
-            const userRole = localStorage.getItem("user_role");
-            const currentView = AppState.currentView;
-            
-            if (currentView === 'visits' && window.loadVisits) {
-                window.loadVisits();
-                console.log("✅ Visites rechargées");
-            }
-            
-            if (currentView === 'feed' && visiteData.statut === 'En cours') {
-                if (window.renderFeed) window.renderFeed();
-            }
-            
-            if (window.refreshMenuBadges) {
-                setTimeout(() => window.refreshMenuBadges(), 500);
-            }
-            
-            if (userRole === 'FAMILLE') {
-                if (visiteData.statut === 'En cours') {
-                    showToast("🔔 Une visite a commencé", "info", 3000);
-                } else if (visiteData.statut === 'En attente') {
-                    showToast("📋 Un nouveau rapport de visite est disponible", "info", 3000);
-                } else if (visiteData.statut === 'Validé') {
-                    showToast("✅ Une visite a été validée", "success", 3000);
-                }
-            }
-            
-            if (userRole === 'COORDINATEUR' && currentView === 'dashboard') {
-                if (window.fetchStats) window.fetchStats();
-                if (window.loadRegistrations) window.loadRegistrations();
-            }
-
-            handleRealtimeUpdate();
-        });
-
-        console.log("✅ Écoute des visites en temps réel activée");
-    }
-
-// ============================================================
-// 🔔 REALTIME NOTIFICATIONS
-// ============================================================
-if (window.Realtime && window.Realtime.subscribeToNotifications) {
-    window.Realtime.subscribeToNotifications((data) => {
-        console.log("🔔 Notification reçue:", data);
-
-        // Mettre à jour badge cloche
-        if (Notifications.updateNotificationBadge) {
-            Notifications.updateNotificationBadge();
-        }
-
-        // Toast
-        showToast(data.message || "Nouvelle notification", "info", 4000);
-
-        handleRealtimeUpdate();
-    });
-
-    console.log("✅ Realtime notifications activé");
-}
-
-
-    
-if (window.Realtime && window.Realtime.subscribeToCommandes) {
-    window.Realtime.subscribeToCommandes((data) => {
-        console.log("📢 [MAIN] Commande mise à jour:", data);
+        // Nettoyer les classes de fond au chargement
+        document.body.classList.remove('auth-page', 'maman', 'senior', 'aidant', 'coordinateur');
         
+        const loader = document.getElementById("initial-loader");
+        const token = localStorage.getItem("token");
+        const onboardingSeen = localStorage.getItem("onboarding_seen");
         const userRole = localStorage.getItem("user_role");
         
-        // Rafraîchir la liste des commandes
-        if (window.loadCommandes) {
-            window.loadCommandes();
+        if (userRole && userRole !== 'FAMILLE') {
+            localStorage.setItem("user_is_maman", "false");
         }
         
-        // Notifier l'aidant si nouvelle commande
-        if (userRole === 'AIDANT' && data.action === 'created') {
-            showToast("📦 Nouvelle commande disponible", "info", 3000);
-        }
+        updatePWAIcon(localStorage.getItem("user_is_maman") === "true");
+
+        console.log("📝 Onboarding vu ?", onboardingSeen);
+        console.log("👤 Rôle utilisateur:", userRole);
+        console.log("🌸 Mode Maman:", localStorage.getItem("user_is_maman") === "true");
         
-        // Notifier la famille si commande prise en charge
-        if (userRole === 'FAMILLE' && data.action === 'accepted') {
-            showToast("🚚 Votre commande a été prise en charge", "info", 3000);
-        }
-        
-        // Mettre à jour les badges
-        if (window.refreshMenuBadges) {
-            setTimeout(() => window.refreshMenuBadges(), 500);
-        }
-
-        handleRealtimeUpdate();
-    });
-}
-
-    
-    // ✅ Correction : appeler la fonction depuis le module importé
-    Notifications.updateNotificationBadge();
-    
-    // Récupération des préférences utilisateur
-    const savedSoundPref = localStorage.getItem('sounds_enabled');
-    if (savedSoundPref !== null) {
-        setSoundsEnabled(savedSoundPref === 'true');
-    }
-
-    const hideLoader = () => {
         if (loader) {
-            loader.style.opacity = "0";
-            setTimeout(() => loader.classList.add("hidden"), 500);
+            loader.classList.remove('hidden');
         }
-    };
+        
+        await preloadResources();
+        
+        // Initialisation des services
+        initMicroInteractions();
+        ErrorHandler.init();
+        startKeepAlive();
+        updateThemeColor();
+        preloadOnboardingImages();
+        initPushNotifications();
+        applyUserTheme();
+        await refreshSubscriptionStatus();
+        
+        try {
+            await checkAppVersion();
+        } catch (err) {
+            console.warn('⚠️ Erreur vérification version:', err);
+        }
 
-    try {
+        // Écouter les changements de visites
+        if (window.Realtime && window.Realtime.subscribeToVisites) {
+            window.Realtime.subscribeToVisites((visiteData) => {
+                console.log("📢 [MAIN] Changement visite reçu:", visiteData);
+                
+                const currentRole = localStorage.getItem("user_role");
+                const currentView = AppState.currentView;
+                
+                if (currentView === 'visits' && window.loadVisits) {
+                    window.loadVisits();
+                }
+                
+                if (currentView === 'feed' && visiteData.statut === 'En cours') {
+                    if (window.renderFeed) window.renderFeed();
+                }
+                
+                if (window.refreshMenuBadges) {
+                    setTimeout(() => window.refreshMenuBadges(), 500);
+                }
+                
+                if (currentRole === 'FAMILLE') {
+                    if (visiteData.statut === 'En cours') {
+                        showToast("🔔 Une visite a commencé", "info", 3000);
+                    } else if (visiteData.statut === 'En attente') {
+                        showToast("📋 Un nouveau rapport de visite est disponible", "info", 3000);
+                    } else if (visiteData.statut === 'Validé') {
+                        showToast("✅ Une visite a été validée", "success", 3000);
+                    }
+                }
+                
+                if (currentRole === 'COORDINATEUR' && currentView === 'dashboard') {
+                    if (window.fetchStats) window.fetchStats();
+                    if (window.loadRegistrations) window.loadRegistrations();
+                }
+
+                handleRealtimeUpdate();
+            });
+
+            console.log("✅ Écoute des visites en temps réel activée");
+        }
+
+        // Notifications Realtime
+        if (window.Realtime && window.Realtime.subscribeToNotifications) {
+            window.Realtime.subscribeToNotifications((data) => {
+                console.log("🔔 Notification reçue:", data);
+
+                if (Notifications.updateNotificationBadge) {
+                    Notifications.updateNotificationBadge();
+                }
+
+                showToast(data.message || "Nouvelle notification", "info", 4000);
+                handleRealtimeUpdate();
+            });
+
+            console.log("✅ Realtime notifications activé");
+        }
+        
+        if (window.Realtime && window.Realtime.subscribeToCommandes) {
+            window.Realtime.subscribeToCommandes((data) => {
+                console.log("📢 [MAIN] Commande mise à jour:", data);
+                
+                const currentRole = localStorage.getItem("user_role");
+                
+                if (window.loadCommandes) {
+                    window.loadCommandes();
+                }
+                
+                if (currentRole === 'AIDANT' && data.action === 'created') {
+                    showToast("📦 Nouvelle commande disponible", "info", 3000);
+                }
+                
+                if (currentRole === 'FAMILLE' && data.action === 'accepted') {
+                    showToast("🚚 Votre commande a été prise en charge", "info", 3000);
+                }
+                
+                if (window.refreshMenuBadges) {
+                    setTimeout(() => window.refreshMenuBadges(), 500);
+                }
+
+                handleRealtimeUpdate();
+            });
+        }
+        
+        Notifications.updateNotificationBadge();
+        
+        const savedSoundPref = localStorage.getItem('sounds_enabled');
+        if (savedSoundPref !== null) {
+            setSoundsEnabled(savedSoundPref === 'true');
+        }
+
+        const hideLoader = () => {
+            if (loader) {
+                loader.style.opacity = "0";
+                setTimeout(() => loader.classList.add("hidden"), 500);
+            }
+        };
+
+        // ✅ TRAITER LE TOKEN
         if (token) {
+            // ✅ VÉRIFIER SI LE TOKEN EST VALIDE (optionnel mais recommandé)
+            try {
+                const decoded = JSON.parse(atob(token.split('.')[1]));
+                if (!decoded.userId) {
+                    throw new Error('Token invalide');
+                }
+            } catch (e) {
+                console.warn('Token invalide, déconnexion');
+                localStorage.removeItem("token");
+                renderAuthView('login');
+                hideLoader();
+                isAppInitializing = false;
+                return;
+            }
+
             if (!onboardingSeen && !window._onboardingCompleted) {
                 hideLoader();
                 window.startOnboarding();
+                isAppInitializing = false;
                 return;
             }
             
-            renderLayout();
+            // ✅ RENDER LAYOUT UNE SEULE FOIS
+            if (!document.querySelector('aside')) {
+                renderLayout();
+            }
             
-            // ✅ Vérifier les visites actives
+            // ✅ VÉRIFIER LES VISITES ACTIVES
             await Visites.checkActiveVisitOnStart();
             Visites.resumeTrackingIfActive();
             checkActiveVisit();
 
-
-                        // ✅ FORCER la mise à jour de l'UI de l'aidant
-            const userRole = localStorage.getItem("user_role");
+            // ✅ FORCER LA MISE À JOUR DE L'UI DE L'AIDANT
             if (userRole === "AIDANT") {
                 const activePatientId = localStorage.getItem("active_patient_id");
                 if (activePatientId) {
@@ -772,17 +787,18 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
 
             setTimeout(() => updateBrandingColors(), 100);
 
-             let defaultView = "home";
+            // ✅ DÉTERMINER LA VUE PAR DÉFAUT
+            let defaultView = "home";
              
-             if (userRole === "COORDINATEUR") {
-                 defaultView = "dashboard";
-             } else if (userRole === "FAMILLE" && localStorage.getItem("user_is_maman") === "true" && localStorage.getItem("user_type_compte") !== "SANS_PATIENT") {
-                 defaultView = "dashboard-maman";
-             } else if (userRole === "AIDANT") {
-                 defaultView = "patients";
-             }
+            if (userRole === "COORDINATEUR") {
+                defaultView = "dashboard";
+            } else if (userRole === "FAMILLE" && localStorage.getItem("user_is_maman") === "true" && localStorage.getItem("user_type_compte") !== "SANS_PATIENT") {
+                defaultView = "dashboard-maman";
+            } else if (userRole === "AIDANT") {
+                defaultView = "patients";
+            }
            
-         let lastView = localStorage.getItem("last_view") || defaultView;
+            let lastView = localStorage.getItem("last_view") || defaultView;
             
             const allowedViews = ROLE_VIEWS[userRole] || [];
             
@@ -792,33 +808,24 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
                 lastView = defaultView;
             }
             
-            await window.switchView(lastView);
-
-            if (userRole === "FAMILLE") {
-                    try {
-                        // Importer les fonctions depuis billing
-                        const { checkAndDisplaySubscriptionStatus, renderSubscriptionBadge } = await import('./modules/billing.js');
-                        await checkAndDisplaySubscriptionStatus();
-                        renderSubscriptionBadge();
-                    } catch (err) {
-                        console.warn('⚠️ Erreur chargement statut abonnement:', err);
-                    }
-                }
+            // ✅ SWITCH VIEW UNE SEULE FOIS AVEC UNE VÉRIFICATION
+            if (AppState.currentView !== lastView) {
+                await window.switchView(lastView);
+            }
 
             setTimeout(() => {
-            if (AppState.currentPatient) {
-                console.log("✅ Realtime messages démarré");
-            }
-        }, 1000);
+                if (AppState.currentPatient) {
+                    console.log("✅ Realtime messages démarré");
+                }
+            }, 1000);
 
-            // ✅ ASSIGNATION DES FONCTIONS GLOBALES APRÈS LE CHARGEMENT
+            // ✅ ASSIGNATION DES FONCTIONS GLOBALES
             console.log("🔍 Vérification des modules après chargement:");
             console.log("🔍 Type de Visites.startVisit:", typeof Visites.startVisit);
             console.log("🔍 Type de Visites.submitEndVisit:", typeof Visites.submitEndVisit);
             console.log("🔍 Type de Commandes.confirmCommand:", typeof Commandes.confirmCommand);
             console.log("🔍 Type de Commandes.markAsDelivered:", typeof Commandes.markAsDelivered);
 
-            // ✅ Assignation des fonctions Visites
             if (Visites && typeof Visites.startVisit === 'function') {
                 window.startVisit = Visites.startVisit.bind(Visites);
                 window.confirmStartVisit = Visites.startVisit.bind(Visites);
@@ -842,7 +849,6 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
                 console.log("✅ window.rateVisit assignée");
             }
 
-            // ✅ Assignation des fonctions Commandes
             if (Commandes && typeof Commandes.confirmCommand === 'function') {
                 window.confirmCommand = Commandes.confirmCommand;
                 console.log("✅ window.confirmCommand assignée");
@@ -857,7 +863,6 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
                 console.error("❌ Commandes.markAsDelivered n'est pas une fonction");
             }
 
-            // ✅ Assignation de quickValidate
             if (typeof quickValidate === 'function') {
                 window.quickValidate = quickValidate;
                 console.log("✅ window.quickValidate assignée");
@@ -865,7 +870,6 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
                 console.error("❌ quickValidate n'est pas une fonction");
             }
 
-            // ✅ Vérification finale des fonctions critiques
             setTimeout(() => {
                 console.log("🔍 Vérification finale des fonctions globales:");
                 const requiredFunctions = ['startVisit', 'confirmCommand', 'quickValidate', 'markAsDelivered', 'submitEndVisit'];
@@ -878,18 +882,13 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
                 });
             }, 500);
 
-
-
             // Écouter les événements de notification
             window.addEventListener('new-notification', (event) => {
                 const { title, message, type } = event.detail;
                 
-                // Afficher un toast
                 showToast(message, "info", 4000);
                 
-                // Mettre à jour le badge de la cloche
                 if (type === 'visit' && AppState.currentView === 'feed') {
-                    // Si on est dans le feed, recharger
                     window.dispatchEvent(new CustomEvent('app-data-updated', {
                         detail: { endpoint: '/visites', method: 'GET', resourceType: 'visites' }
                     }));
@@ -898,16 +897,19 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
             
             hideLoader();
         } else {
+            // ✅ PAS DE TOKEN → AFFICHER LOGIN
             renderAuthView('login');
             hideLoader();
         }
     } catch (err) {
-        console.error("Erreur Init:", err);
+        console.error("❌ Erreur Init:", err);
         renderAuthView('login');
         hideLoader();
+    } finally {
+        // ✅ TOUJOURS RÉINITIALISER LE FLAG
+        isAppInitializing = false;
     }
 }
-
 
 /**
  * 🖼️ PRÉCHARGER LES IMAGES PNG D'ONBOARDING
@@ -4181,7 +4183,13 @@ window.switchView = async function(viewName) {
         pendingView = viewName;
         return;
     }
-    
+
+
+     if (AppState.currentView === viewName) {
+        console.log(`ℹ️ Déjà sur la vue ${viewName}`);
+        return;
+    }
+
     isTransitioning = true;
     const container = document.getElementById("view-container");
     
