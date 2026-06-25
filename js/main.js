@@ -608,26 +608,7 @@ async function initApp() {
     isAppInitializing = true;
 
     try {
-        // ✅ CHARGER LA CONFIGURATION EN PREMIER (AVEC AWAIT)
-        console.log('🔧 [MAIN] Étape 1: Chargement de la configuration...');
-         console.log('🔧 [MAIN] Étape 2: Configuration chargée, poursuite de l\'initialisation...');
-        
-        // ✅ VÉRIFIER QUE LA CONFIG EST BIEN CHARGÉE
-        if (window._env_ && window._env_.SUPABASE_URL) {
-            console.log('✅ [MAIN] Supabase configuré:', window._env_.SUPABASE_URL);
-        } else {
-            console.warn('⚠️ [MAIN] window._env_ n\'est pas défini, fallback sur window.CONFIG');
-            // Fallback: utiliser window.CONFIG
-            if (window.CONFIG) {
-                window._env_ = {
-                    SUPABASE_URL: window.CONFIG.SUPABASE_URL,
-                    SUPABASE_KEY: window.CONFIG.SUPABASE_KEY,
-                    API_URL: window.CONFIG.API_URL,
-                    ENVIRONMENT: 'production'
-                };
-                console.log('✅ [MAIN] window._env_ initialisé depuis window.CONFIG');
-            }
-        }
+     
         // Nettoyer les classes de fond au chargement
         document.body.classList.remove('auth-page', 'maman', 'senior', 'aidant', 'coordinateur');
         
