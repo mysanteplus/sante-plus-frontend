@@ -1,3 +1,5 @@
+// modules/commandes.js - VERSION COMPLÈTE PRODUCTION
+
 import { CONFIG } from "../core/config.js";
 import { UI, compressImage } from "../core/utils.js";
 import { secureFetch, clearApiCache } from "../core/api.js";
@@ -26,11 +28,11 @@ function escapeHtml(str) {
 }
 
 /**
- * 🔍 VÉRIFICATION ABONNEMENT
+ * 🔍 VÉRIFICATION ABONNEMENT RÉELLE
  */
 async function checkUserSubscription() {
     try {
-        const response = await secureFetch("/billing/subscription-status");
+        const response = await secureFetch("/billing/subscription-status", { noCache: true });
         return response.active === true;
     } catch (err) {
         console.error("❌ Erreur vérification abonnement:", err);
@@ -100,7 +102,7 @@ window.openImageModal = (imageUrl, title = "📸 Image") => {
  */
 function renderCommandes(list) {
 
-        const role = localStorage.getItem("user_role");
+    const role = localStorage.getItem("user_role");
     const isAidant = role === "AIDANT";
     const currentUserId = localStorage.getItem("user_id");
     
@@ -470,10 +472,8 @@ window.takeCommand = async (commandeId) => {
         
         Swal.fire("Succès", "Commande prise en charge", "success");
         
-        // ✅ FORCER LE REACHARGEMENT IMMÉDIAT
         await loadCommandes();
         
-        // ✅ AUSSI REACHARGER LES AUTRES VUES
         window.dispatchEvent(new CustomEvent('app-data-updated', {
             detail: { endpoint: '/commandes', method: 'POST', resourceType: 'commande_updated' }
         }));
@@ -593,15 +593,58 @@ window.validateAllDeliveriesWithoutReload = async () => {
 };
 
 // ============================================================
-// OUVRIR LA MODALE DE COMMANDE
+// OUVRIR LA MODALE DE COMMANDE (AVEC VÉRIFICATION ABONNEMENT)
 // ============================================================
 
 export async function openOrderModal() { 
-    // ✅ VÉRIFICATION ABONNEMENT
+    // ✅ VÉRIFICATION ABONNEMENT RÉELLE AVANT TOUT
     const userRole = localStorage.getItem("user_role");
-    if (!(await window.requireActiveFamilySubscription?.("passer une commande"))) {
-    return;
-}
+    
+    if (userRole === "FAMILLE") {
+        try {
+            const isActive = await checkUserSubscription();
+            
+            if (!isActive) {
+                const typeCompte = localStorage.getItem("user_type_compte") || "AVEC_PATIENT";
+                const isSansPatient = typeCompte === "SANS_PATIENT";
+                
+                const result = await Swal.fire({
+                    icon: "warning",
+                    title: "Abonnement requis",
+                    html: `
+                        <div class="text-center">
+                            <p class="text-sm text-slate-600">
+                                Vous devez avoir un abonnement actif pour passer une commande.
+                            </p>
+                            ${isSansPatient ? `
+                                <p class="text-xs text-slate-500 mt-2">Activez le Pack Confort 24/7 pour commander.</p>
+                            ` : `
+                                <p class="text-xs text-slate-500 mt-2">Votre abonnement médical a expiré ou n'est pas actif.</p>
+                            `}
+                        </div>
+                    `,
+                    confirmButtonText: "Voir les offres",
+                    showCancelButton: true,
+                    cancelButtonText: "Annuler",
+                    confirmButtonColor: "#10B981"
+                });
+                
+                if (result.isConfirmed) {
+                    window.switchView("subscription");
+                }
+                return;
+            }
+        } catch (err) {
+            console.error("Erreur vérification abonnement:", err);
+            Swal.fire({
+                icon: "error",
+                title: "Erreur",
+                text: "Impossible de vérifier votre abonnement. Réessayez plus tard.",
+                confirmButtonText: "OK"
+            });
+            return;
+        }
+    }
     
     const isMaman = localStorage.getItem("user_is_maman") === "true";
     const isFamily = userRole === "FAMILLE";
@@ -1188,6 +1231,4 @@ export async function markAsDelivered(commandeId) {
     }
 }
 
-
 window.openOrderModal = openOrderModal;
-
