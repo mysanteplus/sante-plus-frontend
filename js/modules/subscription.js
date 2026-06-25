@@ -135,7 +135,7 @@ function getMedicalPacks(isMaman) {
                 id: 'ESSENTIEL_MAMAN', 
                 name: 'Essentiel', 
                 desc: '2 semaines', 
-                price: 65000, 
+                price: 100, //65000
                 priceDisplay: '65.000 CFA', 
                 duration: 0.5, 
                 durationText: '2 semaines',
@@ -195,7 +195,7 @@ function getMedicalPacks(isMaman) {
                 id: 'ESSENTIEL_SENIOR', 
                 name: 'Essentiel', 
                 desc: '4 visites / mois', 
-                price: 45000, 
+                price: 100, //45000
                 priceDisplay: '45.000 CFA', 
                 duration: 1, 
                 durationText: '1 mois',
