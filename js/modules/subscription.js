@@ -1,4 +1,4 @@
-// modules/subscription.js - VERSION COMPLÈTE CORRIGÉE
+// modules/subscription.js  
 
 import { secureFetch } from "../core/api.js";
 import { UI } from "../core/utils.js";
