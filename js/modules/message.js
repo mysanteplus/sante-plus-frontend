@@ -510,7 +510,7 @@ async function sendPhotoMessage() {
             throw new Error("Token d'authentification manquant");
         }
         
-        const response = await fetch(window.CONFIG.API_URL + "/messages/send-photo", {
+        const response = await fetch(window.CONFIG.API_URL + "/api/messages/send-photo", {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + token },
             body: formData
@@ -606,7 +606,7 @@ async function sendDocumentMessage() {
         }
         
         const token = localStorage.getItem('token');
-        const response = await fetch(window.CONFIG.API_URL + "/messages/send-document", {
+        const response = await fetch(window.CONFIG.API_URL + "/api/messages/send-document", {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + token },
             body: formData
