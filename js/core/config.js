@@ -12,17 +12,25 @@ if (typeof window !== 'undefined') {
 
 // ✅ Fonction pour obtenir les variables d'environnement
 function getEnv(key, defaultValue = '') {
+    // 1. Vérifier dans window._env_ (injecté par le backend via /api/config)
     if (typeof window !== 'undefined' && window._env_ && window._env_[key]) {
         return window._env_[key];
     }
-    // En développement, on peut utiliser des valeurs par défaut
-    if (process.env.NODE_ENV === 'development') {
+    
+    // 2. Vérifier dans window.CONFIG (fallback)
+    if (typeof window !== 'undefined' && window.CONFIG && window.CONFIG[key]) {
+        return window.CONFIG[key];
+    }
+    
+    // 3. Fallback uniquement en développement local
+    if (typeof window !== 'undefined' && 
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        console.warn(`⚠️ [config] Utilisation du fallback pour ${key} (développement uniquement)`);
         return defaultValue;
     }
-    // En production, on force l'utilisation de window._env_
-    if (typeof window !== 'undefined' && window._env_) {
-        console.warn(`⚠️ Variable ${key} non trouvée dans window._env_, utilisation du fallback`);
-    }
+    
+    // 4. En production, on force l'utilisation des valeurs injectées
+    console.warn(`⚠️ [config] Variable ${key} non trouvée, utilisation de la valeur par défaut`);
     return defaultValue;
 }
 
