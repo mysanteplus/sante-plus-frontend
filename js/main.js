@@ -582,7 +582,7 @@ const ONBOARDING_STEPS_BABY = [
         desc: "Accédez dès maintenant à votre espace de suivi et profitez d'un accompagnement personnalisé pour vous et bébé.",
         image: "/assets/images/logo-maman-text.png",
         accent: "border-rose-500",
-        isLogo: true  // ← Flag pour savoir que c'est une image de logo
+        isLogo: true   
     }
 ];
 
@@ -793,6 +793,17 @@ if (window.Realtime && window.Realtime.subscribeToCommandes) {
             }
             
             await window.switchView(lastView);
+
+            if (userRole === "FAMILLE") {
+                    try {
+                        // Importer les fonctions depuis billing
+                        const { checkAndDisplaySubscriptionStatus, renderSubscriptionBadge } = await import('./modules/billing.js');
+                        await checkAndDisplaySubscriptionStatus();
+                        renderSubscriptionBadge();
+                    } catch (err) {
+                        console.warn('⚠️ Erreur chargement statut abonnement:', err);
+                    }
+                }
 
             setTimeout(() => {
             if (AppState.currentPatient) {
@@ -3488,6 +3499,7 @@ window.addPatientAfterRegistration = async () => {
 // ============================================================
 // LAYOUT PRINCIPAL (HEADER, SIDEBAR, FOOTER)
 // ============================================================
+ 
 function renderLayout() {
     const userRole = localStorage.getItem("user_role");
     const userName = localStorage.getItem("user_name");
@@ -3497,9 +3509,7 @@ function renderLayout() {
     const primaryColor = isMaman ? '#E11D48' : '#059669';
     const primaryLight = isMaman ? '#FFF1F2' : '#ECFDF5';
 
-
-
-     // Couleurs dynamiques pour le drawer mobile (fond clair + dégradé subtil)
+    // Couleurs dynamiques pour le drawer mobile
     const drawerBgClass = userRole === 'COORDINATEUR' ? 'bg-gradient-to-br from-white to-amber-50/80' 
                         : (userRole === 'AIDANT' ? 'bg-gradient-to-br from-white to-amber-50/70'
                         : (isMaman ? 'bg-gradient-to-br from-white to-pink-50/80'
@@ -3518,35 +3528,35 @@ function renderLayout() {
     document.getElementById("app").innerHTML = `
         <div class="flex h-screen w-full bg-transparent overflow-hidden font-sans select-none">
             <!-- Sidebar Desktop -->
-                 <aside class="hidden lg:flex flex-col w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white shadow-xl">
-                    <!-- Logo -->
-                    <div class="flex justify-center py-6 border-b border-white/10">
-                        <div class="w-16 h-16">
-                            <img id="sidebar-logo-img" class="w-full h-full object-contain" src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}">
+            <aside class="hidden lg:flex flex-col w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white shadow-xl">
+                <!-- Logo -->
+                <div class="flex justify-center py-6 border-b border-white/10">
+                    <div class="w-16 h-16">
+                        <img id="sidebar-logo-img" class="w-full h-full object-contain" src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}">
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="flex-1 py-6 px-4 space-y-1" id="nav-desktop">
+                    ${getNavLinks(userRole, 'desktop')}
+                </nav>
+                
+                <!-- Profil & Déconnexion -->
+                <div class="p-4 border-t border-white/10 mt-auto">
+                    <div class="flex items-center gap-3 mb-4 p-2 rounded-xl bg-white/5">
+                        <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-black text-sm border border-white/20 overflow-hidden">
+                            ${userPhoto ? `<img src="${userPhoto}" class="w-full h-full object-cover">` : `<i class="fa-regular fa-user text-white"></i>`}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold truncate">${userName?.split(' ')[0] || 'Utilisateur'}</p>
+                            <p class="text-[9px] text-slate-400 uppercase tracking-wider">${userRole}</p>
                         </div>
                     </div>
-                    
-                    <!-- Navigation -->
-                    <nav class="flex-1 py-6 px-4 space-y-1" id="nav-desktop">
-                        ${getNavLinks(userRole, 'desktop')}
-                    </nav>
-                    
-                    <!-- Profil & Déconnexion -->
-                    <div class="p-4 border-t border-white/10 mt-auto">
-                        <div class="flex items-center gap-3 mb-4 p-2 rounded-xl bg-white/5">
-                            <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-black text-sm border border-white/20 overflow-hidden">
-                                ${userPhoto ? `<img src="${userPhoto}" class="w-full h-full object-cover">` : `<i class="fa-regular fa-user text-white"></i>`}
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-semibold truncate">${userName?.split(' ')[0] || 'Utilisateur'}</p>
-                                 <p class="text-[9px] text-slate-400 uppercase tracking-wider">${userRole}</p>
-                            </div>
-                        </div>
-                        <button onclick="window.logout()" class="w-full py-2.5 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-power-off text-xs"></i> Déconnexion
-                        </button>
-                    </div>
-                </aside>
+                    <button onclick="window.logout()" class="w-full py-2.5 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-power-off text-xs"></i> Déconnexion
+                    </button>
+                </div>
+            </aside>
 
             <!-- Contenu principal -->
             <div class="flex-1 flex flex-col min-w-0 h-[100dvh] relative overflow-hidden">
@@ -3557,24 +3567,30 @@ function renderLayout() {
                         <i class="fa-solid fa-bars text-lg"></i>
                     </button>
                     
-                   <!-- Logo mobile -->
-                   <div class="lg:hidden flex items-center justify-center h-14 overflow-hidden">
-                       <div class="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden">
-                           <img 
-                               id="header-logo-img" 
-                               class="w-9 h-9 object-contain block" 
-                               src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}"
-                               alt="Santé Plus"
-                           >
-                       </div>
-                   </div>
-                    
-                    <!-- Titre desktop -->
-                    <div class="hidden lg:block">
+                    <!-- Logo mobile -->
+                    <div class="lg:hidden flex items-center justify-center h-14 overflow-hidden">
+                        <div class="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden">
+                            <img 
+                                id="header-logo-img" 
+                                class="w-9 h-9 object-contain block" 
+                                src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}"
+                                alt="Santé Plus"
+                            >
+                        </div>
                     </div>
                     
-                    <!-- Actions droite -->
+                    <!-- Titre desktop -->
+                    <div class="hidden lg:block"></div>
+                    
+                    <!-- ✅ ACTIONS DROITE - AVEC BADGE ABONNEMENT -->
                     <div class="flex items-center gap-2">
+                        <!-- ✅ BADGE ABONNEMENT (seulement pour les familles) -->
+                        ${isFamily ? `
+                            <div id="subscription-badge-container" class="hidden lg:flex items-center">
+                                <!-- Le badge sera rendu dynamiquement -->
+                            </div>
+                        ` : ''}
+                        
                         <button onclick="window.switchView('notifications')" 
                                 class="relative w-9 h-9 lg:w-10 lg:h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-all active:scale-95">
                             <i class="fa-regular fa-bell text-base"></i>
@@ -3587,46 +3603,46 @@ function renderLayout() {
                     </div>
                 </header>
 
-                             <!-- Menu latéral mobile (drawer) - FOND CLAIR + DÉGRADÉ SUBTIL -->
-             <div id="mobile-drawer" class="fixed inset-0 z-50 hidden">
-                 <div class="absolute inset-0 bg-black/30" id="drawer-overlay"></div>
-                 <div class="absolute top-0 left-0 bottom-0 w-80 ${drawerBgClass} shadow-xl transform -translate-x-full transition-transform duration-300 flex flex-col border-r ${drawerBorderColor}">
-                     <!-- En-tête du drawer -->
-                     <div class="p-5 border-b ${drawerBorderColor} shrink-0">
-                         <div class="flex items-center justify-between">
-                             <div class="flex items-center gap-3">
-                              <div class="w-12 h-12 rounded-xl flex items-center justify-center">
-                                  <img src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}" class="w-12 h-12 object-contain">
-                              </div>
-                                 
-                                 <div>
-                                     <p class="font-bold text-slate-800 text-base">${userName?.split(' ')[0] || 'Utilisateur'}</p>
-                                     <p class="text-[9px] ${drawerAccentColor} uppercase font-black tracking-wider">${userRole}</p>
-                                 </div>
-                             </div>
-                             <button id="close-drawer" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 transition">
-                                 <i class="fa-solid fa-times text-sm"></i>
-                             </button>
-                         </div>
-                     </div>
-                     
-                     <!-- Navigation -->
-                     <nav class="flex-1 overflow-y-auto py-4" id="drawer-menu"></nav>
-                     
-                     <!-- Bouton déconnexion en bas -->
-                     <div class="shrink-0 p-5 border-t ${drawerBorderColor} space-y-3">
-                         <button id="install-app-drawer" 
-                                 class="w-full py-3 rounded-xl text-[10px] font-black uppercase active:scale-98 transition-all flex items-center justify-center gap-2 bg-white border ${drawerBorderColor} text-slate-600 hover:${drawerAccentColor} hover:border-${userRole === 'COORDINATEUR' ? 'amber-200' : (userRole === 'AIDANT' ? 'amber-200' : (isMaman ? 'pink-200' : 'emerald-200'))} transition">
-                             <i class="fa-solid fa-download"></i> Installer l'application
-                         </button>
-                         
-                         <button onclick="window.logout()" 
-                                 class="w-full py-3 bg-rose-50 text-rose-500 rounded-xl text-[10px] font-black uppercase active:scale-98 transition-all flex items-center justify-center gap-2 hover:bg-rose-100 border border-rose-100">
-                             <i class="fa-solid fa-power-off"></i> Déconnexion
-                         </button>
-                     </div>
-                 </div>
-             </div>
+                <!-- Menu latéral mobile (drawer) -->
+                <div id="mobile-drawer" class="fixed inset-0 z-50 hidden">
+                    <div class="absolute inset-0 bg-black/30" id="drawer-overlay"></div>
+                    <div class="absolute top-0 left-0 bottom-0 w-80 ${drawerBgClass} shadow-xl transform -translate-x-full transition-transform duration-300 flex flex-col border-r ${drawerBorderColor}">
+                        <!-- En-tête du drawer -->
+                        <div class="p-5 border-b ${drawerBorderColor} shrink-0">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-xl flex items-center justify-center">
+                                        <img src="${isMaman ? CONFIG.LOGO_MAMAN_ICON : CONFIG.LOGO_GENERAL_ICON}" class="w-12 h-12 object-contain">
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-800 text-base">${userName?.split(' ')[0] || 'Utilisateur'}</p>
+                                        <p class="text-[9px] ${drawerAccentColor} uppercase font-black tracking-wider">${userRole}</p>
+                                    </div>
+                                </div>
+                                <button id="close-drawer" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 transition">
+                                    <i class="fa-solid fa-times text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Navigation -->
+                        <nav class="flex-1 overflow-y-auto py-4" id="drawer-menu"></nav>
+                        
+                        <!-- Bouton déconnexion en bas -->
+                        <div class="shrink-0 p-5 border-t ${drawerBorderColor} space-y-3">
+                            <button id="install-app-drawer" 
+                                    class="w-full py-3 rounded-xl text-[10px] font-black uppercase active:scale-98 transition-all flex items-center justify-center gap-2 bg-white border ${drawerBorderColor} text-slate-600 hover:${drawerAccentColor} hover:border-${userRole === 'COORDINATEUR' ? 'amber-200' : (userRole === 'AIDANT' ? 'amber-200' : (isMaman ? 'pink-200' : 'emerald-200'))} transition">
+                                <i class="fa-solid fa-download"></i> Installer l'application
+                            </button>
+                            
+                            <button onclick="window.logout()" 
+                                    class="w-full py-3 bg-rose-50 text-rose-500 rounded-xl text-[10px] font-black uppercase active:scale-98 transition-all flex items-center justify-center gap-2 hover:bg-rose-100 border border-rose-100">
+                                <i class="fa-solid fa-power-off"></i> Déconnexion
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Effets de fond -->
                 <div class="absolute top-40 left-[-5%] w-[500px] h-[500px] bg-green-200/20 rounded-full blur-[120px] pointer-events-none z-0 animate-blob"></div>
                 <div class="absolute bottom-[-10%] right-[-5%] w-[400px] h-[400px] bg-blue-200/20 rounded-full blur-[100px] pointer-events-none z-0 animate-blob animation-delay-2000"></div>
@@ -3648,102 +3664,87 @@ function renderLayout() {
         const primaryBgLight = isMaman ? 'bg-pink-50' : 'bg-emerald-50';
         const primaryText = isMaman ? 'text-pink-600' : 'text-emerald-600';
         
-       // Définition des sections avec leurs items
-         const sections = [];
-         
-         // Section PRINCIPAL
-         let mainItems = [];
-         
-         if (userRole === "COORDINATEUR") {
-             mainItems = [
-                 { id: "dashboard", icon: "fa-chart-pie", label: "Dashboard" },
-                 { id: "patients", icon: "fa-folder-open", label: "Patients" },
-                 { id: "aidants", icon: "fa-user-nurse", label: "Aidants" },
-                 { id: "planning", icon: "fa-calendar-days", label: "Planning" },
-                 { id: "rh-dashboard", icon: "fa-users", label: "RH" },
-                 { id: "map", icon: "fa-location-dot", label: "Radar" },
-                 { id: "commandes", icon: "fa-box", label: "Commandes" },
-                 { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
-                 { id: "users", icon: "fa-users-gear", label: "Utilisateurs" }
-             ];
-         }
-         
-         else if (userRole === "AIDANT") {
-             mainItems = [
-                 { id: "home", icon: "fa-home", label: "Accueil" },
-                 { id: "patients", icon: "fa-folder-open", label: "Dossiers" },
-                 { id: "feed", icon: "fa-newspaper", label: "Journal" },
-                 { id: "messages", icon: "fa-comments", label: "Messages" },
-                 { id: "planning", icon: "fa-calendar-days", label: "Planning" },
-                 { id: "visits", icon: "fa-calendar-check", label: "Visites" },
-                 { id: "commandes", icon: "fa-box", label: "Livraisons" },
-                 { id: "map", icon: "fa-location-dot", label: "Radar" }
-             ];
-         }
-         
-      else if (userRole === "FAMILLE") {
-          const isSansPatient = localStorage.getItem("user_type_compte") === "SANS_PATIENT";
-      
-          if (isMaman && !isSansPatient) {
-              mainItems = [
-                  { id: "dashboard-maman", icon: "fa-chart-line", label: "Tableau maman" },
-                  { id: "feed", icon: "fa-newspaper", label: "Journal bébé" },
-                  { id: "map", icon: "fa-location-dot", label: "Radar" },
-                  { id: "visits", icon: "fa-calendar-check", label: "Visites" },
-                  { id: "commandes", icon: "fa-box", label: "Commandes" },
-                  { id: "education", icon: "fa-graduation-cap", label: "Éducation" },
-                  { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
-                  { id: "subscription", icon: "fa-crown", label: "Abonnement" }
-              ];
-          }
-      
-          else if (!isMaman && !isSansPatient) {
-              mainItems = [
-                  { id: "home", icon: "fa-home", label: "Accueil" },
-                  { id: "feed", icon: "fa-newspaper", label: "Journal de soins" },
-                  { id: "map", icon: "fa-location-dot", label: "Radar" },
-                  { id: "visits", icon: "fa-calendar-check", label: "Visites" },
-                  { id: "commandes", icon: "fa-box", label: "Commandes" },
-                  { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
-                  { id: "subscription", icon: "fa-crown", label: "Abonnement" }
-              ];
-          }
-      
-          else {
-              mainItems = [
-                  { id: "home", icon: "fa-home", label: "Accueil" },
-                  { id: "commandes", icon: "fa-box", label: "Commandes" },
-                  { id: "map", icon: "fa-location-dot", label: "Radar" },
-                  { id: "subscription", icon: "fa-crown", label: "Abonnement" },
-                  { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" }
-              ];
-          }
-      }
-         
-         if (mainItems.length > 0) {
-             sections.push({ title: 'PRINCIPAL', icon: 'fa-compass', items: mainItems, defaultOpen: true });
-         }
+        // Définition des sections avec leurs items
+        const sections = [];
         
-         
-
-         
-         // Section COMPTE (profil pour tous)
-         const accountItems = [
-             { id: 'profile', icon: 'fa-user-circle', label: 'Mon profil', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] }
-         ].filter(item => item.roles.includes(userRole));
-         
-         if (accountItems.length > 0) {
-             sections.push({ title: 'COMPTE', icon: 'fa-user-circle', items: accountItems, defaultOpen: false });
-         }
-
-
-     
+        // Section PRINCIPAL
+        let mainItems = [];
+        
+        if (userRole === "COORDINATEUR") {
+            mainItems = [
+                { id: "dashboard", icon: "fa-chart-pie", label: "Dashboard" },
+                { id: "patients", icon: "fa-folder-open", label: "Patients" },
+                { id: "aidants", icon: "fa-user-nurse", label: "Aidants" },
+                { id: "planning", icon: "fa-calendar-days", label: "Planning" },
+                { id: "rh-dashboard", icon: "fa-users", label: "RH" },
+                { id: "map", icon: "fa-location-dot", label: "Radar" },
+                { id: "commandes", icon: "fa-box", label: "Commandes" },
+                { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+                { id: "users", icon: "fa-users-gear", label: "Utilisateurs" }
+            ];
+        } else if (userRole === "AIDANT") {
+            mainItems = [
+                { id: "home", icon: "fa-home", label: "Accueil" },
+                { id: "patients", icon: "fa-folder-open", label: "Dossiers" },
+                { id: "feed", icon: "fa-newspaper", label: "Journal" },
+                { id: "messages", icon: "fa-comments", label: "Messages" },
+                { id: "planning", icon: "fa-calendar-days", label: "Planning" },
+                { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+                { id: "commandes", icon: "fa-box", label: "Livraisons" },
+                { id: "map", icon: "fa-location-dot", label: "Radar" }
+            ];
+        } else if (userRole === "FAMILLE") {
+            const isSansPatient = localStorage.getItem("user_type_compte") === "SANS_PATIENT";
+        
+            if (isMaman && !isSansPatient) {
+                mainItems = [
+                    { id: "dashboard-maman", icon: "fa-chart-line", label: "Tableau maman" },
+                    { id: "feed", icon: "fa-newspaper", label: "Journal bébé" },
+                    { id: "map", icon: "fa-location-dot", label: "Radar" },
+                    { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+                    { id: "commandes", icon: "fa-box", label: "Commandes" },
+                    { id: "education", icon: "fa-graduation-cap", label: "Éducation" },
+                    { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+                    { id: "subscription", icon: "fa-crown", label: "Abonnement" }
+                ];
+            } else if (!isMaman && !isSansPatient) {
+                mainItems = [
+                    { id: "home", icon: "fa-home", label: "Accueil" },
+                    { id: "feed", icon: "fa-newspaper", label: "Journal de soins" },
+                    { id: "map", icon: "fa-location-dot", label: "Radar" },
+                    { id: "visits", icon: "fa-calendar-check", label: "Visites" },
+                    { id: "commandes", icon: "fa-box", label: "Commandes" },
+                    { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" },
+                    { id: "subscription", icon: "fa-crown", label: "Abonnement" }
+                ];
+            } else {
+                mainItems = [
+                    { id: "home", icon: "fa-home", label: "Accueil" },
+                    { id: "commandes", icon: "fa-box", label: "Commandes" },
+                    { id: "map", icon: "fa-location-dot", label: "Radar" },
+                    { id: "subscription", icon: "fa-crown", label: "Abonnement" },
+                    { id: "billing", icon: "fa-file-invoice-dollar", label: "Factures" }
+                ];
+            }
+        }
+        
+        if (mainItems.length > 0) {
+            sections.push({ title: 'PRINCIPAL', icon: 'fa-compass', items: mainItems, defaultOpen: true });
+        }
+        
+        // Section COMPTE (profil pour tous)
+        const accountItems = [
+            { id: 'profile', icon: 'fa-user-circle', label: 'Mon profil', roles: ['COORDINATEUR', 'FAMILLE', 'AIDANT'] }
+        ].filter(item => item.roles.includes(userRole));
+        
+        if (accountItems.length > 0) {
+            sections.push({ title: 'COMPTE', icon: 'fa-user-circle', items: accountItems, defaultOpen: false });
+        }
         
         // Stocker l'état d'ouverture des sections dans localStorage
         const getSectionState = (sectionTitle) => {
             const saved = localStorage.getItem(`drawer_section_${sectionTitle}`);
             if (saved !== null) return saved === 'true';
-            // Valeur par défaut
             if (sectionTitle === 'PRINCIPAL') return true;
             return false;
         };
@@ -3763,7 +3764,6 @@ function renderLayout() {
                     const isOpen = getSectionState(section.title);
                     return `
                         <div class="mb-2">
-                            <!-- En-tête de section (cliquable) -->
                             <button class="section-header w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all active:scale-98" 
                                     data-section="${section.title}">
                                 <div class="flex items-center gap-2">
@@ -3773,7 +3773,6 @@ function renderLayout() {
                                 <i class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isOpen ? 'rotate-0' : '-rotate-90'}"></i>
                             </button>
                             
-                            <!-- Corps de section (repliable) -->
                             <div class="section-content ml-2 mt-1 space-y-0.5 ${isOpen ? '' : 'hidden'}">
                                 ${section.items.map(item => `
                                     <button onclick="window.switchView('${item.id}'); window.closeDrawerMobile?.()" 
@@ -3818,7 +3817,6 @@ function renderLayout() {
                     saveSectionState(sectionTitle, true);
                 }
                 
-                // Feedback haptique
                 if (window.UI?.vibrate) window.UI.vibrate('light');
             });
         });
@@ -3860,7 +3858,6 @@ function renderLayout() {
         const overlay = document.getElementById('drawer-overlay');
         const closeBtn = document.getElementById('close-drawer');
         
-        // Fonction pour fermer le drawer
         window.closeDrawerMobile = () => {
             if (drawer) {
                 drawer.classList.remove('show');
@@ -3882,38 +3879,35 @@ function renderLayout() {
             if (closeBtn) closeBtn.onclick = window.closeDrawerMobile;
         }
         
-const installBtn = document.getElementById('install-app-drawer');
-if (installBtn) {
-    // Vérifier si l'app est déjà installée
-    const isAppInstalled = () => {
-        return window.matchMedia('(display-mode: standalone)').matches || 
-               window.navigator.standalone === true;
-    };
-    
-    // Cacher le bouton si déjà installé
-    if (isAppInstalled()) {
-        installBtn.style.display = 'none';
-    }
-    
-    installBtn.onclick = () => {
-        if (window.deferredPrompt) {
-            window.deferredPrompt.prompt();
-            window.deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('✅ PWA installée');
-                    // Cacher le bouton après installation
-                    installBtn.style.display = 'none';
-                    if (window.showToast) showToast("Application installée avec succès !", "success");
+        const installBtn = document.getElementById('install-app-drawer');
+        if (installBtn) {
+            const isAppInstalled = () => {
+                return window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone === true;
+            };
+            
+            if (isAppInstalled()) {
+                installBtn.style.display = 'none';
+            }
+            
+            installBtn.onclick = () => {
+                if (window.deferredPrompt) {
+                    window.deferredPrompt.prompt();
+                    window.deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('✅ PWA installée');
+                            installBtn.style.display = 'none';
+                            if (window.showToast) showToast("Application installée avec succès !", "success");
+                        } else {
+                            console.log('❌ Installation refusée');
+                        }
+                        window.deferredPrompt = null;
+                    });
                 } else {
-                    console.log('❌ Installation refusée');
+                    if (window.showToast) showToast("L'installation sera disponible dans quelques instants", "info");
                 }
-                window.deferredPrompt = null;
-            });
-        } else {
-            if (window.showToast) showToast("L'installation sera disponible dans quelques instants", "info");
+            };
         }
-    };
-}
     }, 100);
     
 
@@ -3922,7 +3916,6 @@ if (installBtn) {
         updateBrandingColors();
     }, 50);
 }
-
 
 
 
