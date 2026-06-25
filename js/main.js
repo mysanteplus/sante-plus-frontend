@@ -601,9 +601,9 @@ async function loadBackendConfig() {
     try {
         console.log('🔧 Chargement de la configuration depuis le backend...');
         
-        // ✅ Utiliser l'URL absolue
-        const baseUrl = window.location.origin;
-        const configUrl = `${baseUrl}/api/config`;
+        // ✅ Utiliser l'URL du backend (API_URL) au lieu de l'URL de la page
+        const apiUrl = window.CONFIG?.API_URL || 'https://sante-plus-backend-main.onrender.com/api';
+        const configUrl = `${apiUrl}/config`;  // Note: pas de /api en double
         
         console.log(`📡 Appel de: ${configUrl}`);
         
@@ -614,7 +614,7 @@ async function loadBackendConfig() {
         
         if (!response.ok) {
             console.warn(`⚠️ /api/config a répondu ${response.status}, utilisation des valeurs par défaut`);
-            // ✅ Fallback : utiliser window.CONFIG si disponible
+            // Fallback : utiliser window.CONFIG
             if (window.CONFIG && window.CONFIG.SUPABASE_URL) {
                 window._env_ = {
                     SUPABASE_URL: window.CONFIG.SUPABASE_URL,
@@ -628,25 +628,37 @@ async function loadBackendConfig() {
         }
         
         const config = await response.json();
-        console.log('✅ Configuration reçue du backend:', config);
+        console.log('✅ Configuration reçue du backend');
         
-        // ✅ Injecter les variables dans window._env_
+        // ✅ Mettre à jour window._env_
         window._env_ = {
-            SUPABASE_URL: config.supabaseUrl,
-            SUPABASE_KEY: config.supabaseKey,
-            API_URL: config.apiUrl,
-            ENVIRONMENT: config.environment
+            SUPABASE_URL: config.supabaseUrl || window._env_?.SUPABASE_URL,
+            SUPABASE_KEY: config.supabaseKey || window._env_?.SUPABASE_KEY,
+            API_URL: config.apiUrl || window._env_?.API_URL,
+            ENVIRONMENT: config.environment || window._env_?.ENVIRONMENT
         };
         
+        // ✅ Sauvegarder en cache
+        try {
+            localStorage.setItem('sps_config', JSON.stringify({
+                supabaseUrl: window._env_.SUPABASE_URL,
+                supabaseKey: window._env_.SUPABASE_KEY,
+                apiUrl: window._env_.API_URL,
+                environment: window._env_.ENVIRONMENT
+            }));
+        } catch (e) {
+            // Ignorer les erreurs de localStorage
+        }
+        
         console.log('✅ Configuration chargée depuis le backend');
-        console.log(`   Environnement: ${config.environment}`);
-        console.log(`   Supabase URL: ${config.supabaseUrl ? '✅ présent' : '❌ manquant'}`);
-        console.log(`   Supabase Key: ${config.supabaseKey ? '✅ présent' : '❌ manquant'}`);
+        console.log(`   Environnement: ${window._env_.ENVIRONMENT}`);
+        console.log(`   Supabase URL: ${window._env_.SUPABASE_URL ? '✅ présent' : '❌ manquant'}`);
         
         // ✅ Mettre à jour window.CONFIG
         if (window.CONFIG) {
-            if (config.supabaseUrl) window.CONFIG.SUPABASE_URL = config.supabaseUrl;
-            if (config.supabaseKey) window.CONFIG.SUPABASE_KEY = config.supabaseKey;
+            if (window._env_.SUPABASE_URL) window.CONFIG.SUPABASE_URL = window._env_.SUPABASE_URL;
+            if (window._env_.SUPABASE_KEY) window.CONFIG.SUPABASE_KEY = window._env_.SUPABASE_KEY;
+            if (window._env_.API_URL) window.CONFIG.API_URL = window._env_.API_URL;
             console.log('✅ window.CONFIG mis à jour');
         }
         
@@ -654,7 +666,7 @@ async function loadBackendConfig() {
         console.error('❌ Impossible de charger la config depuis le backend:', err.message);
         console.warn('   Utilisation des valeurs par défaut');
         
-        // ✅ Fallback : utiliser window.CONFIG si disponible
+        // Fallback : utiliser window.CONFIG
         if (window.CONFIG && window.CONFIG.SUPABASE_URL) {
             window._env_ = {
                 SUPABASE_URL: window.CONFIG.SUPABASE_URL,
@@ -666,10 +678,6 @@ async function loadBackendConfig() {
         }
     }
 }
-
-
-
-
 
 
 async function initApp() {
