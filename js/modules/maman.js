@@ -1,4 +1,4 @@
-// js/modules/maman.js - VERSION 100% DYNAMIQUE
+// js/modules/maman.js 
 import { secureFetch } from "../core/api.js";
 import { UI } from "../core/utils.js";
 import supabase from "../core/supabaseClient.js";
