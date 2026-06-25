@@ -593,24 +593,42 @@ const ONBOARDING_STEPS_BABY = [
 let ONBOARDING_STEPS = ONBOARDING_STEPS_GENERAL;
 
 
- // ============================================================
+// ============================================================
 // CHARGEMENT DE LA CONFIGURATION DEPUIS LE BACKEND
 // ============================================================
 
 async function loadBackendConfig() {
     try {
         console.log('🔧 Chargement de la configuration depuis le backend...');
-        const response = await fetch('/api/config', { 
+        
+        // ✅ Utiliser l'URL absolue
+        const baseUrl = window.location.origin;
+        const configUrl = `${baseUrl}/api/config`;
+        
+        console.log(`📡 Appel de: ${configUrl}`);
+        
+        const response = await fetch(configUrl, { 
             cache: 'no-store',
             headers: { 'Cache-Control': 'no-cache' }
         });
         
         if (!response.ok) {
             console.warn(`⚠️ /api/config a répondu ${response.status}, utilisation des valeurs par défaut`);
+            // ✅ Fallback : utiliser window.CONFIG si disponible
+            if (window.CONFIG && window.CONFIG.SUPABASE_URL) {
+                window._env_ = {
+                    SUPABASE_URL: window.CONFIG.SUPABASE_URL,
+                    SUPABASE_KEY: window.CONFIG.SUPABASE_KEY,
+                    API_URL: window.CONFIG.API_URL,
+                    ENVIRONMENT: 'production'
+                };
+                console.log('✅ Utilisation de window.CONFIG comme fallback');
+            }
             return;
         }
         
         const config = await response.json();
+        console.log('✅ Configuration reçue du backend:', config);
         
         // ✅ Injecter les variables dans window._env_
         window._env_ = {
@@ -622,19 +640,36 @@ async function loadBackendConfig() {
         
         console.log('✅ Configuration chargée depuis le backend');
         console.log(`   Environnement: ${config.environment}`);
-        console.log(`   Supabase: ${config.supabaseUrl ? '✅' : '❌'}`);
+        console.log(`   Supabase URL: ${config.supabaseUrl ? '✅ présent' : '❌ manquant'}`);
+        console.log(`   Supabase Key: ${config.supabaseKey ? '✅ présent' : '❌ manquant'}`);
         
-        // ✅ Mettre à jour window.CONFIG si besoin
+        // ✅ Mettre à jour window.CONFIG
         if (window.CONFIG) {
             if (config.supabaseUrl) window.CONFIG.SUPABASE_URL = config.supabaseUrl;
             if (config.supabaseKey) window.CONFIG.SUPABASE_KEY = config.supabaseKey;
+            console.log('✅ window.CONFIG mis à jour');
         }
         
     } catch (err) {
-        console.warn('⚠️ Impossible de charger la config depuis le backend:', err.message);
+        console.error('❌ Impossible de charger la config depuis le backend:', err.message);
         console.warn('   Utilisation des valeurs par défaut');
+        
+        // ✅ Fallback : utiliser window.CONFIG si disponible
+        if (window.CONFIG && window.CONFIG.SUPABASE_URL) {
+            window._env_ = {
+                SUPABASE_URL: window.CONFIG.SUPABASE_URL,
+                SUPABASE_KEY: window.CONFIG.SUPABASE_KEY,
+                API_URL: window.CONFIG.API_URL,
+                ENVIRONMENT: 'production'
+            };
+            console.log('✅ Utilisation de window.CONFIG comme fallback');
+        }
     }
 }
+
+
+
+
 
 
 async function initApp() {
@@ -646,7 +681,27 @@ async function initApp() {
     isAppInitializing = true;
 
     try {
-         await loadBackendConfig();
+        // ✅ CHARGER LA CONFIGURATION EN PREMIER (AVEC AWAIT)
+        console.log('🔧 [MAIN] Étape 1: Chargement de la configuration...');
+        await loadBackendConfig();
+        console.log('🔧 [MAIN] Étape 2: Configuration chargée, poursuite de l\'initialisation...');
+        
+        // ✅ VÉRIFIER QUE LA CONFIG EST BIEN CHARGÉE
+        if (window._env_ && window._env_.SUPABASE_URL) {
+            console.log('✅ [MAIN] Supabase configuré:', window._env_.SUPABASE_URL);
+        } else {
+            console.warn('⚠️ [MAIN] window._env_ n\'est pas défini, fallback sur window.CONFIG');
+            // Fallback: utiliser window.CONFIG
+            if (window.CONFIG) {
+                window._env_ = {
+                    SUPABASE_URL: window.CONFIG.SUPABASE_URL,
+                    SUPABASE_KEY: window.CONFIG.SUPABASE_KEY,
+                    API_URL: window.CONFIG.API_URL,
+                    ENVIRONMENT: 'production'
+                };
+                console.log('✅ [MAIN] window._env_ initialisé depuis window.CONFIG');
+            }
+        }
         // Nettoyer les classes de fond au chargement
         document.body.classList.remove('auth-page', 'maman', 'senior', 'aidant', 'coordinateur');
         
