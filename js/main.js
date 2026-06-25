@@ -442,51 +442,6 @@ function updatePWAIcon(isMaman) {
 }
 
 
-
-
-// ============================================================
-// VÉRIFICATION DE VERSION AU DÉMARRAGE
-// ============================================================
-
-async function checkAppVersion() {
-  try {
-    const response = await fetch('/version.json', { 
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' }
-    });
-    
-    if (!response.ok) return;
-    
-    const data = await response.json();
-    const currentVersion = data.version;
-    
-    // Récupérer la version stockée localement
-    const storedVersion = localStorage.getItem('app_version');
-    
-    if (!storedVersion) {
-      // Première visite, stocker la version
-      localStorage.setItem('app_version', currentVersion);
-      return;
-    }
-    
-    if (storedVersion !== currentVersion) {
-      console.log(`🔄 Nouvelle version détectée: ${storedVersion} → ${currentVersion}`);
-      localStorage.setItem('app_version', currentVersion);
-      
-      // Vider le cache IndexedDB (db)
-      if (window.db && db.clearAll) {
-        await db.clearAll();
-      }
-      
-      // Afficher la notification de mise à jour
-      showUpdateNotification(currentVersion);
-    }
-    
-  } catch (err) {
-    console.warn('⚠️ Erreur vérification version:', err.message);
-  }
-}
-
  // ============================================================
 // VARIABLES GLOBALES
 // ============================================================
