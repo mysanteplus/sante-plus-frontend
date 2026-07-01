@@ -1,4 +1,5 @@
-// js/modules/notifications.js
+// js/modules/notifications.js  
+
 import { secureFetch } from "../core/api.js";
 import { UI } from "../core/utils.js";
 
@@ -17,7 +18,7 @@ export async function renderNotificationsPage() {
     container.innerHTML = `
         <div class="animate-fadeIn max-w-2xl mx-auto pb-32">
             <div class="flex items-center gap-4 mb-8">
-                <button onclick="window.switchView('home')" 
+                <button onclick="window.goBack()" 
                         class="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all active:scale-95">
                     <i class="fa-solid fa-arrow-left text-lg"></i>
                 </button>
@@ -51,33 +52,58 @@ function renderNotificationsList() {
         `;
     }
     
-    return notifications.map(notif => `
-        <div class="notification-item bg-white rounded-2xl border border-slate-100 p-4 shadow-sm transition-all ${!notif.read ? 'border-l-4 border-l-emerald-500 bg-emerald-50/30' : ''}" 
-             data-id="${notif.id}">
-            <div class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-xl ${getIconBg(notif.type)} flex items-center justify-center">
-                    <i class="${getIcon(notif.type)} text-white text-sm"></i>
-                </div>
-                <div class="flex-1">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <p class="font-black text-slate-800 text-sm">${escapeHtml(notif.title)}</p>
-                        ${!notif.read ? '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>' : ''}
+    return notifications.map(notif => {
+        // ✅ DÉTERMINER L'URL DE REDIRECTION
+        let redirectUrl = notif.url || "/#home";
+        let redirectView = getViewFromUrl(redirectUrl);
+        let icon = getIcon(notif.type);
+        let iconBg = getIconBg(notif.type);
+        
+        return `
+            <div class="notification-item bg-white rounded-2xl border border-slate-100 p-4 shadow-sm transition-all ${!notif.read ? 'border-l-4 border-l-emerald-500 bg-emerald-50/30' : ''}" 
+                 data-id="${notif.id}"
+                 onclick="window.goToNotification('${notif.id}', '${redirectView}')">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center">
+                        <i class="${icon} text-white text-sm"></i>
                     </div>
-                    <p class="text-xs text-slate-500 mt-0.5">${escapeHtml(notif.message)}</p>
-                    <p class="text-[9px] text-slate-400 mt-2 flex items-center gap-2">
-                        <i class="fa-regular fa-clock"></i>
-                        ${formatDate(notif.created_at)}
-                    </p>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <p class="font-black text-slate-800 text-sm">${escapeHtml(notif.title)}</p>
+                            ${!notif.read ? '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>' : ''}
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">${escapeHtml(notif.message)}</p>
+                        <p class="text-[9px] text-slate-400 mt-2 flex items-center gap-2">
+                            <i class="fa-regular fa-clock"></i>
+                            ${formatDate(notif.created_at)}
+                        </p>
+                        <p class="text-[8px] text-emerald-500 mt-1 font-medium">
+                            <i class="fa-solid fa-arrow-right"></i> Cliquer pour voir
+                        </p>
+                    </div>
                 </div>
-                ${notif.url ? `
-                    <button onclick="window.goToNotification('${notif.url}', '${notif.id}')" 
-                            class="text-emerald-600 hover:text-emerald-700 transition">
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </button>
-                ` : ''}
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
+}
+
+/**
+ * 🔗 EXTRAIRE LA VUE DEPUIS L'URL
+ */
+function getViewFromUrl(url) {
+    if (!url) return "home";
+    
+    // Extraire le nom de la vue après le #
+    const match = url.match(/#([a-zA-Z-]+)/);
+    if (match) {
+        const view = match[1];
+        // Vérifier que la vue existe
+        const validViews = ['home', 'dashboard', 'patients', 'visits', 'feed', 'billing', 'commandes', 'planning', 'map', 'subscription', 'profile', 'notifications'];
+        if (validViews.includes(view)) {
+            return view;
+        }
+    }
+    return "home";
 }
 
 /**
@@ -91,6 +117,8 @@ function getIcon(type) {
         'alert': 'fa-solid fa-triangle-exclamation',
         'message': 'fa-regular fa-comment',
         'expiration': 'fa-regular fa-clock',
+        'commande': 'fa-solid fa-box',
+        'notification': 'fa-regular fa-bell',
         'default': 'fa-regular fa-bell'
     };
     return icons[type] || icons.default;
@@ -104,6 +132,8 @@ function getIconBg(type) {
         'alert': 'bg-rose-500',
         'message': 'bg-amber-500',
         'expiration': 'bg-orange-500',
+        'commande': 'bg-indigo-500',
+        'notification': 'bg-slate-500',
         'default': 'bg-slate-500'
     };
     return colors[type] || colors.default;
@@ -114,7 +144,6 @@ function getIconBg(type) {
  */
 async function loadNotifications() {
     try {
-        // Récupérer les notifications depuis le backend
         const data = await secureFetch("/notifications");
         notifications = data || [];
         unreadCount = notifications.filter(n => !n.read).length;
@@ -129,7 +158,6 @@ async function loadNotifications() {
  * 🔔 METTRE À JOUR LE BADGE DANS LE HEADER
  */
 export function updateNotificationBadge() {
-    // Chercher par ID ou par classe
     const badge = document.getElementById('notification-badge') || document.querySelector('header .bg-rose-500');
     if (badge) {
         if (unreadCount > 0) {
@@ -140,6 +168,7 @@ export function updateNotificationBadge() {
         }
     }
 }
+
 /**
  * ✅ MARQUER TOUT COMME LU
  */
@@ -163,39 +192,8 @@ window.markAllAsRead = async () => {
 /**
  * 🔗 REDIRIGER VERS LA PAGE CORRESPONDANTE
  */
-window.goToNotification = async (url, notifId, type) => {
+window.goToNotification = async (notifId, targetView) => {
     // Marquer comme lue
-    await markAsRead(notifId);
-    
-    let targetView = 'home';
-    
-    // Déterminer la vue selon le type
-    switch(type) {
-        case 'visit':
-            targetView = 'visits';
-            break;
-        case 'payment':
-            targetView = 'billing';
-            break;
-        case 'assignment':
-            targetView = 'planning';
-            break;
-        case 'expiration':
-            targetView = 'subscription';
-            break;
-        case 'message':
-            targetView = 'feed';
-            break;
-        default:
-            targetView = url?.replace('#', '') || 'home';
-    }
-    
-    console.log("🔀 Redirection vers:", targetView);
-    window.switchView(targetView);
-};
-
-
-async function markAsRead(notifId) {
     try {
         await secureFetch(`/notifications/mark-read/${notifId}`, { method: "POST" });
         const notif = notifications.find(n => n.id === notifId);
@@ -205,7 +203,17 @@ async function markAsRead(notifId) {
     } catch (err) {
         console.error(err);
     }
-}
+    
+    // ✅ REDIRIGER VERS LA BONNE VUE
+    console.log(`🔀 Redirection notification vers: ${targetView}`);
+    
+    if (typeof window.switchView === 'function') {
+        await window.switchView(targetView);
+    } else {
+        window.location.hash = targetView;
+        window.location.reload();
+    }
+};
 
 /**
  * 📅 FORMATER LA DATE
@@ -235,5 +243,5 @@ function escapeHtml(str) {
     });
 }
 
-// Exporter pour rafraîchir le badge après chaque notification
+// Exporter
 export { unreadCount };
